@@ -1,0 +1,19 @@
+project_name = Aqua
+source_dir = src
+main_unit = aqua-driver
+exec_name = aqua
+config_dir = config
+path_unit = { unit = Aqua.Paths
+              path = src/aqua-paths.ads }
+builder_option = "-g"
+builder_option = "-k"
+builder_option = "-s"
+builder_option = "-j4"
+compiler_option = "-g"
+compiler_option = "-gnatwea"
+compiler_option = "-gnata"
+compiler_option = "-gnato"
+compiler_option = "-gnatyabcefhiklmnoprstOASux"
+compiler_option = "-gnat2012"
+compiler_option = "-fstack-check"
+linker_option = "-g"

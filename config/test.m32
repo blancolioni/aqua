@@ -1,0 +1,25 @@
+map = 805306369
+array = 805306370
+aqua = 805306371
+io = 805306372
+
+start:
+   mov #io, op
+   get_property Get_Timer
+   mov pv, r0
+   mov "Calculating processor speed", -(sp)
+   get_property Put_Line, 1
+   mov #0, r2
+loop:
+   inc r2
+   get_property Get_Timer
+   sub r0, pv, r1
+   cmp r1, #200
+   blt loop
+
+   mov r2, -(sp)
+   get_property Put, 1
+   mov " bogoMIPS", -(sp)
+   get_property Put_Line, 1
+   rts
+   
