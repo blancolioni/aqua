@@ -44,19 +44,28 @@ package Aqua is
                      return Word
    is (Value + Tag * 16#1000_0000#);
 
-   function Is_Integer (Value : Word) return Boolean;
-   function Get_Integer (Value : Word) return Aqua_Integer;
-   function To_Integer_Word (Value : Aqua_Integer) return Word;
+   function Is_Integer (Value : Word) return Boolean
+   is (Get_Tag (Value) = Integer_Tag);
 
-   function Is_Address (Value : Word) return Boolean;
-   function Get_Address (Value : Word) return Address;
-   function To_Address_Word (Addr : Address) return Word;
+   function Get_Integer (Value : Word) return Aqua_Integer
+     with Inline_Always;
 
-   function Is_External_Reference (Value : Word) return Boolean;
+   function To_Integer_Word (Value : Aqua_Integer) return Word
+     with Inline_Always;
+
+   function Is_Address (Value : Word) return Boolean
+   is (Get_Tag (Value) = Address_Tag);
+
+   function Get_Address (Value : Word) return Address with Inline_Always;
+   function To_Address_Word (Addr : Address) return Word with Inline_Always;
+
+   function Is_External_Reference (Value : Word) return Boolean
+   is (Get_Tag (Value) = External_Tag);
+
    function Get_External_Reference (Value : Word) return External_Reference
      with Pre => Is_External_Reference (Value);
    function To_External_Word (Reference : External_Reference)
-                              return Word;
+                              return Word with Inline_Always;
 
    function Is_String_Reference (Value : Word) return Boolean
    is (Get_Tag (Value) = String_Tag);

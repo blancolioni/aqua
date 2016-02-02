@@ -103,33 +103,6 @@ package body Aqua is
       return It;
    end Get_Value;
 
-   ----------------
-   -- Is_Address --
-   ----------------
-
-   function Is_Address (Value : Word) return Boolean is
-   begin
-      return Get_Tag (Value) = Address_Tag;
-   end Is_Address;
-
-   ---------------------------
-   -- Is_External_Reference --
-   ---------------------------
-
-   function Is_External_Reference (Value : Word) return Boolean is
-   begin
-      return Get_Tag (Value) = External_Tag;
-   end Is_External_Reference;
-
-   ----------------
-   -- Is_Integer --
-   ----------------
-
-   function Is_Integer (Value : Word) return Boolean is
-   begin
-      return Get_Tag (Value) = Integer_Tag;
-   end Is_Integer;
-
    ---------
    -- Set --
    ---------
