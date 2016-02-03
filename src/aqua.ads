@@ -132,4 +132,14 @@ package Aqua is
    function Show (Item : External_Object_Interface) return String
                   is abstract;
 
+   procedure Set_Reference
+     (Item : in out External_Object_Interface;
+      Reference : External_Reference)
+   is abstract;
+
+   function Get_Reference
+     (Item : External_Object_Interface)
+      return External_Reference
+      is abstract;
+
 end Aqua;

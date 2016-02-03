@@ -175,6 +175,30 @@ package body Aqua.Objects.Arrays is
 
    end Set_Property;
 
+   -------------------
+   -- Set_Reference --
+   -------------------
+
+   overriding procedure Set_Reference
+     (Object : in out Root_Array_Type;
+      Reference : External_Reference)
+   is
+   begin
+      Object.Ref := Reference;
+   end Set_Reference;
+
+   -------------------
+   -- Set_Reference --
+   -------------------
+
+   overriding procedure Set_Reference
+     (It        : in out Root_Array_Iterator;
+      Reference : External_Reference)
+   is
+   begin
+      It.Ref := Reference;
+   end Set_Reference;
+
    ----------
    -- Show --
    ----------

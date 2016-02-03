@@ -59,6 +59,7 @@ private
      new Object_Interface with
       record
          Map : Object_Maps.Map;
+         Ref : External_Reference := 0;
       end record;
 
    overriding function Name
@@ -79,11 +80,20 @@ private
      (Object : Root_Object_Type)
       return Aqua.Iterators.Aqua_Iterator_Interface'Class;
 
+   overriding procedure Set_Reference
+     (Object : in out Root_Object_Type;
+      Reference : External_Reference);
+
+   overriding function Get_Reference
+     (Object : Root_Object_Type)
+      return External_Reference;
+
    type Root_Object_Iterator is
      new Aqua.Iterators.Aqua_Iterator_Interface with
       record
          Current  : Word;
          Position : Object_Maps.Cursor;
+         Ref      : External_Reference := 0;
       end record;
 
    overriding function Name
@@ -100,6 +110,14 @@ private
      (It : Root_Object_Iterator)
       return String
    is ("[object-iterator]");
+
+   overriding procedure Set_Reference
+     (It : in out Root_Object_Iterator;
+      Reference : External_Reference);
+
+   overriding function Get_Reference
+     (It : Root_Object_Iterator)
+      return External_Reference;
 
    overriding procedure Next
      (It       : in out Root_Object_Iterator;
