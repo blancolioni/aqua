@@ -37,6 +37,30 @@ package body Aqua.Objects is
       return Result;
    end Get_Property;
 
+   -------------------
+   -- Get_Reference --
+   -------------------
+
+   overriding function Get_Reference
+     (Object : Root_Object_Type)
+      return External_Reference
+   is
+   begin
+      return Object.Ref;
+   end Get_Reference;
+
+   -------------------
+   -- Get_Reference --
+   -------------------
+
+   overriding function Get_Reference
+     (It : Root_Object_Iterator)
+      return External_Reference
+   is
+   begin
+      return It.Ref;
+   end Get_Reference;
+
    ------------------
    -- Has_Property --
    ------------------
@@ -86,6 +110,30 @@ package body Aqua.Objects is
          Object.Map.Insert (Name, Value);
       end if;
    end Set_Property;
+
+   -------------------
+   -- Set_Reference --
+   -------------------
+
+   overriding procedure Set_Reference
+     (Object : in out Root_Object_Type;
+      Reference : External_Reference)
+   is
+   begin
+      Object.Ref := Reference;
+   end Set_Reference;
+
+   -------------------
+   -- Set_Reference --
+   -------------------
+
+   overriding procedure Set_Reference
+     (It : in out Root_Object_Iterator;
+      Reference : External_Reference)
+   is
+   begin
+      It.Ref := Reference;
+   end Set_Reference;
 
    ----------
    -- Show --

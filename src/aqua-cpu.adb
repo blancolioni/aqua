@@ -1180,21 +1180,24 @@ package body Aqua.CPU is
       Item : not null access External_Object_Interface'Class)
       return Word
    is
+      Ref : External_Reference := Item.Get_Reference;
    begin
 
-      for I in 1 .. CPU.Ext.Last_Index loop
-         if External_Object_Access (Item) = CPU.Ext (I) then
-            return Set_Tag (Word (I), External_Tag);
-         end if;
-      end loop;
+      if Ref = 0 then
 
-      if CPU.Ext.Last_Index >= Positive (External_Reference'Last) then
-         raise Storage_Error
-           with "no free objects";
+         if CPU.Ext.Last_Index >= Positive (External_Reference'Last) then
+            raise Storage_Error
+              with "no free objects";
+         end if;
+
+         CPU.Ext.Append (External_Object_Access (Item));
+         Ref := External_Reference (CPU.Ext.Last_Index);
+
+         Item.Set_Reference (Ref);
+
       end if;
 
-      CPU.Ext.Append (External_Object_Access (Item));
-      return Set_Tag (Word (CPU.Ext.Last_Index), External_Tag);
+      return Set_Tag (Word (Ref), External_Tag);
    end To_Word;
 
 end Aqua.CPU;

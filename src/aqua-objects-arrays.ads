@@ -43,6 +43,7 @@ private
      new Object_Interface with
       record
          Vector : Object_Vectors.Vector;
+         Ref    : External_Reference := 0;
       end record;
 
    overriding function Name
@@ -63,11 +64,21 @@ private
      (Object : Root_Array_Type)
       return Aqua.Iterators.Aqua_Iterator_Interface'Class;
 
+   overriding procedure Set_Reference
+     (Object : in out Root_Array_Type;
+      Reference : External_Reference);
+
+   overriding function Get_Reference
+     (Object : Root_Array_Type)
+      return External_Reference
+   is (Object.Ref);
+
    type Root_Array_Iterator is
      new Aqua.Iterators.Aqua_Iterator_Interface with
       record
          Current  : Word;
          Position : Object_Vectors.Cursor;
+         Ref      : External_Reference := 0;
       end record;
 
    overriding function Name
@@ -84,6 +95,15 @@ private
      (It : Root_Array_Iterator)
       return String
    is ("[array-iterator]");
+
+   overriding procedure Set_Reference
+     (It        : in out Root_Array_Iterator;
+      Reference : External_Reference);
+
+   overriding function Get_Reference
+     (It : Root_Array_Iterator)
+      return External_Reference
+   is (It.Ref);
 
    overriding procedure Next
      (It       : in out Root_Array_Iterator;
