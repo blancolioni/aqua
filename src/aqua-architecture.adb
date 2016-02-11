@@ -43,7 +43,7 @@ package body Aqua.Architecture is
          when A_Iterator_Start =>
             return 2#00110001#;
          when A_Iterator_Next =>
-            return 2#00110010#;
+            return 2#10000000# + Immediate mod 16;
          when A_Jmp =>
             return 2#00110100#;
          when A_Jsr =>
@@ -191,8 +191,6 @@ package body Aqua.Architecture is
                      return A_Set_Property;
                   when 1 =>
                      return A_Iterator_Start;
-                  when 2 =>
-                     return A_Iterator_Next;
                   when 4 =>
                      return A_Jmp;
                   when 5 =>
@@ -202,24 +200,49 @@ package body Aqua.Architecture is
                end case;
          end case;
       elsif Size_Bits = 1 and then Op_Count_Bits = 0 then
-         return Aqua_Instruction'Val (Aqua_Instruction'Pos (A_Br)
-                                      + Low_Nybble);
+         declare
+            Result : constant Branch_Instruction :=
+                       Branch_Instruction'Val (Aqua_Instruction'Pos (A_Br)
+                                               + Low_Nybble);
+         begin
+            return Result;
+         end;
+      elsif Size_Bits = 2 and then Op_Count_Bits = 0 then
+         return A_Iterator_Next;
       else
          case Op_Count_Bits is
             when 0 =>
                raise Bad_Instruction with Octet'Image (Instruction);
             when 1 =>
-               return Aqua_Instruction'Val
-                 (Aqua_Instruction'Pos (Single_Operand_Instruction'First)
-                  + Low_Nybble);
+               declare
+                  Result : constant Single_Operand_Instruction :=
+                             Single_Operand_Instruction'Val
+                               (Aqua_Instruction'Pos
+                                  (Single_Operand_Instruction'First)
+                                + Low_Nybble);
+               begin
+                  return Result;
+               end;
             when 2 =>
-               return Aqua_Instruction'Val
-                 (Aqua_Instruction'Pos (Double_Operand_Instruction'First)
-                  + Low_Nybble);
+               declare
+                  Result : constant Double_Operand_Instruction :=
+                             Double_Operand_Instruction'Val
+                               (Aqua_Instruction'Pos
+                                  (Double_Operand_Instruction'First)
+                                + Low_Nybble);
+               begin
+                  return Result;
+               end;
             when 3 =>
-               return Aqua_Instruction'Val
-                 (Aqua_Instruction'Pos (Triple_Operand_Instruction'First)
-                  + Low_Nybble);
+               declare
+                  Result : constant Triple_Operand_Instruction :=
+                             Triple_Operand_Instruction'Val
+                               (Aqua_Instruction'Pos
+                                  (Triple_Operand_Instruction'First)
+                                + Low_Nybble);
+               begin
+                  return Result;
+               end;
          end case;
       end if;
    end Get_Instruction;
