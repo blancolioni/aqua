@@ -469,9 +469,9 @@ package body Aqua.CPU is
             Traps.Handle_Iterator_Start (CPU);
          when A_Iterator_Next =>
             declare
-               R : constant Octet := Next_Octet (CPU);
+               R : constant Register_Index := Register_Index (Op mod 16);
             begin
-               Traps.Handle_Iterator_Next (CPU, Register_Index (R));
+               Traps.Handle_Iterator_Next (CPU, R);
             end;
       end case;
 
