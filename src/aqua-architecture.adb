@@ -33,7 +33,7 @@ package body Aqua.Architecture is
             + (Aqua_Instruction'Pos (Instruction)
                - Aqua_Instruction'Pos (Triple_Operand_Instruction'First));
          when Branch_Instruction =>
-            return 2#0100_0000# +
+            return 2#0100_0001# +
               (Aqua_Instruction'Pos (Instruction)
                - Aqua_Instruction'Pos (Branch_Instruction'First));
          when A_Get_Property =>
@@ -203,7 +203,7 @@ package body Aqua.Architecture is
          declare
             Result : constant Branch_Instruction :=
                        Branch_Instruction'Val (Aqua_Instruction'Pos (A_Br)
-                                               + Low_Nybble);
+                                               + Low_Nybble - 1);
          begin
             return Result;
          end;
