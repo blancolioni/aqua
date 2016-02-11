@@ -10,6 +10,9 @@ package Aqua is
    type Data_Size is
      (Word_8_Size, Word_16_Size, Word_32_Size);
 
+   Float_32_Size : constant Data_Size := Word_32_Size;
+   Float_64_Size : constant Data_Size := Word_16_Size;
+
    Address_Size : constant Data_Size := Word_32_Size;
 
    Data_Octets : constant array (Data_Size) of Word :=

@@ -414,6 +414,10 @@ package body Aqua.CPU is
                Aqua.Architecture.Write
                  (Dst, Size, Trace_Code, CPU.R, CPU.Image.all, Y);
             end;
+         when Single_Operand_Float_Instruction =>
+            null;
+         when Double_Operand_Float_Instruction =>
+            null;
          when Branch_Instruction =>
             declare
                Condition : constant Condition_Code :=

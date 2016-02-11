@@ -29,9 +29,19 @@ package body Aqua.Architecture is
                - Aqua_Instruction'Pos (Double_Operand_Instruction'First));
          when Triple_Operand_Instruction =>
             return (Data_Size'Pos (Size) + 1) * 64
-              + 2#00110000#
+              + 2#0011_0000#
             + (Aqua_Instruction'Pos (Instruction)
                - Aqua_Instruction'Pos (Triple_Operand_Instruction'First));
+         when Single_Operand_Float_Instruction =>
+            return (if Size = Float_32_Size then 0 else 1)
+              + 2#1100_1000#
+            + Aqua_Instruction'Pos (Instruction)
+              - Aqua_Instruction'Pos (Single_Operand_Float_Instruction'First);
+         when Double_Operand_Float_Instruction =>
+            return (if Size = Float_32_Size then 0 else 1)
+              + 2#1100_0000#
+            + Aqua_Instruction'Pos (Instruction)
+              - Aqua_Instruction'Pos (Double_Operand_Float_Instruction'First);
          when Branch_Instruction =>
             return 2#0100_0001# +
               (Aqua_Instruction'Pos (Instruction)
@@ -209,6 +219,15 @@ package body Aqua.Architecture is
          end;
       elsif Size_Bits = 2 and then Op_Count_Bits = 0 then
          return A_Iterator_Next;
+      elsif Size_Bits = 3 and then Op_Count_Bits = 0 then
+         declare
+            Result : constant Float_Instruction :=
+                       Float_Instruction'Val
+                         (Aqua_Instruction'Pos (Float_Instruction'First)
+                          + Low_Nybble / 2);
+         begin
+            return Result;
+         end;
       else
          case Op_Count_Bits is
             when 0 =>
