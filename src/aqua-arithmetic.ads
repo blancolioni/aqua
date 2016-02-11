@@ -3,7 +3,7 @@ package Aqua.Arithmetic is
    --  type-aware arithmetic
 
    procedure Inc (X : in out Word;
-                  Y : in     Positive := 1);
+                  Y : in     Positive := 1) with Inline_Always;
 
    procedure Dec (X : in out Word;
                   Y : in     Positive := 1);
