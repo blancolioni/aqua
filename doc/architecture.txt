@@ -1,0 +1,111 @@
+32-bit word.
+Tagged word encoding: 4 bit tag, 28 bit payload.
+
+Tag    Type
+0000   Integer
+0001   Address
+0010   String
+0011   External reference
+0100   Subroutine
+0101   (Floating point)
+
+Modes
+
+Code      Mode                             Syntax
+000ccccc  unsigned constant c              #c, 0 <= c <= 63
+0010rrrr  register                         rN
+0011rrrr  register deferred                (rN)
+0100rrrr  register autoincrement           (rN)+
+0101rrrr  register autoincrement deferred  @(rN)+
+0110rrrr  register autodecrement           -(rN)
+0111rrrr  register autodecrement deferred  @-(rN)
+1000rrrr  indexed 32-bit                   X(rN)
+1001rrrr  indexed 32-bit deferred          @X(rN)
+1010rrrr  indexed 16-bit                   X(rN), -32768 <= X <= 32767
+1100rrrr  indexed 8-bit                    X(rN), -128 <= X <= 127
+111sssss  immediate string                 "..."
+
+Instructions:  1 byte opcode, zero or more operand bytes
+
+Single-, double- and triple-operand instructions indicate data
+size in top two bits.  8 and 16 bit data is always of type integer.
+
+Bits    Data size
+01      8-bit
+10      16-bit
+11      32-bit
+
+Zero-operand instructions:
+
+Opcode       Instruction
+00000000     Halt
+00000001     Nop
+00000010     Rts
+
+Single-operand instructions
+
+ss010000     clr
+ss010001     dec
+ss010010     inc
+ss010011     neg
+ss010100     not
+ss010101     tst
+
+Double-operand instructions
+
+ss100000     mov
+ss100001     cmp
+ss100010     add
+ss100011     and
+ss100100     div
+ss100101     mul
+ss100110     or
+ss100111     sub
+ss101000     xor
+
+Triple-operand instructions
+
+ss110000     add3
+ss110001     and3
+ss110010     div3
+ss110011     mul3
+ss110100     or3
+ss110101     sub3
+ss110110     xor3
+
+Branch
+
+01000000     br
+01000001     bne
+01000010     beq
+01000011     bge
+01000100     blt
+01000101     bgt
+01000110     ble
+01000111     bpl
+01001000     bmi
+01001001     bhi
+01001010     blos
+01001011     bvc
+01001100     bvs
+01001101     bcc
+01001110     bcs
+
+Properties
+
+0010nnnn     get_property n
+00110000     set_property
+
+Iterators
+
+00110001     iterator_start
+1000rrrr     iterator_next r
+
+Jumps
+
+00110100     jmp
+00110101     jsr
+
+Traps
+
+0001tttt     trap t
