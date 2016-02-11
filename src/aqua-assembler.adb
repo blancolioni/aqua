@@ -435,7 +435,7 @@ package body Aqua.Assembler is
    begin
       A.Ensure_Label (X,  True);
       A.Labels (X).References.Append ((A.PC, False, False));
-      return A.Next_String - 1;
+      return A.Labels (X).Value;
    end Reference_String;
 
    --------------------------------------
