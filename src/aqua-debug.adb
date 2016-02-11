@@ -27,49 +27,68 @@ package body Aqua.Debug is
 
       begin
          case Instruction is
-         when No_Operand_Instruction =>
-            return Img;
-         when Single_Operand_Instruction =>
-            declare
-               Size : constant Data_Size := Get_Size (Op);
-            begin
-               return Img & Size_Image (Size) & " dst";
-            end;
+            when No_Operand_Instruction =>
+               return Img;
+            when Single_Operand_Instruction =>
+               declare
+                  Size : constant Data_Size := Get_Size (Op);
+               begin
+                  return Img & Size_Image (Size) & " dst";
+               end;
 
-         when Double_Operand_Instruction =>
-            declare
-               Size : constant Data_Size := Get_Size (Op);
-            begin
-               return Img & Size_Image (Size) & " src, dst";
-            end;
-         when Triple_Operand_Instruction =>
-            declare
-               Size : constant Data_Size := Get_Size (Op);
-               T_Img : constant String :=
-                         Img (Img'First .. Img'Last - 2);
-            begin
-               return T_Img & Size_Image (Size) & " src1, src2, dst";
-            end;
-         when Branch_Instruction =>
-            return Img & " offset";
-         when A_Jmp | A_Jsr =>
-            return Img & " destination";
-         when A_Get_Property =>
-            return Img & Octet'Image (Op mod 16);
-         when A_Set_Property =>
-            return Img;
-         when A_Trap =>
-            return Img & Octet'Image (Op mod 16);
-         when A_Iterator_Start =>
-            return Img;
+            when Double_Operand_Instruction =>
+               declare
+                  Size : constant Data_Size := Get_Size (Op);
+               begin
+                  return Img & Size_Image (Size) & " src, dst";
+               end;
+            when Triple_Operand_Instruction =>
+               declare
+                  Size  : constant Data_Size := Get_Size (Op);
+                  T_Img : constant String :=
+                            Img (Img'First .. Img'Last - 2);
+               begin
+                  return T_Img & Size_Image (Size) & " src1, src2, dst";
+               end;
+            when Single_Operand_Float_Instruction =>
+               declare
+                  F_Img : String := Img;
+               begin
+                  if Op mod 2 = 1 then
+                     F_Img (F_Img'First) := 'd';
+                  end if;
+                  return F_Img & " dst";
+               end;
+            when Double_Operand_Float_Instruction =>
+               declare
+                  F_Img : String := Img;
+               begin
+                  if Op mod 2 = 1 then
+                     F_Img (F_Img'First) := 'd';
+                  end if;
+                  return F_Img & " src, dst";
+               end;
 
-         when A_Iterator_Next =>
-            declare
-               R_Image : String := Octet'Image (Op mod 16);
-            begin
-               R_Image (R_Image'First) := 'r';
-               return Img & " " & R_Image;
-            end;
+            when Branch_Instruction =>
+               return Img & " offset";
+            when A_Jmp | A_Jsr =>
+               return Img & " destination";
+            when A_Get_Property =>
+               return Img & Octet'Image (Op mod 16);
+            when A_Set_Property =>
+               return Img;
+            when A_Trap =>
+               return Img & Octet'Image (Op mod 16);
+            when A_Iterator_Start =>
+               return Img;
+
+            when A_Iterator_Next =>
+               declare
+                  R_Image : String := Octet'Image (Op mod 16);
+               begin
+                  R_Image (R_Image'First) := 'r';
+                  return Img & " " & R_Image;
+               end;
          end case;
       end;
    exception

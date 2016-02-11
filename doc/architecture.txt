@@ -62,6 +62,8 @@ ss100101     mul
 ss100110     or
 ss100111     sub
 ss101000     xor
+ss101001     ash
+ss101010     lsh
 
 Triple-operand instructions
 
@@ -72,6 +74,8 @@ ss110011     mul3
 ss110100     or3
 ss110101     sub3
 ss110110     xor3
+ss110111     ash3
+ss111000     lsh3
 
 Branch
 
@@ -90,6 +94,16 @@ Branch
 01001101     bvs
 01001110     bcc
 01001111     bcs
+
+Floating point
+1100000s     fadd
+1100001s     fsub
+1100010s     fmul
+1100011s     fdiv
+
+1100100s     fsqrt
+1100101s     fexp
+1100110s     fln
 
 Properties
 

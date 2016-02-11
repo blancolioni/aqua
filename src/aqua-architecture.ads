@@ -26,7 +26,10 @@ package Aqua.Architecture is
      (A_Halt, A_Nop, A_Rts,
       A_Clr, A_Dec, A_Inc, A_Neg, A_Not, A_Tst,
       A_Mov, A_Cmp, A_Add, A_And, A_Div, A_Mul, A_Or, A_Sub, A_Xor,
+      A_Ash, A_Lsh,
       A_Add_3, A_And_3, A_Div_3, A_Mul_3, A_Or_3, A_Sub_3, A_Xor_3,
+      A_Fadd, A_Fsub, A_Fmul, A_Fdiv,
+      A_Fsqrt, A_Fexp, A_Fln,
       A_Br, A_Bne, A_Beq, A_Bge, A_Blt, A_Bgt, A_Ble, A_Bpl, A_Bmi,
       A_Bhi, A_Blos, A_Bvc, A_Bvs, A_Bcc, A_Bcs,
       A_Jmp, A_Jsr,
@@ -39,9 +42,14 @@ package Aqua.Architecture is
    subtype Single_Operand_Instruction is
      Aqua_Instruction range A_Clr .. A_Tst;
    subtype Double_Operand_Instruction is
-     Aqua_Instruction range A_Mov .. A_Xor;
+     Aqua_Instruction range A_Mov .. A_Lsh;
    subtype Triple_Operand_Instruction is
      Aqua_Instruction range A_Add_3 .. A_Xor_3;
+   subtype Single_Operand_Float_Instruction is
+     Aqua_Instruction range A_Fsqrt .. A_Fln;
+   subtype Double_Operand_Float_Instruction is
+     Aqua_Instruction range A_Fadd .. A_Fdiv;
+   subtype Float_Instruction is Aqua_Instruction range A_Fadd .. A_Fln;
    subtype Branch_Instruction is
      Aqua_Instruction range A_Br .. A_Bcs;
    subtype Jump_Instruction is
