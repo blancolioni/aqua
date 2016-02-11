@@ -202,24 +202,49 @@ package body Aqua.Architecture is
                end case;
          end case;
       elsif Size_Bits = 1 and then Op_Count_Bits = 0 then
-         return Aqua_Instruction'Val (Aqua_Instruction'Pos (A_Br)
+         declare
+            Result : constant Branch_Instruction :=
+                       Branch_Instruction'Val (Aqua_Instruction'Pos (A_Br)
                                       + Low_Nybble);
+         begin
+            return Result;
+         end;
+      elsif Size_Bits = 2 and then Op_Count_Bits = 0 then
+         return A_Iterator_Next;
       else
          case Op_Count_Bits is
             when 0 =>
                raise Bad_Instruction with Octet'Image (Instruction);
             when 1 =>
-               return Aqua_Instruction'Val
-                 (Aqua_Instruction'Pos (Single_Operand_Instruction'First)
+               declare
+                  Result : constant Single_Operand_Instruction :=
+                             Single_Operand_Instruction'Val
+                               (Aqua_Instruction'Pos
+                                  (Single_Operand_Instruction'First)
                   + Low_Nybble);
+               begin
+                  return Result;
+               end;
             when 2 =>
-               return Aqua_Instruction'Val
-                 (Aqua_Instruction'Pos (Double_Operand_Instruction'First)
+               declare
+                  Result : constant Double_Operand_Instruction :=
+                             Double_Operand_Instruction'Val
+                               (Aqua_Instruction'Pos
+                                  (Double_Operand_Instruction'First)
                   + Low_Nybble);
+               begin
+                  return Result;
+               end;
             when 3 =>
-               return Aqua_Instruction'Val
-                 (Aqua_Instruction'Pos (Triple_Operand_Instruction'First)
+               declare
+                  Result : constant Triple_Operand_Instruction :=
+                             Triple_Operand_Instruction'Val
+                               (Aqua_Instruction'Pos
+                                  (Triple_Operand_Instruction'First)
                   + Low_Nybble);
+               begin
+                  return Result;
+               end;
          end case;
       end if;
    end Get_Instruction;
