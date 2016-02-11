@@ -3,519 +3,263 @@ function Get_Instruction
   (Instruction : Octet)
   return Aqua_Instruction
 is
+   Map : constant array (Octet) of Aqua_Instruction :=
+     (0 => A_Halt,
+       1 => A_Nop,
+       2 => A_Rts,
+       3 => A_Clr,
+       4 => A_Dec,
+       5 => A_Inc,
+       6 => A_Neg,
+       7 => A_Not,
+       8 => A_Tst,
+       9 => A_Mov,
+       10 => A_Cmp,
+       11 => A_Add,
+       12 => A_And,
+       13 => A_Div,
+       14 => A_Mul,
+       15 => A_Or,
+       16 => A_Trap,
+       17 => A_Trap,
+       18 => A_Trap,
+       19 => A_Trap,
+       20 => A_Trap,
+       21 => A_Trap,
+       22 => A_Trap,
+       23 => A_Trap,
+       24 => A_Trap,
+       25 => A_Trap,
+       26 => A_Trap,
+       27 => A_Trap,
+       28 => A_Trap,
+       29 => A_Trap,
+       30 => A_Trap,
+       31 => A_Trap,
+       32 => A_Get_Property,
+       33 => A_Get_Property,
+       34 => A_Get_Property,
+       35 => A_Get_Property,
+       36 => A_Get_Property,
+       37 => A_Get_Property,
+       38 => A_Get_Property,
+       39 => A_Get_Property,
+       40 => A_Get_Property,
+       41 => A_Get_Property,
+       42 => A_Get_Property,
+       43 => A_Get_Property,
+       44 => A_Get_Property,
+       45 => A_Get_Property,
+       46 => A_Get_Property,
+       47 => A_Get_Property,
+       48 => A_Set_Property,
+       49 => A_Iterator_Start,
+       50 => A_Halt,
+       51 => A_Halt,
+       52 => A_Jmp,
+       53 => A_Jsr,
+       54 => A_Halt,
+       55 => A_Halt,
+       56 => A_Halt,
+       57 => A_Halt,
+       58 => A_Halt,
+       59 => A_Halt,
+       60 => A_Halt,
+       61 => A_Halt,
+       62 => A_Halt,
+       63 => A_Halt,
+       64 => A_Halt,
+       65 => A_Br,
+       66 => A_Bne,
+       67 => A_Beq,
+       68 => A_Bge,
+       69 => A_Blt,
+       70 => A_Bgt,
+       71 => A_Ble,
+       72 => A_Bpl,
+       73 => A_Bmi,
+       74 => A_Bhi,
+       75 => A_Blos,
+       76 => A_Bvc,
+       77 => A_Bvs,
+       78 => A_Bcc,
+       79 => A_Bcs,
+       80 => A_Clr,
+       81 => A_Dec,
+       82 => A_Inc,
+       83 => A_Neg,
+       84 => A_Not,
+       85 => A_Tst,
+       86 => A_Halt,
+       87 => A_Halt,
+       88 => A_Halt,
+       89 => A_Halt,
+       90 => A_Halt,
+       91 => A_Halt,
+       92 => A_Halt,
+       93 => A_Halt,
+       94 => A_Halt,
+       95 => A_Halt,
+       96 => A_Mov,
+       97 => A_Cmp,
+       98 => A_Add,
+       99 => A_And,
+       100 => A_Div,
+       101 => A_Mul,
+       102 => A_Or,
+       103 => A_Sub,
+       104 => A_Xor,
+       105 => A_Ash,
+       106 => A_Lsh,
+       107 => A_Halt,
+       108 => A_Halt,
+       109 => A_Halt,
+       110 => A_Halt,
+       111 => A_Halt,
+       112 => A_Add_3,
+       113 => A_And_3,
+       114 => A_Div_3,
+       115 => A_Mul_3,
+       116 => A_Or_3,
+       117 => A_Sub_3,
+       118 => A_Xor_3,
+       119 => A_Halt,
+       120 => A_Halt,
+       121 => A_Halt,
+       122 => A_Halt,
+       123 => A_Halt,
+       124 => A_Halt,
+       125 => A_Halt,
+       126 => A_Halt,
+       127 => A_Halt,
+       128 => A_Iterator_Next,
+       129 => A_Iterator_Next,
+       130 => A_Iterator_Next,
+       131 => A_Iterator_Next,
+       132 => A_Iterator_Next,
+       133 => A_Iterator_Next,
+       134 => A_Iterator_Next,
+       135 => A_Iterator_Next,
+       136 => A_Iterator_Next,
+       137 => A_Iterator_Next,
+       138 => A_Iterator_Next,
+       139 => A_Iterator_Next,
+       140 => A_Iterator_Next,
+       141 => A_Iterator_Next,
+       142 => A_Iterator_Next,
+       143 => A_Iterator_Next,
+       144 => A_Clr,
+       145 => A_Dec,
+       146 => A_Inc,
+       147 => A_Neg,
+       148 => A_Not,
+       149 => A_Tst,
+       150 => A_Halt,
+       151 => A_Halt,
+       152 => A_Halt,
+       153 => A_Halt,
+       154 => A_Halt,
+       155 => A_Halt,
+       156 => A_Halt,
+       157 => A_Halt,
+       158 => A_Halt,
+       159 => A_Halt,
+       160 => A_Mov,
+       161 => A_Cmp,
+       162 => A_Add,
+       163 => A_And,
+       164 => A_Div,
+       165 => A_Mul,
+       166 => A_Or,
+       167 => A_Sub,
+       168 => A_Xor,
+       169 => A_Ash,
+       170 => A_Lsh,
+       171 => A_Halt,
+       172 => A_Halt,
+       173 => A_Halt,
+       174 => A_Halt,
+       175 => A_Halt,
+       176 => A_Add_3,
+       177 => A_And_3,
+       178 => A_Div_3,
+       179 => A_Mul_3,
+       180 => A_Or_3,
+       181 => A_Sub_3,
+       182 => A_Xor_3,
+       183 => A_Halt,
+       184 => A_Halt,
+       185 => A_Halt,
+       186 => A_Halt,
+       187 => A_Halt,
+       188 => A_Halt,
+       189 => A_Halt,
+       190 => A_Halt,
+       191 => A_Halt,
+       192 => A_Fadd,
+       193 => A_Fadd,
+       194 => A_Fsub,
+       195 => A_Fsub,
+       196 => A_Fmul,
+       197 => A_Fmul,
+       198 => A_Fdiv,
+       199 => A_Fdiv,
+       200 => A_Fsqrt,
+       201 => A_Fsqrt,
+       202 => A_Fexp,
+       203 => A_Fexp,
+       204 => A_Fln,
+       205 => A_Fln,
+       206 => A_Halt,
+       207 => A_Halt,
+       208 => A_Clr,
+       209 => A_Dec,
+       210 => A_Inc,
+       211 => A_Neg,
+       212 => A_Not,
+       213 => A_Tst,
+       214 => A_Halt,
+       215 => A_Halt,
+       216 => A_Halt,
+       217 => A_Halt,
+       218 => A_Halt,
+       219 => A_Halt,
+       220 => A_Halt,
+       221 => A_Halt,
+       222 => A_Halt,
+       223 => A_Halt,
+       224 => A_Mov,
+       225 => A_Cmp,
+       226 => A_Add,
+       227 => A_And,
+       228 => A_Div,
+       229 => A_Mul,
+       230 => A_Or,
+       231 => A_Sub,
+       232 => A_Xor,
+       233 => A_Ash,
+       234 => A_Lsh,
+       235 => A_Halt,
+       236 => A_Halt,
+       237 => A_Halt,
+       238 => A_Halt,
+       239 => A_Halt,
+       240 => A_Add_3,
+       241 => A_And_3,
+       242 => A_Div_3,
+       243 => A_Mul_3,
+       244 => A_Or_3,
+       245 => A_Sub_3,
+       246 => A_Xor_3,
+       247 => A_Halt,
+       248 => A_Halt,
+       249 => A_Halt,
+       250 => A_Halt,
+       251 => A_Halt,
+       252 => A_Halt,
+       253 => A_Halt,
+       254 => A_Halt,
+       255 => A_Halt);
 begin
-   case Instruction is
-      when 0 =>
-         return A_Halt;
-      when 1 =>
-         return A_Nop;
-      when 2 =>
-         return A_Rts;
-      when 3 =>
-         return A_Clr;
-      when 4 =>
-         return A_Dec;
-      when 5 =>
-         return A_Inc;
-      when 6 =>
-         return A_Neg;
-      when 7 =>
-         return A_Not;
-      when 8 =>
-         return A_Tst;
-      when 9 =>
-         return A_Mov;
-      when 10 =>
-         return A_Cmp;
-      when 11 =>
-         return A_Add;
-      when 12 =>
-         return A_And;
-      when 13 =>
-         return A_Div;
-      when 14 =>
-         return A_Mul;
-      when 15 =>
-         return A_Or;
-      when 16 =>
-         return A_Trap;
-      when 17 =>
-         return A_Trap;
-      when 18 =>
-         return A_Trap;
-      when 19 =>
-         return A_Trap;
-      when 20 =>
-         return A_Trap;
-      when 21 =>
-         return A_Trap;
-      when 22 =>
-         return A_Trap;
-      when 23 =>
-         return A_Trap;
-      when 24 =>
-         return A_Trap;
-      when 25 =>
-         return A_Trap;
-      when 26 =>
-         return A_Trap;
-      when 27 =>
-         return A_Trap;
-      when 28 =>
-         return A_Trap;
-      when 29 =>
-         return A_Trap;
-      when 30 =>
-         return A_Trap;
-      when 31 =>
-         return A_Trap;
-      when 32 =>
-         return A_Get_Property;
-      when 33 =>
-         return A_Get_Property;
-      when 34 =>
-         return A_Get_Property;
-      when 35 =>
-         return A_Get_Property;
-      when 36 =>
-         return A_Get_Property;
-      when 37 =>
-         return A_Get_Property;
-      when 38 =>
-         return A_Get_Property;
-      when 39 =>
-         return A_Get_Property;
-      when 40 =>
-         return A_Get_Property;
-      when 41 =>
-         return A_Get_Property;
-      when 42 =>
-         return A_Get_Property;
-      when 43 =>
-         return A_Get_Property;
-      when 44 =>
-         return A_Get_Property;
-      when 45 =>
-         return A_Get_Property;
-      when 46 =>
-         return A_Get_Property;
-      when 47 =>
-         return A_Get_Property;
-      when 48 =>
-         return A_Set_Property;
-      when 49 =>
-         return A_Iterator_Start;
-      when 50 =>
-         raise Bad_Instruction with "32";
-      when 51 =>
-         raise Bad_Instruction with "33";
-      when 52 =>
-         return A_Jmp;
-      when 53 =>
-         return A_Jsr;
-      when 54 =>
-         raise Bad_Instruction with "36";
-      when 55 =>
-         raise Bad_Instruction with "37";
-      when 56 =>
-         raise Bad_Instruction with "38";
-      when 57 =>
-         raise Bad_Instruction with "39";
-      when 58 =>
-         raise Bad_Instruction with "3A";
-      when 59 =>
-         raise Bad_Instruction with "3B";
-      when 60 =>
-         raise Bad_Instruction with "3C";
-      when 61 =>
-         raise Bad_Instruction with "3D";
-      when 62 =>
-         raise Bad_Instruction with "3E";
-      when 63 =>
-         raise Bad_Instruction with "3F";
-      when 64 =>
-         raise Bad_Instruction with "40";
-      when 65 =>
-         return A_Br;
-      when 66 =>
-         return A_Bne;
-      when 67 =>
-         return A_Beq;
-      when 68 =>
-         return A_Bge;
-      when 69 =>
-         return A_Blt;
-      when 70 =>
-         return A_Bgt;
-      when 71 =>
-         return A_Ble;
-      when 72 =>
-         return A_Bpl;
-      when 73 =>
-         return A_Bmi;
-      when 74 =>
-         return A_Bhi;
-      when 75 =>
-         return A_Blos;
-      when 76 =>
-         return A_Bvc;
-      when 77 =>
-         return A_Bvs;
-      when 78 =>
-         return A_Bcc;
-      when 79 =>
-         return A_Bcs;
-      when 80 =>
-         return A_Clr;
-      when 81 =>
-         return A_Dec;
-      when 82 =>
-         return A_Inc;
-      when 83 =>
-         return A_Neg;
-      when 84 =>
-         return A_Not;
-      when 85 =>
-         return A_Tst;
-      when 86 =>
-         raise Bad_Instruction with "56";
-      when 87 =>
-         raise Bad_Instruction with "57";
-      when 88 =>
-         raise Bad_Instruction with "58";
-      when 89 =>
-         raise Bad_Instruction with "59";
-      when 90 =>
-         raise Bad_Instruction with "5A";
-      when 91 =>
-         raise Bad_Instruction with "5B";
-      when 92 =>
-         raise Bad_Instruction with "5C";
-      when 93 =>
-         raise Bad_Instruction with "5D";
-      when 94 =>
-         raise Bad_Instruction with "5E";
-      when 95 =>
-         raise Bad_Instruction with "5F";
-      when 96 =>
-         return A_Mov;
-      when 97 =>
-         return A_Cmp;
-      when 98 =>
-         return A_Add;
-      when 99 =>
-         return A_And;
-      when 100 =>
-         return A_Div;
-      when 101 =>
-         return A_Mul;
-      when 102 =>
-         return A_Or;
-      when 103 =>
-         return A_Sub;
-      when 104 =>
-         return A_Xor;
-      when 105 =>
-         return A_Ash;
-      when 106 =>
-         return A_Lsh;
-      when 107 =>
-         raise Bad_Instruction with "6B";
-      when 108 =>
-         raise Bad_Instruction with "6C";
-      when 109 =>
-         raise Bad_Instruction with "6D";
-      when 110 =>
-         raise Bad_Instruction with "6E";
-      when 111 =>
-         raise Bad_Instruction with "6F";
-      when 112 =>
-         return A_Add_3;
-      when 113 =>
-         return A_And_3;
-      when 114 =>
-         return A_Div_3;
-      when 115 =>
-         return A_Mul_3;
-      when 116 =>
-         return A_Or_3;
-      when 117 =>
-         return A_Sub_3;
-      when 118 =>
-         return A_Xor_3;
-      when 119 =>
-         raise Bad_Instruction with "77";
-      when 120 =>
-         raise Bad_Instruction with "78";
-      when 121 =>
-         raise Bad_Instruction with "79";
-      when 122 =>
-         raise Bad_Instruction with "7A";
-      when 123 =>
-         raise Bad_Instruction with "7B";
-      when 124 =>
-         raise Bad_Instruction with "7C";
-      when 125 =>
-         raise Bad_Instruction with "7D";
-      when 126 =>
-         raise Bad_Instruction with "7E";
-      when 127 =>
-         raise Bad_Instruction with "7F";
-      when 128 =>
-         return A_Iterator_Next;
-      when 129 =>
-         return A_Iterator_Next;
-      when 130 =>
-         return A_Iterator_Next;
-      when 131 =>
-         return A_Iterator_Next;
-      when 132 =>
-         return A_Iterator_Next;
-      when 133 =>
-         return A_Iterator_Next;
-      when 134 =>
-         return A_Iterator_Next;
-      when 135 =>
-         return A_Iterator_Next;
-      when 136 =>
-         return A_Iterator_Next;
-      when 137 =>
-         return A_Iterator_Next;
-      when 138 =>
-         return A_Iterator_Next;
-      when 139 =>
-         return A_Iterator_Next;
-      when 140 =>
-         return A_Iterator_Next;
-      when 141 =>
-         return A_Iterator_Next;
-      when 142 =>
-         return A_Iterator_Next;
-      when 143 =>
-         return A_Iterator_Next;
-      when 144 =>
-         return A_Clr;
-      when 145 =>
-         return A_Dec;
-      when 146 =>
-         return A_Inc;
-      when 147 =>
-         return A_Neg;
-      when 148 =>
-         return A_Not;
-      when 149 =>
-         return A_Tst;
-      when 150 =>
-         raise Bad_Instruction with "96";
-      when 151 =>
-         raise Bad_Instruction with "97";
-      when 152 =>
-         raise Bad_Instruction with "98";
-      when 153 =>
-         raise Bad_Instruction with "99";
-      when 154 =>
-         raise Bad_Instruction with "9A";
-      when 155 =>
-         raise Bad_Instruction with "9B";
-      when 156 =>
-         raise Bad_Instruction with "9C";
-      when 157 =>
-         raise Bad_Instruction with "9D";
-      when 158 =>
-         raise Bad_Instruction with "9E";
-      when 159 =>
-         raise Bad_Instruction with "9F";
-      when 160 =>
-         return A_Mov;
-      when 161 =>
-         return A_Cmp;
-      when 162 =>
-         return A_Add;
-      when 163 =>
-         return A_And;
-      when 164 =>
-         return A_Div;
-      when 165 =>
-         return A_Mul;
-      when 166 =>
-         return A_Or;
-      when 167 =>
-         return A_Sub;
-      when 168 =>
-         return A_Xor;
-      when 169 =>
-         return A_Ash;
-      when 170 =>
-         return A_Lsh;
-      when 171 =>
-         raise Bad_Instruction with "AB";
-      when 172 =>
-         raise Bad_Instruction with "AC";
-      when 173 =>
-         raise Bad_Instruction with "AD";
-      when 174 =>
-         raise Bad_Instruction with "AE";
-      when 175 =>
-         raise Bad_Instruction with "AF";
-      when 176 =>
-         return A_Add_3;
-      when 177 =>
-         return A_And_3;
-      when 178 =>
-         return A_Div_3;
-      when 179 =>
-         return A_Mul_3;
-      when 180 =>
-         return A_Or_3;
-      when 181 =>
-         return A_Sub_3;
-      when 182 =>
-         return A_Xor_3;
-      when 183 =>
-         raise Bad_Instruction with "B7";
-      when 184 =>
-         raise Bad_Instruction with "B8";
-      when 185 =>
-         raise Bad_Instruction with "B9";
-      when 186 =>
-         raise Bad_Instruction with "BA";
-      when 187 =>
-         raise Bad_Instruction with "BB";
-      when 188 =>
-         raise Bad_Instruction with "BC";
-      when 189 =>
-         raise Bad_Instruction with "BD";
-      when 190 =>
-         raise Bad_Instruction with "BE";
-      when 191 =>
-         raise Bad_Instruction with "BF";
-      when 192 =>
-         return A_Fadd;
-      when 193 =>
-         return A_Fadd;
-      when 194 =>
-         return A_Fsub;
-      when 195 =>
-         return A_Fsub;
-      when 196 =>
-         return A_Fmul;
-      when 197 =>
-         return A_Fmul;
-      when 198 =>
-         return A_Fdiv;
-      when 199 =>
-         return A_Fdiv;
-      when 200 =>
-         return A_Fsqrt;
-      when 201 =>
-         return A_Fsqrt;
-      when 202 =>
-         return A_Fexp;
-      when 203 =>
-         return A_Fexp;
-      when 204 =>
-         return A_Fln;
-      when 205 =>
-         return A_Fln;
-      when 206 =>
-         raise Bad_Instruction with "CE";
-      when 207 =>
-         raise Bad_Instruction with "CF";
-      when 208 =>
-         return A_Clr;
-      when 209 =>
-         return A_Dec;
-      when 210 =>
-         return A_Inc;
-      when 211 =>
-         return A_Neg;
-      when 212 =>
-         return A_Not;
-      when 213 =>
-         return A_Tst;
-      when 214 =>
-         raise Bad_Instruction with "D6";
-      when 215 =>
-         raise Bad_Instruction with "D7";
-      when 216 =>
-         raise Bad_Instruction with "D8";
-      when 217 =>
-         raise Bad_Instruction with "D9";
-      when 218 =>
-         raise Bad_Instruction with "DA";
-      when 219 =>
-         raise Bad_Instruction with "DB";
-      when 220 =>
-         raise Bad_Instruction with "DC";
-      when 221 =>
-         raise Bad_Instruction with "DD";
-      when 222 =>
-         raise Bad_Instruction with "DE";
-      when 223 =>
-         raise Bad_Instruction with "DF";
-      when 224 =>
-         return A_Mov;
-      when 225 =>
-         return A_Cmp;
-      when 226 =>
-         return A_Add;
-      when 227 =>
-         return A_And;
-      when 228 =>
-         return A_Div;
-      when 229 =>
-         return A_Mul;
-      when 230 =>
-         return A_Or;
-      when 231 =>
-         return A_Sub;
-      when 232 =>
-         return A_Xor;
-      when 233 =>
-         return A_Ash;
-      when 234 =>
-         return A_Lsh;
-      when 235 =>
-         raise Bad_Instruction with "EB";
-      when 236 =>
-         raise Bad_Instruction with "EC";
-      when 237 =>
-         raise Bad_Instruction with "ED";
-      when 238 =>
-         raise Bad_Instruction with "EE";
-      when 239 =>
-         raise Bad_Instruction with "EF";
-      when 240 =>
-         return A_Add_3;
-      when 241 =>
-         return A_And_3;
-      when 242 =>
-         return A_Div_3;
-      when 243 =>
-         return A_Mul_3;
-      when 244 =>
-         return A_Or_3;
-      when 245 =>
-         return A_Sub_3;
-      when 246 =>
-         return A_Xor_3;
-      when 247 =>
-         raise Bad_Instruction with "F7";
-      when 248 =>
-         raise Bad_Instruction with "F8";
-      when 249 =>
-         raise Bad_Instruction with "F9";
-      when 250 =>
-         raise Bad_Instruction with "FA";
-      when 251 =>
-         raise Bad_Instruction with "FB";
-      when 252 =>
-         raise Bad_Instruction with "FC";
-      when 253 =>
-         raise Bad_Instruction with "FD";
-      when 254 =>
-         raise Bad_Instruction with "FE";
-      when 255 =>
-         raise Bad_Instruction with "FF";
-   end case;
+   return Map (Instruction);
 end Get_Instruction;

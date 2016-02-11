@@ -69,28 +69,33 @@ begin
          Put_Line ("  (Instruction : Octet)");
          Put_Line ("  return Aqua_Instruction");
          Put_Line ("is");
-         Put_Line ("begin");
-         Put_Line ("   case Instruction is");
+         Put_Line ("   Map : constant array (Octet) of Aqua_Instruction :=");
          for Op in Octet loop
-            Put_Line ("      when" & Op'Img & " =>");
+            if Op = 0 then
+               Put ("     (");
+            else
+               Put ("      ");
+            end if;
+            Put (Op'Img & " => ");
             declare
                Instruction : Aqua.Architecture.Aqua_Instruction;
             begin
                Instruction :=
                  Aqua.Architecture.Get_Instruction
                    (Op);
-               Put_Line ("         return "
-                         & Mixed_Case_Image
-                           (Instruction)
-                         & ";");
+               Put (Mixed_Case_Image (Instruction));
             exception
                when others =>
-                  Put_Line ("         raise Bad_Instruction with """
-                            & Aqua.IO.Hex_Image (Op)
-                            & """;");
+                  Put ("A_Halt");
             end;
+            if Op = 255 then
+               Put_Line (");");
+            else
+               Put_Line (",");
+            end if;
          end loop;
-         Put_Line ("   end case;");
+         Put_Line ("begin");
+         Put_Line ("   return Map (Instruction);");
          Put_Line ("end Get_Instruction;");
       end;
 
