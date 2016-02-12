@@ -3,6 +3,108 @@ with Aqua.IO;
 
 package body Aqua.Architecture is
 
+   ---------------------------
+   -- Calculate_Instruction --
+   ---------------------------
+
+   function Calculate_Instruction
+     (Instruction : Octet)
+      return Aqua_Instruction
+   is
+      subtype Octet_2 is Octet range 0 .. 3;
+      subtype Octet_4 is Octet range 0 .. 15;
+      Size_Bits     : constant Octet_2 := Instruction / 64;
+      Op_Count_Bits : constant Octet_2 := Instruction / 16 mod 4;
+      Low_Nybble    : constant Octet_4 := Instruction mod 16;
+   begin
+      if Size_Bits = 0 then
+         case Op_Count_Bits is
+            when 0 =>
+               declare
+                  Result : constant No_Operand_Instruction :=
+                             No_Operand_Instruction'Val (Instruction);
+               begin
+                  return Result;
+               end;
+            when 1 =>
+               return A_Trap;
+            when 2 =>
+               return A_Get_Property;
+            when 3 =>
+               case Low_Nybble is
+                  when 0 =>
+                     return A_Set_Property;
+                  when 1 =>
+                     return A_Iterator_Start;
+                  when 4 =>
+                     return A_Jmp;
+                  when 5 =>
+                     return A_Jsr;
+                  when 6 =>
+                     return A_Goto;
+                  when 8 .. 15 =>
+                     return A_Call;
+                  when others =>
+                     raise Bad_Instruction with Octet'Image (Instruction);
+               end case;
+         end case;
+      elsif Size_Bits = 1 and then Op_Count_Bits = 0 then
+         declare
+            Result : constant Branch_Instruction :=
+                       Branch_Instruction'Val (Aqua_Instruction'Pos (A_Br)
+                                               + Low_Nybble - 1);
+         begin
+            return Result;
+         end;
+      elsif Size_Bits = 2 and then Op_Count_Bits = 0 then
+         return A_Iterator_Next;
+      elsif Size_Bits = 3 and then Op_Count_Bits = 0 then
+         declare
+            Result : constant Float_Instruction :=
+                       Float_Instruction'Val
+                         (Aqua_Instruction'Pos (Float_Instruction'First)
+                          + Low_Nybble / 2);
+         begin
+            return Result;
+         end;
+      else
+         case Op_Count_Bits is
+            when 0 =>
+               raise Bad_Instruction with Octet'Image (Instruction);
+            when 1 =>
+               declare
+                  Result : constant Single_Operand_Instruction :=
+                             Single_Operand_Instruction'Val
+                               (Aqua_Instruction'Pos
+                                  (Single_Operand_Instruction'First)
+                                + Low_Nybble);
+               begin
+                  return Result;
+               end;
+            when 2 =>
+               declare
+                  Result : constant Double_Operand_Instruction :=
+                             Double_Operand_Instruction'Val
+                               (Aqua_Instruction'Pos
+                                  (Double_Operand_Instruction'First)
+                                + Low_Nybble);
+               begin
+                  return Result;
+               end;
+            when 3 =>
+               declare
+                  Result : constant Triple_Operand_Instruction :=
+                             Triple_Operand_Instruction'Val
+                               (Aqua_Instruction'Pos
+                                  (Triple_Operand_Instruction'First)
+                                + Low_Nybble);
+               begin
+                  return Result;
+               end;
+         end case;
+      end if;
+   end Calculate_Instruction;
+
    ------------
    -- Encode --
    ------------
@@ -58,6 +160,10 @@ package body Aqua.Architecture is
             return 2#00110100#;
          when A_Jsr =>
             return 2#00110101#;
+         when A_Goto =>
+            return 2#00110110#;
+         when A_Call =>
+            return 2#00111000# + Immediate mod 8;
          when A_Trap =>
             return 2#00010000# + Immediate mod 16;
       end case;
@@ -181,91 +287,6 @@ package body Aqua.Architecture is
      (Instruction : Octet)
       return Aqua_Instruction
       is separate;
-
---        subtype Octet_2 is Octet range 0 .. 3;
---        subtype Octet_4 is Octet range 0 .. 15;
---        Size_Bits     : constant Octet_2 := Instruction / 64;
---        Op_Count_Bits : constant Octet_2 := Instruction / 16 mod 4;
---        Low_Nybble    : constant Octet_4 := Instruction mod 16;
---     begin
---        if Size_Bits = 0 then
---           case Op_Count_Bits is
---              when 0 =>
---                 return Aqua_Instruction'Val (Instruction);
---              when 1 =>
---                 return A_Trap;
---              when 2 =>
---                 return A_Get_Property;
---              when 3 =>
---                 case Low_Nybble is
---                    when 0 =>
---                       return A_Set_Property;
---                    when 1 =>
---                       return A_Iterator_Start;
---                    when 4 =>
---                       return A_Jmp;
---                    when 5 =>
---                       return A_Jsr;
---                    when others =>
---                       raise Bad_Instruction with Octet'Image (Instruction);
---                 end case;
---           end case;
---        elsif Size_Bits = 1 and then Op_Count_Bits = 0 then
---           declare
---              Result : constant Branch_Instruction :=
---                         Branch_Instruction'Val (Aqua_Instruction'Pos (A_Br)
---                                                 + Low_Nybble - 1);
---           begin
---              return Result;
---           end;
---        elsif Size_Bits = 2 and then Op_Count_Bits = 0 then
---           return A_Iterator_Next;
---        elsif Size_Bits = 3 and then Op_Count_Bits = 0 then
---           declare
---              Result : constant Float_Instruction :=
---                         Float_Instruction'Val
---                           (Aqua_Instruction'Pos (Float_Instruction'First)
---                            + Low_Nybble / 2);
---           begin
---              return Result;
---           end;
---        else
---           case Op_Count_Bits is
---              when 0 =>
---                 raise Bad_Instruction with Octet'Image (Instruction);
---              when 1 =>
---                 declare
---                    Result : constant Single_Operand_Instruction :=
---                               Single_Operand_Instruction'Val
---                                 (Aqua_Instruction'Pos
---                                    (Single_Operand_Instruction'First)
---                                  + Low_Nybble);
---                 begin
---                    return Result;
---                 end;
---              when 2 =>
---                 declare
---                    Result : constant Double_Operand_Instruction :=
---                               Double_Operand_Instruction'Val
---                                 (Aqua_Instruction'Pos
---                                    (Double_Operand_Instruction'First)
---                                  + Low_Nybble);
---                 begin
---                    return Result;
---                 end;
---              when 3 =>
---                 declare
---                    Result : constant Triple_Operand_Instruction :=
---                               Triple_Operand_Instruction'Val
---                                 (Aqua_Instruction'Pos
---                                    (Triple_Operand_Instruction'First)
---                                  + Low_Nybble);
---                 begin
---                    return Result;
---                 end;
---           end case;
---        end if;
---     end Get_Instruction;
 
    -----------------
    -- Get_Operand --
