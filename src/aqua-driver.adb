@@ -81,7 +81,7 @@ begin
                Instruction : Aqua.Architecture.Aqua_Instruction;
             begin
                Instruction :=
-                 Aqua.Architecture.Get_Instruction
+                 Aqua.Architecture.Calculate_Instruction
                    (Op);
                Put (Mixed_Case_Image (Instruction));
             exception
