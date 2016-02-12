@@ -13,7 +13,7 @@ package body Aqua.Debug is
       declare
          use Aqua.Architecture;
          Instruction  : constant Aqua_Instruction :=
-                          Get_Instruction (Op);
+                          Calculate_Instruction (Op);
          A_Img        : constant String :=
                           Ada.Characters.Handling.To_Lower
                             (Aqua_Instruction'Image (Instruction));
@@ -71,8 +71,10 @@ package body Aqua.Debug is
 
             when Branch_Instruction =>
                return Img & " offset";
-            when A_Jmp | A_Jsr =>
+            when A_Jmp | A_Jsr | A_Goto =>
                return Img & " destination";
+            when A_Call =>
+               return Img & Octet'Image (Op mod 8) & ", destination";
             when A_Get_Property =>
                return Img & Octet'Image (Op mod 16);
             when A_Set_Property =>
