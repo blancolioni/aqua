@@ -5,6 +5,7 @@ with Ada.Text_IO;
 
 with Aqua.Arithmetic;
 with Aqua.CPU.Traps;
+with Aqua.Debug;
 with Aqua.IO;
 with Aqua.Objects;
 with Aqua.Primitives;
@@ -481,7 +482,7 @@ package body Aqua.CPU is
             begin
                Aqua.Architecture.Read
                  (Operand => Dst,
-                  Size    => Word_16_Size,
+                  Size    => Word_32_Size,
                   Trace   => Trace_Code,
                   R       => CPU.R,
                   Memory  => CPU.Image.all,
@@ -490,9 +491,11 @@ package body Aqua.CPU is
                PC := X;
 
                Saved_Rs.Count := N;
+               if N > 0 then
                for I in 0 .. N - 1 loop
                   Saved_Rs.Rs (I) := CPU.R (Register_Index (I));
                end loop;
+               end if;
 
                CPU.R_Stack.Insert (CPU.R_Stack.First, Saved_Rs);
             end;
