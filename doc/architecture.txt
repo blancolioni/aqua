@@ -22,7 +22,9 @@ Code      Mode                             Syntax
 1000rrrr  indexed 32-bit                   X(rN)
 1001rrrr  indexed 32-bit deferred          @X(rN)
 1010rrrr  indexed 16-bit                   X(rN), -32768 <= X <= 32767
+1011rrrr  floating point register          fN or dN
 1100rrrr  indexed 8-bit                    X(rN), -128 <= X <= 127
+1101rrrr  string register                  sN
 111sssss  immediate string                 "..."
 
 Instructions:  1 byte opcode, zero or more operand bytes
@@ -41,6 +43,7 @@ Opcode       Instruction
 00000000     Halt
 00000001     Nop
 00000010     Rts
+00000011     return
 
 Single-operand instructions
 
@@ -119,6 +122,8 @@ Jumps
 
 00110100     jmp
 00110101     jsr
+00110110     goto src
+00111nnn     call n, src
 
 Traps
 
