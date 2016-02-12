@@ -1,4 +1,5 @@
 private with Ada.Calendar;
+private with Ada.Containers.Doubly_Linked_Lists;
 private with Ada.Containers.Vectors;
 private with Ada.Containers.Indefinite_Hashed_Maps;
 private with Ada.Strings.Fixed.Hash;
@@ -92,17 +93,30 @@ private
         Hash            => Ada.Strings.Fixed.Hash,
         Equivalent_Keys => "=");
 
+   type Saved_Register_Count is mod 8;
+
+   type Saved_Register_Array is array (Saved_Register_Count) of Word;
+
+   type Saved_Registers is
+      record
+         Count : Saved_Register_Count;
+         Rs    : Saved_Register_Array;
+      end record;
+
+   package List_Of_Saved_Registers is
+     new Ada.Containers.Doubly_Linked_Lists (Saved_Registers);
+
    type Aqua_CPU_Type
      (Image : access Aqua.Images.Root_Image_Type'Class;
       Load : access Aqua.Execution.Loader_Interface'Class) is
    limited new Ada.Finalization.Limited_Controlled
      and Aqua.Execution.Execution_Interface with
       record
---         Image      : Aqua.Images.Image_Type;
          R          : Aqua.Architecture.Registers :=
                         (Architecture.R_PC => 0,
                          Architecture.R_SP => 16#1FFF_FFFC#,
-                         others => 16#BAAD_F00D#);
+                         others            => 16#BAAD_F00D#);
+         R_Stack    : List_Of_Saved_Registers.List;
          N, Z, C, V : Boolean := False;
          B          : Boolean := False;
          Ext        : External_Object_Vectors.Vector;

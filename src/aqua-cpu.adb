@@ -299,6 +299,17 @@ package body Aqua.CPU is
             null;
          when A_Rts =>
             PC := CPU.Pop;
+         when A_Return =>
+            declare
+               Top : Saved_Registers renames
+                       CPU.R_Stack.First_Element;
+            begin
+               for R in 0 .. Top.Count - 1 loop
+                  CPU.R (Register_Index (R)) := Top.Rs (R);
+               end loop;
+               PC := CPU.Pop;
+               CPU.R_Stack.Delete_First;
+            end;
          when Single_Operand_Instruction =>
             declare
                Size : constant Data_Size := Get_Size (Op);
@@ -441,6 +452,49 @@ package body Aqua.CPU is
                   CPU.Push (PC);
                end if;
                PC := To_Address_Word (New_PC);
+            end;
+
+         when A_Goto =>
+            declare
+               X : Word;
+               Dst : constant Operand_Type :=
+                       Next_Operand (CPU);
+            begin
+               Aqua.Architecture.Read
+                 (Operand => Dst,
+                  Size    => Word_16_Size,
+                  Trace   => Trace_Code,
+                  R       => CPU.R,
+                  Memory  => CPU.Image.all,
+                  Value   => X);
+               PC := X;
+            end;
+
+         when A_Call =>
+            declare
+               N : constant Saved_Register_Count :=
+                     Saved_Register_Count (Op mod 8);
+               Saved_Rs : Saved_Registers;
+               X : Word;
+               Dst : constant Operand_Type :=
+                       Next_Operand (CPU);
+            begin
+               Aqua.Architecture.Read
+                 (Operand => Dst,
+                  Size    => Word_16_Size,
+                  Trace   => Trace_Code,
+                  R       => CPU.R,
+                  Memory  => CPU.Image.all,
+                  Value   => X);
+               CPU.Push (PC);
+               PC := X;
+
+               Saved_Rs.Count := N;
+               for I in 0 .. N - 1 loop
+                  Saved_Rs.Rs (I) := CPU.R (Register_Index (I));
+               end loop;
+
+               CPU.R_Stack.Insert (CPU.R_Stack.First, Saved_Rs);
             end;
 
          when A_Get_Property =>
