@@ -5,6 +5,7 @@ io = 805306372
 
 start:
    mov #io, op
+   jmp running_tests
    get_property Get_Timer
    mov pv, r0
    mov "Calculating processor speed", -(sp)
@@ -39,7 +40,8 @@ test_loop:
    mov r8, op
    get_property name
    mov pv, -(sp)
-   get_property Put_Line, 1
+   mov #io, op
+   get_property Put, 1
    mov r8, op
    get_property test
    inc r5
@@ -47,22 +49,33 @@ test_loop:
    call 0, pv
 
    tst r0
-   bne test_loop
+   bne test_failed
 
-   inc r6
    mov #io, op
-   mov "FAILED", -(sp)
-   get_property Put_Line, 1
-   
+   mov ": PASS", -(sp)
+   get_property put_line, 1
+   inc r6
+   br test_loop_end
+
+test_failed:
+   mov #io, op
+   mov ": FAIL (", -(sp)
+   get_property Put, 1
+   mov r0, -(sp)
+   get_property Put, 1
+   mov ")", -(sp)
+   get_property Put_line, 1
+
+test_loop_end:
    br test_loop
 
 test_loop_out:
    mov #io, op
-   mov "#tests: ", -(sp)
+   mov "tests: ", -(sp)
    get_property put, 1
    mov r5, -(sp)
    get_property put, 1
-   mov "; #failed: ", -(sp)
+   mov "; passed: ", -(sp)
    get_property put, 1
    mov r6, -(sp)
    get_property put_line, 1
@@ -72,19 +85,53 @@ create_tests:
    mov #array, op
    get_property new
    mov pv, r0
+   mov "test-indirect-call", r1
+   mov #test_indirect_call, r2
+   jsr create_test
+   mov "test-clr-inc", r1
+   mov #test_clr_inc, r2
+   jsr create_test
+   mov "test-add", r1
+   mov #test_add, r2
+   jsr create_test
+   rts
+
+create_test:
    mov #map, op
    get_property new
    mov pv, op
-   mov "test-indirect-call", pv
+   mov r1, pv
    set_property name
-   mov #test_1, pv
+   mov r2, pv
    set_property test
    mov op, -(sp)
    mov r0, op
    get_property append, 1
    rts
 
+test_indirect_call:
+   mov #0, r0
+   rts
 
-test_1:
+test_clr_inc:
    mov #1, r0
+   clr r0
+   rts
+
+test_add:
+   mov #33, r0
+   mov #44, r1
+   add r0, r1, r2
+   mov #io, op
+   mov r2, -(sp)
+   mov r1, -(sp)
+   mov r0, -(sp)
+   get_property put_line, 1
+   get_property put_line, 1
+   get_property put_line, 1
+   mov r2, r0
+   cmp r0, #77
+   bne test_add_end
+   clr r0
+test_add_end:
    rts
