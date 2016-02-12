@@ -402,6 +402,10 @@ package body Aqua.Assembler is
       declare
          Info : Label_Info := A.Labels (Name);
       begin
+         if not Relative then
+            Info.Deferred := True;
+         end if;
+
          Info.References.Append ((A.PC, Relative, False));
          A.Labels (Name) := Info;
 
