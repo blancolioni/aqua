@@ -494,9 +494,9 @@ package body Aqua.CPU is
 
                Saved_Rs.Count := N;
                if N > 0 then
-               for I in 0 .. N - 1 loop
-                  Saved_Rs.Rs (I) := CPU.R (Register_Index (I));
-               end loop;
+                  for I in 0 .. N - 1 loop
+                     Saved_Rs.Rs (I) := CPU.R (Register_Index (I));
+                  end loop;
                end if;
 
                CPU.R_Stack.Insert (CPU.R_Stack.First, Saved_Rs);
