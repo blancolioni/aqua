@@ -22,5 +22,69 @@ loop:
    get_property Put, 1
    mov " bogoMIPS", -(sp)
    get_property Put_Line, 1
-   rts
+
+running_tests:
+   mov "Running tests", -(sp)
+   get_property Put_Line, 1
+
+   jsr create_tests
+   mov r0, ctr
+   mov #0, r5
+   mov #0, r6
+   iterator_start   
+test_loop:
+   iterator_next r8
+   beq test_loop_out
+
+   mov r8, op
+   get_property name
+   mov pv, -(sp)
+   get_property Put_Line, 1
+   mov r8, op
+   get_property test
+   inc r5
+   clr r0
+   call 0, pv
+
+   tst r0
+   bne test_loop
+
+   inc r6
+   mov #io, op
+   mov "FAILED", -(sp)
+   get_property Put_Line, 1
    
+   br test_loop
+
+test_loop_out:
+   mov #io, op
+   mov "#tests: ", -(sp)
+   get_property put, 1
+   mov r5, -(sp)
+   get_property put, 1
+   mov "; #failed: ", -(sp)
+   get_property put, 1
+   mov r6, -(sp)
+   get_property put_line, 1
+   rts
+
+create_tests:
+   mov #array, op
+   get_property new
+   mov pv, r0
+   mov #map, op
+   get_property new
+   mov pv, op
+   mov "test-indirect-call", pv
+   set_property name
+   mov #test_1, pv
+   set_property test
+   mov op, -(sp)
+   mov r0, op
+   get_property append, 1
+   rts
+
+
+test_1:
+   mov #1, r0
+   rts
