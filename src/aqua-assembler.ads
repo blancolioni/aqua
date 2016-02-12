@@ -109,6 +109,15 @@ package Aqua.Assembler is
       Name : String)
       return Boolean;
 
+   function Is_Named_Number
+     (A    : Root_Assembly_Type'Class;
+      Name : String)
+      return Boolean;
+
+   procedure Set_Deferred
+     (A    : in out Root_Assembly_Type;
+      Name : String);
+
    function Get_Value
      (A    : Root_Assembly_Type'Class;
       Name : String)
@@ -152,6 +161,8 @@ private
          External        : Boolean := False;
          Register_Alias  : Boolean := False;
          String_Constant : Boolean := False;
+         Named_Number    : Boolean := False;
+         Deferred        : Boolean := False;
          Value           : Word    := 0;
       end record;
 

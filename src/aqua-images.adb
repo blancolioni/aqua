@@ -230,10 +230,6 @@ package body Aqua.Images is
          & " - "
          & Hex_Image (Image.High + Get_Address (High)));
 
-      if Trace_Load then
-         Ada.Text_IO.Put_Line (" hdr  grp prnt chld addr");
-      end if;
-
       for I in 1 .. Binding_Count loop
          declare
             use Ada.Strings.Unbounded;
@@ -319,13 +315,19 @@ package body Aqua.Images is
 
       for I in 1 .. External_Count + String_Count loop
          declare
-            Length  : Word;
-            Refs    : Word;
-            Defined : Octet;
+            Length   : Word;
+            Refs     : Word;
+            Flags    : Octet;
+            Defined  : Boolean;
+            Deferred : Boolean;
          begin
             Read_Word (File, Length);
             Read_Word (File, Refs);
-            Read_Octet (File, Defined);
+            Read_Octet (File, Flags);
+
+            Defined := (Flags and 1) = 1;
+            Deferred := (Flags and 2) = 2;
+
             declare
                S : String (1 .. Natural (Length));
                X : Octet;
@@ -336,29 +338,31 @@ package body Aqua.Images is
                   S (J) := Character'Val (X);
                end loop;
 
-               if Image.Link_Map.Contains (S) then
+               if not Deferred and then Image.Link_Map.Contains (S) then
                   Info := Image.Link_Map (S);
-                  if Info.Has_Value and then Defined /= 0 then
+                  if Info.Has_Value and then Defined then
                      Ada.Text_IO.Put_Line
                        (Ada.Text_IO.Standard_Error,
                         "redefined: " & S);
                   end if;
                end if;
 
-               if Defined /= 0 then
+               if Defined then
                   Info.Has_Value := True;
                end if;
 
                if I <= External_Count then
                   if Trace_Load then
                      Ada.Text_IO.Put
-                       ("E" & Integer'Image (-Integer (I)) & ": "
+                       ((if Deferred then "D" else "E")
+                        & Integer'Image (-Integer (I)) & ": "
                         & S);
                      Ada.Text_IO.Set_Col (20);
                   end if;
 
                   Image.Label_Vector.Append (S);
-                  if Defined /= 0 then
+
+                  if Defined then
                      Read_Word (File, Info.Value);
 
                      if Is_Address (Info.Value) then

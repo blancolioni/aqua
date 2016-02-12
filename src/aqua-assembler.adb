@@ -224,6 +224,7 @@ package body Aqua.Assembler is
          end if;
 
          Info.Defined := True;
+         Info.Named_Number := True;
          Info.Value   := Value;
 
          for Ref of Info.References loop
@@ -270,8 +271,10 @@ package body Aqua.Assembler is
                      (References      => Label_Reference_Lists.Empty_List,
                       Defined         => False,
                       External        => False,
+                      Deferred        => False,
                       Register_Alias  => False,
                       String_Constant => Is_String,
+                      Named_Number    => False,
                       Value           =>
                         (if Is_String
                          then A.Next_String
@@ -329,6 +332,20 @@ package body Aqua.Assembler is
    begin
       return A.Labels.Contains (Name);
    end Is_Defined;
+
+   ---------------------
+   -- Is_Named_Number --
+   ---------------------
+
+   function Is_Named_Number
+     (A    : Root_Assembly_Type'Class;
+      Name : String)
+      return Boolean
+   is
+   begin
+      return A.Labels.Contains (Name)
+        and then A.Labels (Name).Named_Number;
+   end Is_Named_Number;
 
    -----------------
    -- Is_Register --
@@ -486,6 +503,19 @@ package body Aqua.Assembler is
       end if;
    end Reference_Temporary_Label;
 
+   ------------------
+   -- Set_Deferred --
+   ------------------
+
+   procedure Set_Deferred
+     (A    : in out Root_Assembly_Type;
+      Name : String)
+   is
+   begin
+      A.Ensure_Label (Name, Is_String => False);
+      A.Labels (Name).Deferred := True;
+   end Set_Deferred;
+
    --------------
    -- Set_Octet --
    --------------
@@ -545,6 +575,8 @@ package body Aqua.Assembler is
                       External        => False,
                       Register_Alias  => True,
                       String_Constant => False,
+                      Named_Number    => False,
+                      Deferred        => False,
                       Value           => Word (R));
          begin
             A.Labels.Insert (Rx, Info);
@@ -595,14 +627,16 @@ package body Aqua.Assembler is
       use Aqua.IO;
       use Label_Maps;
       File : File_Type;
-      String_Count : Word := 0;
+      String_Count   : Word := 0;
       External_Count : Word := 0;
    begin
 
       for Position in A.Labels.Iterate loop
          if Element (Position).String_Constant then
             String_Count := String_Count + 1;
-         elsif Element (Position).External then
+         elsif Element (Position).External
+           or else Element (Position).Deferred
+         then
             External_Count := External_Count + 1;
          end if;
       end loop;
@@ -671,10 +705,13 @@ package body Aqua.Assembler is
             Label : constant String := Key (Position);
             Info  : constant Label_Info := Element (Position);
          begin
-            if Info.External then
+            if Info.External or else Info.Deferred then
                Write_Word (File, Word (Label'Length));
                Write_Word (File, Word (Info.References.Length));
-               Write_Octet (File, Boolean'Pos (Info.Defined));
+               Write_Octet
+                 (File,
+                  Boolean'Pos (Info.Defined)
+                  + 2 * Boolean'Pos (Info.Deferred));
                for Ch of Label loop
                   Write_Octet (File, Character'Pos (Ch));
                end loop;
