@@ -235,7 +235,9 @@ package body Aqua.CPU is
                   & ": ");
 
                Ada.Text_IO.Put
-                 (Aqua.IO.Hex_Image (Op));
+                 (Aqua.IO.Hex_Image (Op)
+                  & " "
+                  & Aqua.Debug.Opcode_Image (Op));
 
             end if;
             Inc (PC);
