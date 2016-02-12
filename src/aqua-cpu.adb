@@ -1194,9 +1194,7 @@ package body Aqua.CPU is
       return String
    is
    begin
-      if Value = 0 then
-         return "";
-      elsif Is_Integer (Value) then
+      if Is_Integer (Value) then
          return Ada.Strings.Fixed.Trim
            (Aqua_Integer'Image (Get_Integer (Value)),
             Ada.Strings.Left);
