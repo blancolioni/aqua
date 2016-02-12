@@ -23,7 +23,7 @@ package Aqua.Architecture is
      (Always, EQ, LT, LE, MI, LOS, VS, CS);
 
    type Aqua_Instruction is
-     (A_Halt, A_Nop, A_Rts,
+     (A_Halt, A_Nop, A_Rts, A_Return,
       A_Clr, A_Dec, A_Inc, A_Neg, A_Not, A_Tst,
       A_Mov, A_Cmp, A_Add, A_And, A_Div, A_Mul, A_Or, A_Sub, A_Xor,
       A_Ash, A_Lsh,
@@ -32,13 +32,13 @@ package Aqua.Architecture is
       A_Fsqrt, A_Fexp, A_Fln,
       A_Br, A_Bne, A_Beq, A_Bge, A_Blt, A_Bgt, A_Ble, A_Bpl, A_Bmi,
       A_Bhi, A_Blos, A_Bvc, A_Bvs, A_Bcc, A_Bcs,
-      A_Jmp, A_Jsr,
+      A_Jmp, A_Jsr, A_Goto, A_Call,
       A_Trap,
       A_Get_Property, A_Set_Property,
       A_Iterator_Start, A_Iterator_Next);
 
    subtype No_Operand_Instruction is
-     Aqua_Instruction range A_Halt .. A_Rts;
+     Aqua_Instruction range A_Halt .. A_Return;
    subtype Single_Operand_Instruction is
      Aqua_Instruction range A_Clr .. A_Tst;
    subtype Double_Operand_Instruction is
@@ -71,6 +71,10 @@ package Aqua.Architecture is
       end record;
 
    function Get_Instruction
+     (Instruction : Octet)
+      return Aqua_Instruction;
+
+   function Calculate_Instruction
      (Instruction : Octet)
       return Aqua_Instruction;
 
