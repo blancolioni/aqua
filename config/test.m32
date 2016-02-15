@@ -93,6 +93,9 @@ create_tests:
    mov "test-add", r1
    mov #test_add, r2
    jsr create_test
+   mov "test-concat", r1
+   mov #test_concat, r2
+   jsr create_test
    rts
 
 create_test:
@@ -127,4 +130,15 @@ test_add:
    bne test_add_end
    clr r0
 test_add_end:
+   rts
+
+test_concat:
+   mov "Hello, ", r0
+   mov "world", r1
+   add r0, r1, r2
+   mov #1, r0
+   cmp r2, "Hello, world"
+   bne test_concat_out
+   clr r0
+test_concat_out:
    rts
