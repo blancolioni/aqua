@@ -5,7 +5,6 @@ io = 805306372
 
 start:
    mov #io, op
-   jmp running_tests
    get_property Get_Timer
    mov pv, r0
    mov "Calculating processor speed", -(sp)
