@@ -976,7 +976,7 @@ package body Aqua.CPU is
    is
    begin
       return Result : constant Word :=
-        Get_Value (CPU.Image.all, Get_Address (CPU.R (R_PC)), Size)
+        CPU.Image.Get_Value (Get_Address (CPU.R (R_PC)), Size)
       do
          CPU.R (R_PC) := CPU.R (R_PC) + Data_Octets (Size);
          if Trace_Code then

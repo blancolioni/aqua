@@ -5,21 +5,11 @@ private with Ada.Containers.Vectors;
 private with Ada.Strings.Fixed.Less_Case_Insensitive;
 private with Ada.Strings.Unbounded;
 
-private with Aqua.Memory;
+with Aqua.Memory;
 
 package Aqua.Images is
 
-   type Root_Image_Type is new Memory_Interface with private;
-
-   overriding function Get_Octet
-     (Image : Root_Image_Type;
-      Addr  : Address)
-      return Octet;
-
-   overriding procedure Set_Octet
-     (Image : in out Root_Image_Type;
-      Addr  : Address;
-      Value : Octet);
+   type Root_Image_Type is new Aqua.Memory.Memory_Type with private;
 
    procedure Load
      (Image : in out Root_Image_Type'Class;
@@ -140,14 +130,13 @@ private
    package List_Of_Source_Locations is
      new Ada.Containers.Doubly_Linked_Lists (Source_Location);
 
-   type Root_Image_Type is new Memory_Interface with
+   type Root_Image_Type is new Aqua.Memory.Memory_Type with
       record
          Locations     : List_Of_Source_Locations.List;
          Bindings      : Binding_Info_Vectors.Vector;
          String_Vector : Link_Vectors.Vector;
          Label_Vector  : Link_Vectors.Vector;
          Link_Map      : Link_Maps.Map;
-         Memory        : Aqua.Memory.Memory_Type;
          Low           : Address := 16#1000#;
          High          : Address := 16#1000#;
          Code_Low      : Address := 16#1000#;
