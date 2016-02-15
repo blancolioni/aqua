@@ -60,19 +60,6 @@ package body Aqua.Images is
       return Image.Code_Low;
    end Code_Low;
 
-   --------------
-   -- Get_Octet --
-   --------------
-
-   overriding function Get_Octet
-     (Image : Root_Image_Type;
-      Addr  : Address)
-      return Octet
-   is
-   begin
-      return Image.Memory.Get_Octet (Addr);
-   end Get_Octet;
-
    -----------------
    -- Have_String --
    -----------------
@@ -458,19 +445,6 @@ package body Aqua.Images is
    begin
       null;
    end Save;
-
-   --------------
-   -- Set_Octet --
-   --------------
-
-   overriding procedure Set_Octet
-     (Image : in out Root_Image_Type;
-      Addr  : Address;
-      Value : Octet)
-   is
-   begin
-      Image.Memory.Set_Octet (Addr, Value);
-   end Set_Octet;
 
    ----------
    -- Show --

@@ -1,3 +1,5 @@
+with Aqua.Memory;
+
 package Aqua.Architecture is
 
    Bad_Instruction : exception;
@@ -109,7 +111,7 @@ package Aqua.Architecture is
       Size    : Data_Size;
       Trace   : Boolean;
       R       : in out Registers;
-      Memory  : in out Memory_Interface'Class)
+      Memory  : in out Aqua.Memory.Memory_Type'Class)
       return Address;
 
    procedure Read
@@ -117,7 +119,7 @@ package Aqua.Architecture is
       Size    : Data_Size;
       Trace   : Boolean;
       R       : in out Registers;
-      Memory  : in out Memory_Interface'Class;
+      Memory  : in out Aqua.Memory.Memory_Type'Class;
       Value   :    out Word);
 
    procedure Write
@@ -125,7 +127,7 @@ package Aqua.Architecture is
       Size    : Data_Size;
       Trace   : Boolean;
       R       : in out Registers;
-      Memory  : in out Memory_Interface'Class;
+      Memory  : in out Aqua.Memory.Memory_Type'Class;
       Value   : Word);
 
 end Aqua.Architecture;

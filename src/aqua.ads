@@ -91,38 +91,39 @@ package Aqua is
    function Get
      (Source : Word;
       Size   : Data_Size)
-      return Word;
+      return Word with Inline_Always;
 
-   type Memory_Interface is interface;
-
-   function Get_Octet (Memory : Memory_Interface;
-                       Addr   : Address)
-                       return Octet
-                       is abstract;
-
-   procedure Set_Octet (Memory : in out Memory_Interface;
-                        Addr   : Address;
-                        Value  : Octet)
-   is abstract;
-
-   function Get_Value (Memory : Memory_Interface'Class;
-                       Addr   : Address;
-                       Size   : Data_Size)
-                       return Word;
-
-   procedure Set_Value (Memory : in out Memory_Interface'Class;
-                        Addr   : Address;
-                        Size   : Data_Size;
-                        Value  : Word);
-
-   function Get_Word (Memory : Memory_Interface'Class;
-                      Addr   : Address)
-                      return Word
-   is (Get_Value (Memory, Addr, Word_32_Size));
-
-   procedure Set_Word (Memory : in out Memory_Interface'Class;
-                       Addr   : Address;
-                       Value  : Word);
+--     type Memory_Interface is interface;
+--
+--     function Get_Octet (Memory : Memory_Interface;
+--                         Addr   : Address)
+--                         return Octet
+--                         is abstract;
+--
+--     procedure Set_Octet (Memory : in out Memory_Interface;
+--                          Addr   : Address;
+--                          Value  : Octet)
+--     is abstract;
+--
+--     function Get_Value (Memory : Memory_Interface'Class;
+--                         Addr   : Address;
+--                         Size   : Data_Size)
+--                         return Word;
+--
+--     procedure Set_Value (Memory : in out Memory_Interface'Class;
+--                          Addr   : Address;
+--                          Size   : Data_Size;
+--                          Value  : Word);
+--
+--     function Get_Word (Memory : Memory_Interface'Class;
+--                        Addr   : Address)
+--                        return Word
+--     is (Get_Value (Memory, Addr, Word_32_Size))
+--     with Inline_Always;
+--
+--     procedure Set_Word (Memory : in out Memory_Interface'Class;
+--                         Addr   : Address;
+--                         Value  : Word);
 
    type External_Object_Interface is interface;
 

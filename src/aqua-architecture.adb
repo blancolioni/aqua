@@ -196,7 +196,7 @@ package body Aqua.Architecture is
       Size    : Data_Size;
       Trace   : Boolean;
       R       : in out Registers;
-      Memory  : in out Memory_Interface'Class)
+      Memory  : in out Aqua.Memory.Memory_Type'Class)
       return Address
    is
       Result : Address;
@@ -331,7 +331,7 @@ package body Aqua.Architecture is
       Size    : Data_Size;
       Trace   : Boolean;
       R       : in out Registers;
-      Memory  : in out Memory_Interface'Class;
+      Memory  : in out Aqua.Memory.Memory_Type'Class;
       Value   :    out Word)
    is
    begin
@@ -360,7 +360,7 @@ package body Aqua.Architecture is
       Size    : Data_Size;
       Trace   : Boolean;
       R       : in out Registers;
-      Memory  : in out Memory_Interface'Class;
+      Memory  : in out Aqua.Memory.Memory_Type'Class;
       Value   : Word)
    is
    begin
