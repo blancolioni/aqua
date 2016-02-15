@@ -123,12 +123,6 @@ test_add:
    mov #44, r1
    add r0, r1, r2
    mov #io, op
-   mov r2, -(sp)
-   mov r1, -(sp)
-   mov r0, -(sp)
-   get_property put_line, 1
-   get_property put_line, 1
-   get_property put_line, 1
    mov r2, r0
    cmp r0, #77
    bne test_add_end
