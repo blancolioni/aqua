@@ -5,14 +5,14 @@ private with Ada.Containers.Indefinite_Vectors;
 private with Ada.Strings.Fixed.Less_Case_Insensitive;
 private with Ada.Strings.Unbounded;
 
-private with Aqua.Memory;
+with Aqua.Memory;
 
 with Aqua.Architecture;
 
 package Aqua.Assembler is
 
    type Root_Assembly_Type is
-     new Memory_Interface with private;
+     new Aqua.Memory.Memory_Type with private;
 
    procedure Start (A          : in out Root_Assembly_Type);
 
@@ -201,7 +201,7 @@ private
      new Ada.Containers.Doubly_Linked_Lists (Source_Position);
 
    type Root_Assembly_Type is
-     new Memory_Interface with
+     new Aqua.Memory.Memory_Type with
       record
          Source_Path    : Ada.Strings.Unbounded.Unbounded_String;
          Source_Locs    : Source_Position_Lists.List;
@@ -209,23 +209,11 @@ private
          High           : Address := 0;
          PC             : Address := 0;
          Next_String    : Word    := 0;
-         Memory         : Aqua.Memory.Memory_Type;
          Labels         : Label_Maps.Map;
          Temporaries    : Temporary_Label_Vectors.Vector;
          String_Lits    : String_Vectors.Vector;
          Bindings       : Binding_Info_Vectors.Vector;
       end record;
-
-   overriding function Get_Octet
-     (Assembly : Root_Assembly_Type;
-      Addr     : Address)
-      return Octet
-     is (Assembly.Memory.Get_Octet (Addr));
-
-   overriding procedure Set_Octet
-     (Assembly : in out Root_Assembly_Type;
-      Addr   : Address;
-      Value  : Octet);
 
    procedure Ensure_Label
      (A         : in out Root_Assembly_Type'Class;
