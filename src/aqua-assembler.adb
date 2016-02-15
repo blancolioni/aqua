@@ -520,19 +520,6 @@ package body Aqua.Assembler is
       A.Labels (Name).Deferred := True;
    end Set_Deferred;
 
-   --------------
-   -- Set_Octet --
-   --------------
-
-   overriding procedure Set_Octet
-     (Assembly : in out Root_Assembly_Type;
-      Addr   : Address;
-      Value  : Octet)
-   is
-   begin
-      Assembly.Memory.Set_Octet (Addr, Value);
-   end Set_Octet;
-
    ---------------------
    -- Set_Source_File --
    ---------------------
@@ -701,7 +688,7 @@ package body Aqua.Assembler is
       end loop;
 
       for Addr in A.Low .. A.High loop
-         Write_Octet (File, A.Memory.Get_Octet (Addr));
+         Write_Octet (File, A.Get_Octet (Addr));
       end loop;
 
       for Position in A.Labels.Iterate loop
