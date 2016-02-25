@@ -81,9 +81,10 @@ package body Aqua.Debug is
                return Img;
             when A_Trap =>
                return Img & Octet'Image (Op mod 16);
+            when A_Allocate =>
+               return Img;
             when A_Iterator_Start =>
                return Img;
-
             when A_Iterator_Next =>
                declare
                   R_Image : String := Octet'Image (Op mod 16);

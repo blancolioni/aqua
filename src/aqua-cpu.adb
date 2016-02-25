@@ -523,6 +523,29 @@ package body Aqua.CPU is
                  (CPU, Name_Word);
             end;
 
+         when A_Allocate =>
+            declare
+               Base_Word : constant Word :=
+                             CPU.Pop;
+               New_Word  : Word;
+            begin
+               if Is_External_Reference (Base_Word) then
+                  declare
+                     Ext : constant access External_Object_Interface'Class :=
+                             CPU.To_External_Object (Base_Word);
+                     New_Value : constant External_Object_Access :=
+                                   new External_Object_Interface'Class'
+                                     (Ext.all);
+                  begin
+                     New_Word := CPU.To_Word (New_Value);
+                  end;
+               else
+                  New_Word := Base_Word;
+               end if;
+
+               CPU.Push (New_Word);
+            end;
+
          when A_Trap =>
 
             Handle_Trap
