@@ -94,6 +94,23 @@ package body Aqua.Objects is
       end if;
    end Next;
 
+   ---------------------
+   -- Scan_Properties --
+   ---------------------
+
+   overriding procedure Scan_Properties
+     (Object  : Root_Object_Type;
+      Process : not null access
+        procedure (Property_Name  : String;
+                   Property_Value : Word))
+   is
+   begin
+      for Position in Object.Map.Iterate loop
+         Process (Object_Maps.Key (Position),
+                  Object_Maps.Element (Position));
+      end loop;
+   end Scan_Properties;
+
    ------------------
    -- Set_Property --
    ------------------

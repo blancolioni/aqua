@@ -1,3 +1,5 @@
+with Ada.Strings.Fixed;
+
 with Aqua.IO;
 with Aqua.Primitives;
 with Aqua.Words;
@@ -140,6 +142,29 @@ package body Aqua.Objects.Arrays is
          Finished := True;
       end if;
    end Next;
+
+   ---------------------
+   -- Scan_Properties --
+   ---------------------
+
+   overriding procedure Scan_Properties
+     (Object   : Root_Array_Type;
+      Process  : not null access
+        procedure (Property_Name : String;
+                   Property_Value : Aqua.Word))
+   is
+   begin
+      for I in 1 .. Object.Vector.Last_Index loop
+         declare
+            Name : constant String :=
+                     Ada.Strings.Fixed.Trim
+                       (Positive'Image (I),
+                        Ada.Strings.Left);
+         begin
+            Process (Name, Object.Vector.Element (I));
+         end;
+      end loop;
+   end Scan_Properties;
 
    ------------------
    -- Set_Property --

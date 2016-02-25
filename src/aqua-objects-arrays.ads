@@ -73,6 +73,12 @@ private
       return External_Reference
    is (Object.Ref);
 
+   overriding procedure Scan_Properties
+     (Object   : Root_Array_Type;
+      Process  : not null access
+        procedure (Property_Name : String;
+                   Property_Value : Aqua.Word));
+
    type Root_Array_Iterator is
      new Aqua.Iterators.Aqua_Iterator_Interface with
       record
