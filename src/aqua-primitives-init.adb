@@ -464,10 +464,39 @@ package body Aqua.Primitives.Init is
       Arguments : Array_Of_Words)
       return Word
    is
-      pragma Unreferenced (Arguments);
-      Item : constant Primitive_Object_Access :=
+      Item : constant Aqua.Objects.Object_Access :=
                new Aqua.Objects.Root_Object_Type;
    begin
+      if Arguments'Length >= 2 then
+         declare
+            Init : constant access Aqua.Objects.Object_Interface'Class :=
+                     Aqua.Objects.Object_Interface'Class
+                       (Context.To_External_Object
+                          (Arguments (Arguments'First + 1)).all)'Access;
+
+            procedure Copy_Property
+              (Name : String;
+               Value : Word);
+
+            -------------------
+            -- Copy_Property --
+            -------------------
+
+            procedure Copy_Property
+              (Name : String;
+               Value : Word)
+            is
+            begin
+               Item.Set_Property
+                 (Name, Value);
+            end Copy_Property;
+
+         begin
+            Init.Scan_Properties (Copy_Property'Access);
+         end;
+
+      end if;
+
       return Context.To_Word (Item);
    end Handle_Object_New;
 

@@ -28,6 +28,13 @@ package Aqua.Objects is
       return Boolean
       is abstract;
 
+   procedure Scan_Properties
+     (Object  : in Object_Interface;
+      Process : not null access
+        procedure (Property_Name  : String;
+                   Property_Value : Word))
+   is abstract;
+
    type Root_Object_Type is
      new Object_Interface with private;
 
@@ -45,6 +52,8 @@ package Aqua.Objects is
      (Object : in Root_Object_Type;
       Name   : in String)
       return Boolean;
+
+   type Object_Access is access all Root_Object_Type'Class;
 
 private
 
@@ -87,6 +96,12 @@ private
    overriding function Get_Reference
      (Object : Root_Object_Type)
       return External_Reference;
+
+   overriding procedure Scan_Properties
+     (Object  : Root_Object_Type;
+      Process : not null access
+        procedure (Property_Name  : String;
+                   Property_Value : Word));
 
    type Root_Object_Iterator is
      new Aqua.Iterators.Aqua_Iterator_Interface with
