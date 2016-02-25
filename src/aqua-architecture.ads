@@ -37,6 +37,7 @@ package Aqua.Architecture is
       A_Jmp, A_Jsr, A_Goto, A_Call,
       A_Trap,
       A_Get_Property, A_Set_Property,
+      A_Allocate,
       A_Iterator_Start, A_Iterator_Next);
 
    subtype No_Operand_Instruction is

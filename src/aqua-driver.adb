@@ -76,7 +76,12 @@ begin
             else
                Put ("      ");
             end if;
-            Put (Op'Img & " => ");
+            declare
+               Op_Image : constant String := Octet'Image (Op);
+            begin
+               Put (Op_Image (2 .. Op_Image'Last) & " => ");
+            end;
+
             declare
                Instruction : Aqua.Architecture.Aqua_Instruction;
             begin

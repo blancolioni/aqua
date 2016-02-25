@@ -112,6 +112,7 @@ Properties
 
 0010nnnn     get_property n
 00110000     set_property
+00110010     allocate
 
 Iterators
 

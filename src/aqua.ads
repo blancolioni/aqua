@@ -146,4 +146,7 @@ package Aqua is
       return External_Reference
       is abstract;
 
+   type External_Object_Access is
+     access all External_Object_Interface'Class;
+
 end Aqua;
