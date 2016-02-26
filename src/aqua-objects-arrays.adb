@@ -1,8 +1,6 @@
 with Ada.Strings.Fixed;
 
 with Aqua.IO;
-with Aqua.Primitives;
-with Aqua.Words;
 
 package body Aqua.Objects.Arrays is
 
@@ -68,20 +66,7 @@ package body Aqua.Objects.Arrays is
                return Object.Vector.Element (Index);
             end;
          else
-            declare
-               Primitive_Name : constant String :=
-                                  "array__" & Name;
-               Primitive      : constant Subroutine_Reference :=
-                                  Aqua.Primitives.Get_Primitive
-                                    (Primitive_Name);
-            begin
-               if Primitive /= 0 then
-                  return Aqua.Words.To_Subroutine_Word (Primitive);
-               else
-                  raise Constraint_Error with
-                    "expected an array index but found " & Name;
-               end if;
-            end;
+            return Root_Object_Type (Object).Get_Property (Name);
          end if;
       end if;
    end Get_Property;
@@ -175,42 +160,34 @@ package body Aqua.Objects.Arrays is
       Name   : in     String;
       Value  : in     Word)
    is
+      Array_Index : Boolean := True;
    begin
       for Ch of Name loop
          if Ch not in '0' .. '9' then
-            raise Constraint_Error with
-              "array index required; found " & Name;
+            Array_Index := False;
+            exit;
          end if;
       end loop;
 
-      declare
-         Index : constant Natural := Natural'Value (Name);
-      begin
-         if Index = 0 then
-            raise Constraint_Error with
-              "array index must be greater than zero";
-         end if;
+      if Array_Index then
+         declare
+            Index : constant Natural := Natural'Value (Name);
+         begin
+            if Index = 0 then
+               raise Constraint_Error with
+                 "array index must be greater than zero";
+            end if;
 
-         while Index > Object.Vector.Last_Index loop
-            Object.Vector.Append (0);
-         end loop;
+            while Index > Object.Vector.Last_Index loop
+               Object.Vector.Append (0);
+            end loop;
 
-         Object.Vector.Replace_Element (Index, Value);
-      end;
-
+            Object.Vector.Replace_Element (Index, Value);
+         end;
+      else
+         Root_Object_Type (Object).Set_Property (Name, Value);
+      end if;
    end Set_Property;
-
-   -------------------
-   -- Set_Reference --
-   -------------------
-
-   overriding procedure Set_Reference
-     (Object : in out Root_Array_Type;
-      Reference : External_Reference)
-   is
-   begin
-      Object.Ref := Reference;
-   end Set_Reference;
 
    -------------------
    -- Set_Reference --

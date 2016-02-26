@@ -3,7 +3,7 @@ with Ada.Containers.Vectors;
 package Aqua.Objects.Arrays is
 
    type Root_Array_Type is
-     new Object_Interface with private;
+     new Root_Object_Type with private;
 
    overriding procedure Set_Property
      (Object : in out Root_Array_Type;
@@ -40,10 +40,9 @@ private
      new Ada.Containers.Vectors (Positive, Word);
 
    type Root_Array_Type is
-     new Object_Interface with
+     new Root_Object_Type with
       record
          Vector : Object_Vectors.Vector;
-         Ref    : External_Reference := 0;
       end record;
 
    overriding function Name
@@ -63,15 +62,6 @@ private
    overriding function Start
      (Object : Root_Array_Type)
       return Aqua.Iterators.Aqua_Iterator_Interface'Class;
-
-   overriding procedure Set_Reference
-     (Object : in out Root_Array_Type;
-      Reference : External_Reference);
-
-   overriding function Get_Reference
-     (Object : Root_Array_Type)
-      return External_Reference
-   is (Object.Ref);
 
    overriding procedure Scan_Properties
      (Object   : Root_Array_Type;
