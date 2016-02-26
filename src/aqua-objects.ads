@@ -35,6 +35,8 @@ package Aqua.Objects is
                    Property_Value : Word))
    is abstract;
 
+   type Object_Access is access all Object_Interface'Class;
+
    type Root_Object_Type is
      new Object_Interface with private;
 
@@ -52,8 +54,6 @@ package Aqua.Objects is
      (Object : in Root_Object_Type;
       Name   : in String)
       return Boolean;
-
-   type Object_Access is access all Root_Object_Type'Class;
 
 private
 
