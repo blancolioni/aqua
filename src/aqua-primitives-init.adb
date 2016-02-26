@@ -29,7 +29,8 @@ package body Aqua.Primitives.Init is
      array (Positive range <>) of Method_Record;
 
    procedure New_Class
-     (Name : String;
+     (Name    : String;
+      Base    : not null access Aqua.Objects.Object_Interface'Class;
       Methods : Array_Of_Methods);
 
    function Handle_Contains
@@ -215,19 +216,19 @@ package body Aqua.Primitives.Init is
          New_Primitive_Object ("map", Local_Object_Class);
       end;
 
-      New_Class ("array",
+      New_Class ("array", new Aqua.Objects.Arrays.Root_Array_Type,
                  ((new String'("new"), Get_Primitive ("array__new")),
                   (new String'("append"), Get_Primitive ("array__append")),
                   (new String'("first"), Get_Primitive ("array__first")),
                   (new String'("last"), Get_Primitive ("array__last"))));
 
-      New_Class ("aqua",
+      New_Class ("aqua", new Aqua.Objects.Root_Object_Type,
                  ((new String'("report_state"),
                   Get_Primitive ("aqua__report_state")),
                   (new String'("load_object"),
                    Get_Primitive ("aqua__load_object"))));
 
-      New_Class ("io",
+      New_Class ("io", new Aqua.Objects.Root_Object_Type,
                  ((new String'("put"), Get_Primitive ("io__put")),
                   (new String'("new_line"), Get_Primitive ("io__new_line")),
                   (new String'("put_line"), Get_Primitive ("io__put_line")),
@@ -249,9 +250,11 @@ package body Aqua.Primitives.Init is
       Arguments : Array_Of_Words)
       return Word
    is
+      Arr_External : constant access External_Object_Interface'Class :=
+                       Context.To_External_Object (Arguments (1));
       Arr : constant access Aqua.Objects.Arrays.Root_Array_Type'Class :=
                  Aqua.Objects.Arrays.Root_Array_Type'Class
-                   (Context.To_External_Object (Arguments (1)).all)'Access;
+                   (Arr_External.all)'Access;
       Value  : constant Word := Arguments (2);
    begin
       Arr.Append (Value);
@@ -704,22 +707,17 @@ package body Aqua.Primitives.Init is
    ---------------
 
    procedure New_Class
-     (Name : String;
+     (Name    : String;
+      Base    : not null access Aqua.Objects.Object_Interface'Class;
       Methods : Array_Of_Methods)
    is
-      Class : Aqua.Objects.Root_Object_Type;
    begin
       for Method of Methods loop
-         Class.Set_Property (Method.Name.all,
-                             Aqua.Words.To_Subroutine_Word (Method.Impl));
+         Base.Set_Property (Method.Name.all,
+                            Aqua.Words.To_Subroutine_Word (Method.Impl));
       end loop;
 
-      declare
-         Class_Access : constant Primitive_Object_Access :=
-                          new Aqua.Objects.Root_Object_Type'(Class);
-      begin
-         New_Primitive_Object (Name, Class_Access);
-      end;
+      New_Primitive_Object (Name, Base);
    end New_Class;
 
 end Aqua.Primitives.Init;
