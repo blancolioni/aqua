@@ -30,8 +30,13 @@ package body Aqua.Primitives.Init is
 
    procedure New_Class
      (Name    : String;
-      Base    : not null access Aqua.Objects.Object_Interface'Class;
+      Base    : Aqua.Objects.Object_Access;
       Methods : Array_Of_Methods);
+
+   procedure New_Class
+     (Name    : String;
+      Methods : Array_Of_Methods);
+   --  Like New_Class with Base argument of type Root_Object_Type
 
    function Handle_Contains
      (Context : in out Aqua.Execution.Execution_Interface'Class;
@@ -216,19 +221,24 @@ package body Aqua.Primitives.Init is
          New_Primitive_Object ("map", Local_Object_Class);
       end;
 
-      New_Class ("array", new Aqua.Objects.Arrays.Root_Array_Type,
-                 ((new String'("new"), Get_Primitive ("array__new")),
-                  (new String'("append"), Get_Primitive ("array__append")),
-                  (new String'("first"), Get_Primitive ("array__first")),
-                  (new String'("last"), Get_Primitive ("array__last"))));
+      declare
+         Array_Base : constant Aqua.Objects.Object_Access :=
+                        new Aqua.Objects.Arrays.Root_Array_Type;
+      begin
+         New_Class ("array", Array_Base,
+                    ((new String'("new"), Get_Primitive ("array__new")),
+                     (new String'("append"), Get_Primitive ("array__append")),
+                     (new String'("first"), Get_Primitive ("array__first")),
+                     (new String'("last"), Get_Primitive ("array__last"))));
+      end;
 
-      New_Class ("aqua", new Aqua.Objects.Root_Object_Type,
+      New_Class ("aqua",
                  ((new String'("report_state"),
                   Get_Primitive ("aqua__report_state")),
                   (new String'("load_object"),
                    Get_Primitive ("aqua__load_object"))));
 
-      New_Class ("io", new Aqua.Objects.Root_Object_Type,
+      New_Class ("io",
                  ((new String'("put"), Get_Primitive ("io__put")),
                   (new String'("new_line"), Get_Primitive ("io__new_line")),
                   (new String'("put_line"), Get_Primitive ("io__put_line")),
@@ -708,7 +718,7 @@ package body Aqua.Primitives.Init is
 
    procedure New_Class
      (Name    : String;
-      Base    : not null access Aqua.Objects.Object_Interface'Class;
+      Base    : Aqua.Objects.Object_Access;
       Methods : Array_Of_Methods)
    is
    begin
@@ -718,6 +728,20 @@ package body Aqua.Primitives.Init is
       end loop;
 
       New_Primitive_Object (Name, Base);
+   end New_Class;
+
+   ---------------
+   -- New_Class --
+   ---------------
+
+   procedure New_Class
+     (Name    : String;
+      Methods : Array_Of_Methods)
+   is
+      Class : constant Aqua.Objects.Object_Access :=
+                new Aqua.Objects.Root_Object_Type;
+   begin
+      New_Class (Name, Class, Methods);
    end New_Class;
 
 end Aqua.Primitives.Init;
