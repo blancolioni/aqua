@@ -82,8 +82,8 @@ test_loop_out:
 
 create_tests:
    mov #array, op
-   get_property new
-   mov pv, r0
+   allocate
+   mov op, r0
    mov "test-indirect-call", r1
    mov #test_indirect_call, r2
    jsr create_test
@@ -100,8 +100,7 @@ create_tests:
 
 create_test:
    mov #map, op
-   get_property new
-   mov pv, op
+   allocate
    mov r1, pv
    set_property name
    mov r2, pv
