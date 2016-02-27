@@ -526,7 +526,7 @@ package body Aqua.CPU is
          when A_Allocate =>
             declare
                Base_Word : constant Word :=
-                             CPU.Pop;
+                             CPU.R (R_OP);
                New_Word  : Word;
             begin
                if Is_External_Reference (Base_Word) then
@@ -537,13 +537,14 @@ package body Aqua.CPU is
                                    new External_Object_Interface'Class'
                                      (Ext.all);
                   begin
+                     New_Value.Set_Reference (0);
                      New_Word := CPU.To_Word (New_Value);
                   end;
                else
                   New_Word := Base_Word;
                end if;
 
-               CPU.Push (New_Word);
+               CPU.R (R_OP) := New_Word;
             end;
 
          when A_Trap =>
