@@ -167,13 +167,15 @@ package body Aqua.Primitives.Init is
       New_Primitive_Function ("object__get", 2, Handle_Get'Access);
       New_Primitive_Function ("object__image", 1, Handle_Image'Access);
       New_Primitive_Function ("object__include", 2, Handle_Include'Access);
-      New_Primitive_Function ("object__set", 3, Handle_Set'Access);
-      New_Primitive_Function ("object__new", 0, Handle_Object_New'Access);
+      New_Primitive_Function
+        ("object__set", (Object_Argument, String_Argument, Any),
+         Handle_Set'Access);
+      New_Primitive_Function ("object__new", 1, Handle_Object_New'Access);
       New_Primitive_Function ("object__clone", 1, Handle_Clone'Access);
 
       New_Primitive_Function ("array__new", 0, Handle_Array_New'Access);
       New_Primitive_Function ("array__image", 0, Handle_Image'Access);
-      New_Primitive_Function ("array__append", 0, Handle_Array_Append'Access);
+      New_Primitive_Function ("array__append", 2, Handle_Array_Append'Access);
       New_Primitive_Function ("array__first", 0, Handle_Array_First'Access);
       New_Primitive_Function ("array__last", 0, Handle_Array_Last'Access);
 
@@ -192,15 +194,15 @@ package body Aqua.Primitives.Init is
       New_Primitive_Function ("aqua__load_object", 2,
                               Handle_Load_Object'Access);
 
-      New_Primitive_Function ("io__put", 1,
+      New_Primitive_Function ("io__put", 2,
                               Handle_Put'Access);
-      New_Primitive_Function ("io__put_line", 1,
+      New_Primitive_Function ("io__put_line", 2,
                               Handle_Put_Line'Access);
-      New_Primitive_Function ("io__new_line", 0,
+      New_Primitive_Function ("io__new_line", 1,
                               Handle_New_Line'Access);
-      New_Primitive_Function ("io__set_output", 1,
+      New_Primitive_Function ("io__set_output", 2,
                               Handle_Set_Output'Access);
-      New_Primitive_Function ("io__get_timer", 0,
+      New_Primitive_Function ("io__get_timer", 1,
                               Handle_Get_Timer'Access);
 
       declare

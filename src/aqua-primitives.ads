@@ -2,6 +2,13 @@ with Aqua.Execution;
 
 package Aqua.Primitives is
 
+   type Function_Argument_Category is
+     (Any, Object_Argument, Map_Argument, Array_Argument,
+      String_Argument, Integer_Argument);
+
+   type Argument_Category is
+     array (Positive range <>) of Function_Argument_Category;
+
    procedure New_Primitive_Object
      (Name : String;
       Item : not null access External_Object_Interface'Class);
@@ -28,9 +35,19 @@ package Aqua.Primitives is
       Argument_Count : Natural;
       Handler        : Primitive_Handler);
 
+   procedure New_Primitive_Function
+     (Name      : String;
+      Arguments : Argument_Category;
+      Handler   : Primitive_Handler);
+
    procedure New_Primitive_Handler
      (Name           : String;
       Argument_Count : Natural;
+      Handler        : Handler_Interface'Class);
+
+   procedure New_Primitive_Handler
+     (Name           : String;
+      Arguments      : Argument_Category;
       Handler        : Handler_Interface'Class);
 
    function Call_Primitive
