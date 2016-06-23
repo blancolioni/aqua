@@ -1179,8 +1179,14 @@ package body Aqua.CPU is
       Value : Word)
       return access External_Object_Interface'Class
    is
+      Reference : constant Natural :=
+                    Natural (Value and Payload_Mask);
    begin
-      return CPU.Ext (Positive (Value and Payload_Mask));
+      if Reference = 0 then
+         return null;
+      else
+         return CPU.Ext (Positive (Value and Payload_Mask));
+      end if;
    end To_External_Object;
 
    ----------------
