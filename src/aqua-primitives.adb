@@ -91,11 +91,11 @@ package body Aqua.Primitives is
       for Arg of Arguments loop
          Current := Current + 1;
          if Current > Actuals'Last then
-            Ada.Text_IO.Put_Line
-              (Ada.Text_IO.Standard_Error,
-               "warning: too many arguments in call to "
-               & Info.Name.all);
-            exit;
+            raise Aqua.Execution.Execution_Error
+            with "In call to " & Info.Name.all
+              & ": too many arguments at "
+              & Context.Show (Arg)
+              & " [" & Aqua.IO.Hex_Image (Arg) & "]";
          else
             Actuals (Current) := Arg;
             case Info.Arg_Categories (Current) is
