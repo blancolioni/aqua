@@ -133,8 +133,12 @@ package Aqua is
    function Text (Item : External_Object_Interface) return String
                   is abstract;
 
-   function Show (Item : External_Object_Interface) return String
-                  is abstract;
+   function Show
+     (Item : External_Object_Interface;
+      Recursive_Show : access
+        function (Value : Word) return String)
+      return String
+      is abstract;
 
    procedure Set_Reference
      (Item : in out External_Object_Interface;

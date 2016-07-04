@@ -82,7 +82,9 @@ private
    is ("[object]");
 
    overriding function Show
-     (Object : Root_Object_Type)
+     (Object : Root_Object_Type;
+      Recursive_Show : access
+        function (Value : Word) return String)
       return String;
 
    overriding function Start
@@ -122,7 +124,9 @@ private
    is ("[object-iterator]");
 
    overriding function Show
-     (It : Root_Object_Iterator)
+     (It : Root_Object_Iterator;
+     Recursive_Show : access
+       function (Value : Word) return String)
       return String
    is ("[object-iterator]");
 
