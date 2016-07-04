@@ -56,7 +56,9 @@ private
    is ("[array]");
 
    overriding function Show
-     (Object : Root_Array_Type)
+     (Object         : Root_Array_Type;
+      Recursive_Show : access
+        function (Value : Aqua.Word) return String)
       return String;
 
    overriding function Start
@@ -88,7 +90,9 @@ private
    is ("[array-iterator]");
 
    overriding function Show
-     (It : Root_Array_Iterator)
+     (It             : Root_Array_Iterator;
+      Recursive_Show : access
+        function (Value : Aqua.Word) return String)
       return String
    is ("[array-iterator]");
 

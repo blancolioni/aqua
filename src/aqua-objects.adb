@@ -157,7 +157,9 @@ package body Aqua.Objects is
    ----------
 
    overriding function Show
-     (Object : Root_Object_Type)
+     (Object         : Root_Object_Type;
+      Recursive_Show : access
+        function (Value : Aqua.Word) return String)
       return String
    is
       use Ada.Strings.Unbounded;
@@ -171,7 +173,7 @@ package body Aqua.Objects is
             Result := Result & ", ";
          end if;
          Result := Result
-           & Key (Position) & " => " & Aqua.IO.Hex_Image (Element (Position));
+           & Key (Position) & " => " & Recursive_Show (Element (Position));
       end loop;
       if Result = Null_Unbounded_String then
          return "()";

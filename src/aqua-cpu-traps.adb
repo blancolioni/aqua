@@ -203,7 +203,8 @@ package body Aqua.CPU.Traps is
         Aqua_Container_Interface'Class (Container_Ext.all)'Access;
 
       if Trace_Properties then
-         Ada.Text_IO.Put_Line ("iterating: " & Container.Show);
+         Ada.Text_IO.Put_Line
+           ("iterating: " & CPU.Show (Container_Word));
       end if;
 
       declare

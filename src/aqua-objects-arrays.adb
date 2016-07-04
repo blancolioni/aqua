@@ -1,7 +1,5 @@
 with Ada.Strings.Fixed;
 
-with Aqua.IO;
-
 package body Aqua.Objects.Arrays is
 
    ------------
@@ -206,7 +204,9 @@ package body Aqua.Objects.Arrays is
    ----------
 
    overriding function Show
-     (Object : Root_Array_Type)
+     (Object         : Root_Array_Type;
+      Recursive_Show : access
+        function (Value : Aqua.Word) return String)
       return String
    is
       function Elements_Image (Start : Positive) return String;
@@ -219,7 +219,7 @@ package body Aqua.Objects.Arrays is
       begin
          if Start <= Object.Vector.Last_Index then
             return (if Start = 1 then "" else ",")
-              & Aqua.IO.Hex_Image (Object.Vector (Start))
+              & Recursive_Show (Object.Vector (Start))
               & Elements_Image (Start + 1);
          else
             return "]";

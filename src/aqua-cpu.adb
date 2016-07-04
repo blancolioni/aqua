@@ -1,3 +1,4 @@
+with Ada.Containers.Ordered_Maps;
 with Ada.Exceptions;
 with Ada.Strings.Unbounded;
 
@@ -1136,18 +1137,51 @@ package body Aqua.CPU is
       Value : Word)
       return String
    is
+      package Word_Maps is
+        new Ada.Containers.Ordered_Maps
+          (Word, Boolean);
+
+      Shown_Map : Word_Maps.Map;
+
+      function Recursive_Show (X : Word) return String;
+
+      function Internal_Show (X : Word) return String;
+
+      -------------------
+      -- Internal_Show --
+      -------------------
+
+      function Internal_Show (X : Word) return String is
+      begin
+         if Shown_Map.Contains (X) then
+            return "[cycle]";
+         else
+            return Recursive_Show (X);
+         end if;
+      end Internal_Show;
+
+      --------------------
+      -- Recursive_Show --
+      --------------------
+
+      function Recursive_Show (X : Word) return String is
+      begin
+         if Is_Address (X) then
+            return "@" & Aqua.IO.Hex_Image (Get_Address (X));
+         elsif Is_Integer (X) then
+            return "#" & Aqua_Integer'Image (Get_Integer (X));
+         elsif Is_External_Reference (X) then
+            Shown_Map.Insert (X, True);
+            return CPU.To_External_Object (X).Show (Internal_Show'Access);
+         elsif Is_String_Reference (X) then
+            return CPU.To_String (X);
+         else
+            return Aqua.IO.Hex_Image (X);
+         end if;
+      end Recursive_Show;
+
    begin
-      if Is_Address (Value) then
-         return "@" & Aqua.IO.Hex_Image (Get_Address (Value));
-      elsif Is_Integer (Value) then
-         return "#" & Aqua_Integer'Image (Get_Integer (Value));
-      elsif Is_External_Reference (Value) then
-         return CPU.To_External_Object (Value).Show;
-      elsif Is_String_Reference (Value) then
-         return CPU.To_String (Value);
-      else
-         return Aqua.IO.Hex_Image (Value);
-      end if;
+      return Recursive_Show (Value);
    end Show;
 
    ----------------
