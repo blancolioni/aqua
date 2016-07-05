@@ -6,6 +6,7 @@ with Ada.Text_IO;
 
 --  with Aqua.IO;
 with Aqua.Objects.Arrays;
+with Aqua.Objects.Lists;
 with Aqua.Words;
 
 package body Aqua.Primitives.Init is
@@ -103,6 +104,16 @@ package body Aqua.Primitives.Init is
       Arguments : Array_Of_Words)
       return Word;
 
+   function Handle_List_New
+     (Context   : in out Aqua.Execution.Execution_Interface'Class;
+      Arguments : Array_Of_Words)
+      return Word;
+
+   function Handle_List_Append
+     (Context   : in out Aqua.Execution.Execution_Interface'Class;
+      Arguments : Array_Of_Words)
+      return Word;
+
    function Handle_To_Integer
      (Context : in out Aqua.Execution.Execution_Interface'Class;
       Arguments : Array_Of_Words)
@@ -179,6 +190,9 @@ package body Aqua.Primitives.Init is
       New_Primitive_Function ("array__first", 0, Handle_Array_First'Access);
       New_Primitive_Function ("array__last", 0, Handle_Array_Last'Access);
 
+      New_Primitive_Function ("list__new", 0, Handle_List_New'Access);
+      New_Primitive_Function ("list__append", 2, Handle_List_Append'Access);
+
       New_Primitive_Function ("string__to_lower", 1, Handle_To_Lower'Access);
       New_Primitive_Function ("string__to_integer", 1,
                               Handle_To_Integer'Access);
@@ -248,6 +262,15 @@ package body Aqua.Primitives.Init is
                    Get_Primitive ("io__set_output")),
                   (new String'("get_timer"),
                    Get_Primitive ("io__get_timer"))));
+
+      declare
+         List_Base : constant Aqua.Objects.Object_Access :=
+                        new Aqua.Objects.Lists.Root_List_Type;
+      begin
+         New_Class ("list", List_Base,
+                    ((new String'("new"), Get_Primitive ("list__new")),
+                     (new String'("append"), Get_Primitive ("list__append"))));
+      end;
 
       Created_Primitives := True;
 
@@ -433,6 +456,43 @@ package body Aqua.Primitives.Init is
       end if;
       return Arguments (1);
    end Handle_Include;
+
+   ------------------------
+   -- Handle_List_Append --
+   ------------------------
+
+   function Handle_List_Append
+     (Context   : in out Aqua.Execution.Execution_Interface'Class;
+      Arguments : Array_Of_Words)
+      return Word
+   is
+      List_External : constant access External_Object_Interface'Class :=
+                        Context.To_External_Object (Arguments (1));
+      List          : constant access
+        Aqua.Objects.Lists.Root_List_Type'Class :=
+          Aqua.Objects.Lists.Root_List_Type'Class
+            (List_External.all)'Access;
+      Value         : constant Word := Arguments (2);
+   begin
+      List.Append (Value);
+      return Arguments (1);
+   end Handle_List_Append;
+
+   ---------------------
+   -- Handle_List_New --
+   ---------------------
+
+   function Handle_List_New
+     (Context   : in out Aqua.Execution.Execution_Interface'Class;
+      Arguments : Array_Of_Words)
+      return Word
+   is
+      pragma Unreferenced (Arguments);
+      Item : constant Primitive_Object_Access :=
+               new Aqua.Objects.Lists.Root_List_Type;
+   begin
+      return Context.To_Word (Item);
+   end Handle_List_New;
 
    ------------------------
    -- Handle_Load_Object --
