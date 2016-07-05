@@ -1169,7 +1169,9 @@ package body Aqua.CPU is
          if Is_Address (X) then
             return "@" & Aqua.IO.Hex_Image (Get_Address (X));
          elsif Is_Integer (X) then
-            return "#" & Aqua_Integer'Image (Get_Integer (X));
+            return Ada.Strings.Fixed.Trim
+              (Aqua_Integer'Image (Get_Integer (X)),
+               Ada.Strings.Left);
          elsif Is_External_Reference (X) then
             Shown_Map.Insert (X, True);
             return CPU.To_External_Object (X).Show (Internal_Show'Access);
