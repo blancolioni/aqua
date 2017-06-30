@@ -185,10 +185,10 @@ package body Aqua.Primitives.Init is
       New_Primitive_Function ("object__clone", 1, Handle_Clone'Access);
 
       New_Primitive_Function ("array__new", 0, Handle_Array_New'Access);
-      New_Primitive_Function ("array__image", 0, Handle_Image'Access);
+      New_Primitive_Function ("array__image", 1, Handle_Image'Access);
       New_Primitive_Function ("array__append", 2, Handle_Array_Append'Access);
-      New_Primitive_Function ("array__first", 0, Handle_Array_First'Access);
-      New_Primitive_Function ("array__last", 0, Handle_Array_Last'Access);
+      New_Primitive_Function ("array__first", 1, Handle_Array_First'Access);
+      New_Primitive_Function ("array__last", 1, Handle_Array_Last'Access);
 
       New_Primitive_Function ("list__new", 0, Handle_List_New'Access);
       New_Primitive_Function ("list__append", 2, Handle_List_Append'Access);
