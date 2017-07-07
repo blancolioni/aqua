@@ -203,7 +203,7 @@ package body Aqua.Primitives.Init is
       New_Primitive_Function ("string__length", 1,
                               Handle_String_Length'Access);
 
-      New_Primitive_Function ("aqua__report_state", 0,
+      New_Primitive_Function ("aqua__report_state", 1,
                               Handle_Report_State'Access);
       New_Primitive_Function ("aqua__load_object", 2,
                               Handle_Load_Object'Access);
