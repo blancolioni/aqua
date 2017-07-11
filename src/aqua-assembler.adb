@@ -4,6 +4,8 @@ with Aqua.IO;
 
 package body Aqua.Assembler is
 
+   Trace_Write : constant Boolean := False;
+
    function Temporary_Label_Image
      (Label : Natural;
       Index : Positive)
@@ -709,13 +711,49 @@ package body Aqua.Assembler is
                if Info.Defined then
                   Write_Word (File, Info.Value);
                end if;
+
+               if Trace_Write then
+                  if Info.Defined then
+                     Ada.Text_IO.Put ("v");
+                  else
+                     Ada.Text_IO.Put ("-");
+                  end if;
+                  if Info.Deferred then
+                     Ada.Text_IO.Put ("d");
+                  else
+                     Ada.Text_IO.Put ("-");
+                  end if;
+                  if Info.String_Constant then
+                     Ada.Text_IO.Put ("s");
+                  else
+                     Ada.Text_IO.Put ("-");
+                  end if;
+
+                  Ada.Text_IO.Put
+                    (" " & Label);
+                  Ada.Text_IO.Set_Col (60);
+               end if;
+
                for Ref of Info.References loop
+                  if Trace_Write then
+                     Ada.Text_IO.Put
+                       (" " & Aqua.IO.Hex_Image (Ref.Addr));
+                     Ada.Text_IO.Put
+                       ((if Ref.Relative then "r" else ""));
+                     Ada.Text_IO.Put
+                       ((if Ref.Branch then "b" else ""));
+                  end if;
                   Write_Address (File, Ref.Addr);
                   Write_Octet
                     (File,
                      Boolean'Pos (Ref.Relative)
                          + 2 * Boolean'Pos (Ref.Branch));
                end loop;
+
+               if Trace_Write then
+                  Ada.Text_IO.New_Line;
+               end if;
+
             end if;
          end;
       end loop;

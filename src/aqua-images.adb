@@ -307,6 +307,7 @@ package body Aqua.Images is
             Flags    : Octet;
             Defined  : Boolean;
             Deferred : Boolean;
+            Exists   : Boolean := False;
          begin
             Read_Word (File, Length);
             Read_Word (File, Refs);
@@ -328,10 +329,22 @@ package body Aqua.Images is
                if Image.Link_Map.Contains (S) then
                   Exists := True;
                   Info := Image.Link_Map (S);
+                  if Info.Is_String /= (I > External_Count) then
+                     Ada.Text_IO.Put_Line
+                       (Ada.Text_IO.Standard_Error,
+                        "defined as both string and label: "
+                        & S);
+                  end if;
+
                   if Info.Has_Value and then Defined then
                      Ada.Text_IO.Put_Line
                        (Ada.Text_IO.Standard_Error,
                         "redefined: " & S);
+                  end if;
+
+                  if Trace_Load and then Deferred then
+                     Ada.Text_IO.Put_Line
+                       (S & ": map contains deferred entry");
                   end if;
                end if;
 
@@ -341,11 +354,28 @@ package body Aqua.Images is
 
                if I <= External_Count then
                   if Trace_Load then
+                     if Exists then
+                        Ada.Text_IO.Put ("e");
+                     else
+                        Ada.Text_IO.Put ("-");
+                     end if;
+                     if Info.Has_Value then
+                        Ada.Text_IO.Put ("v");
+                     else
+                        Ada.Text_IO.Put ("-");
+                     end if;
+                     if Deferred then
+                        Ada.Text_IO.Put ("d");
+                     else
+                        Ada.Text_IO.Put ("-");
+                     end if;
+
+                     Ada.Text_IO.Put ("-");
+
                      Ada.Text_IO.Put
-                       ((if Deferred then "D" else "E")
-                        & Integer'Image (-Integer (I)) & ": "
+                       (Integer'Image (Integer (I)) & ": "
                         & S);
-                     Ada.Text_IO.Set_Col (20);
+                     Ada.Text_IO.Set_Col (60);
                   end if;
 
                   Image.Label_Vector.Append (S);
@@ -360,14 +390,24 @@ package body Aqua.Images is
                              - Get_Address (Low)
                              + Image.High);
                      end if;
+
                   end if;
+
+                  if Info.Has_Value and then Trace_Load then
+                     Ada.Text_IO.Put (Aqua.IO.Hex_Image (Info.Value));
+                  end if;
+
                   Info.Is_String := False;
+
+                  if Trace_Load then
+                     Ada.Text_IO.Set_Col (72);
+                  end if;
+
                else
-                  if False then
+                  if Trace_Load then
                      Ada.Text_IO.Put_Line
-                       ("S"
-                        & Integer'Image (-Integer (I - External_Count)) & ": "
-                        & S);
+                       ("s ["
+                        & S & "]");
                   end if;
                   Image.String_Vector.Append (S);
                   Info.Value := Word (Image.String_Vector.Last_Index);
@@ -393,7 +433,7 @@ package body Aqua.Images is
                            Ada.Text_IO.Put
                              ((if Relative mod 2 = 1 then "r" else ""));
                            Ada.Text_IO.Put
-                             ((if Relative mod 2 = 1 then "b" else ""));
+                             ((if Relative / 2 mod 2 = 1 then "b" else ""));
                         end if;
                      end if;
                   end;
@@ -406,9 +446,19 @@ package body Aqua.Images is
                end if;
 
                if Image.Link_Map.Contains (S) then
+                  if Trace_Load then
+                     Ada.Text_IO.Put ("updating: ");
+                  end if;
                   Image.Link_Map (S) := Info;
                else
+                  if Trace_Load then
+                     Ada.Text_IO.Put ("inserting: ");
+                  end if;
                   Image.Link_Map.Insert (S, Info);
+               end if;
+
+               if Trace_Load then
+                  Ada.Text_IO.Put_Line (S);
                end if;
 
             end;
@@ -423,6 +473,24 @@ package body Aqua.Images is
       Close (File);
 
    end Load;
+
+   -----------
+   -- Merge --
+   -----------
+
+   procedure Merge
+     (Target : in out Link_Info;
+      Info   : Link_Info)
+   is
+   begin
+      if Info.Has_Value then
+         Target.Value := Info.Value;
+         Target.Has_Value := True;
+      end if;
+      for Ref of Info.References loop
+         Target.References.Append (Ref);
+      end loop;
+   end Merge;
 
    ---------------
    -- New_Image --
