@@ -325,7 +325,8 @@ package body Aqua.Images is
                   S (J) := Character'Val (X);
                end loop;
 
-               if not Deferred and then Image.Link_Map.Contains (S) then
+               if Image.Link_Map.Contains (S) then
+                  Exists := True;
                   Info := Image.Link_Map (S);
                   if Info.Has_Value and then Defined then
                      Ada.Text_IO.Put_Line
