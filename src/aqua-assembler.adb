@@ -283,8 +283,6 @@ package body Aqua.Assembler is
                          then A.Next_String
                          else 0));
          begin
-            Ada.Text_IO.Put_Line (Name);
-
             A.Labels.Insert (Name, Info);
             if Is_String then
                A.String_Lits.Append (Name);
