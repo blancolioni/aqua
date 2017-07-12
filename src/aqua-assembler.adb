@@ -1,4 +1,5 @@
 with Ada.Text_IO;
+with Ada.Unchecked_Deallocation;
 
 with Aqua.IO;
 
@@ -282,6 +283,8 @@ package body Aqua.Assembler is
                          then A.Next_String
                          else 0));
          begin
+            Ada.Text_IO.Put_Line (Name);
+
             A.Labels.Insert (Name, Info);
             if Is_String then
                A.String_Lits.Append (Name);
@@ -290,6 +293,20 @@ package body Aqua.Assembler is
          end;
       end if;
    end Ensure_Label;
+
+   ----------
+   -- Free --
+   ----------
+
+   procedure Free
+     (A : in out Assembly)
+   is
+      procedure Internal is
+        new Ada.Unchecked_Deallocation (Root_Assembly_Type'Class,
+                                        Assembly);
+   begin
+      Internal (A);
+   end Free;
 
    ------------------
    -- Get_Register --
