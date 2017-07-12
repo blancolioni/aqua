@@ -195,7 +195,10 @@ package body Aqua.Images is
       External_Count : Word;
       String_Count   : Word;
    begin
-      Ada.Text_IO.Put_Line ("image: loading " & Name);
+
+      if Trace_Load then
+         Ada.Text_IO.Put_Line ("image: loading " & Name);
+      end if;
 
       Open (File, Name);
 
@@ -205,17 +208,19 @@ package body Aqua.Images is
       Read_Word (File, External_Count);
       Read_Word (File, String_Count);
 
-      Ada.Text_IO.Put_Line
-        (Name
-         & ": bindings:" & Word'Image (Binding_Count)
-         & "; externals:" & Word'Image (External_Count)
-         & "; strings:" & Word'Image (String_Count)
-         & " range "
-         & Hex_Image (Low) & " - " & Hex_Image (High)
-         & "; new range "
-         & Hex_Image (Image.High + Get_Address (Low))
-         & " - "
-         & Hex_Image (Image.High + Get_Address (High)));
+      if Trace_Load then
+         Ada.Text_IO.Put_Line
+           (Name
+            & ": bindings:" & Word'Image (Binding_Count)
+            & "; externals:" & Word'Image (External_Count)
+            & "; strings:" & Word'Image (String_Count)
+            & " range "
+            & Hex_Image (Low) & " - " & Hex_Image (High)
+            & "; new range "
+            & Hex_Image (Image.High + Get_Address (Low))
+            & " - "
+            & Hex_Image (Image.High + Get_Address (High)));
+      end if;
 
       for I in 1 .. Binding_Count loop
          declare
