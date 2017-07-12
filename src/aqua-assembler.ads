@@ -142,6 +142,9 @@ package Aqua.Assembler is
 
    type Assembly is access all Root_Assembly_Type'Class;
 
+   procedure Free
+     (A : in out Assembly);
+
 private
 
    type Reference_Info is
