@@ -474,24 +474,6 @@ package body Aqua.Images is
 
    end Load;
 
-   -----------
-   -- Merge --
-   -----------
-
-   procedure Merge
-     (Target : in out Link_Info;
-      Info   : Link_Info)
-   is
-   begin
-      if Info.Has_Value then
-         Target.Value := Info.Value;
-         Target.Has_Value := True;
-      end if;
-      for Ref of Info.References loop
-         Target.References.Append (Ref);
-      end loop;
-   end Merge;
-
    ---------------
    -- New_Image --
    ---------------
