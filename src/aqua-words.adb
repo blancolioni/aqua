@@ -1,39 +1,39 @@
 package body Aqua.Words is
 
-   ------------------------------
-   -- Get_Subroutine_Reference --
-   ------------------------------
+   -----------------------------
+   -- Get_Primitive_Reference --
+   -----------------------------
 
-   function Get_Subroutine_Reference
+   function Get_Primitive_Reference
      (Value : Word)
-      return Subroutine_Reference
+      return Primitive_Reference
    is
    begin
-      return Subroutine_Reference (Value and Payload_Mask);
-   end Get_Subroutine_Reference;
+      return Primitive_Reference (Value and Payload_Mask);
+   end Get_Primitive_Reference;
 
-   -----------------------------
-   -- Is_Subroutine_Reference --
-   -----------------------------
+   ----------------------------
+   -- Is_Primitive_Reference --
+   ----------------------------
 
-   function Is_Subroutine_Reference
+   function Is_Primitive_Reference
      (Value : Word)
       return Boolean
    is
    begin
-      return Get_Tag (Value) = Subroutine_Tag;
-   end Is_Subroutine_Reference;
+      return Get_Tag (Value) = Primitive_Tag;
+   end Is_Primitive_Reference;
 
-   ------------------------
-   -- To_Subroutine_Word --
-   ------------------------
+   -----------------------
+   -- To_Primitive_Word --
+   -----------------------
 
-   function To_Subroutine_Word
-     (Reference : Subroutine_Reference)
+   function To_Primitive_Word
+     (Reference : Primitive_Reference)
       return Word
    is
    begin
-      return Set_Tag (Word (Reference), Subroutine_Tag);
-   end To_Subroutine_Word;
+      return Set_Tag (Word (Reference), Primitive_Tag);
+   end To_Primitive_Word;
 
 end Aqua.Words;

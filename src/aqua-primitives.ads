@@ -52,18 +52,18 @@ package Aqua.Primitives is
 
    function Call_Primitive
      (Context   : in out Aqua.Execution.Execution_Interface'Class;
-      Primitive : Subroutine_Reference)
+      Primitive : Primitive_Reference)
       return Word;
 
    function Call_Primitive
      (Context   : in out Aqua.Execution.Execution_Interface'Class;
-      Primitive : Subroutine_Reference;
+      Primitive : Primitive_Reference;
       Arguments : Array_Of_Words)
       return Word;
 
    function Get_Primitive
      (Name : String)
-      return Subroutine_Reference;
+      return Primitive_Reference;
 
 private
 

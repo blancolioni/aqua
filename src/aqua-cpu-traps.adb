@@ -39,7 +39,7 @@ package body Aqua.CPU.Traps is
 
       if Is_String_Reference (Target) then
          declare
-            Prim : constant Subroutine_Reference :=
+            Prim : constant Primitive_Reference :=
                      Aqua.Primitives.Get_Primitive
                        ("string__" & CPU.Image.To_String (Property_Name));
          begin
@@ -105,10 +105,10 @@ package body Aqua.CPU.Traps is
             end if;
          end;
 
-         if Aqua.Words.Is_Subroutine_Reference (Value) then
+         if Aqua.Words.Is_Primitive_Reference (Value) then
             Value :=
               Aqua.Primitives.Call_Primitive
-                (CPU, Aqua.Words.Get_Subroutine_Reference (Value),
+                (CPU, Aqua.Words.Get_Primitive_Reference (Value),
                  Target & Arguments (1 .. Argument_Count));
          end if;
 

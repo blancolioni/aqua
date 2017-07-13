@@ -49,7 +49,7 @@ package body Aqua.Primitives is
 
    function Call_Primitive
      (Context   : in out Aqua.Execution.Execution_Interface'Class;
-      Primitive : Subroutine_Reference;
+      Primitive : Primitive_Reference;
       Arguments : Array_Of_Words)
       return Word
    is
@@ -132,7 +132,7 @@ package body Aqua.Primitives is
 
    function Call_Primitive
      (Context   : in out Aqua.Execution.Execution_Interface'Class;
-      Primitive : Subroutine_Reference)
+      Primitive : Primitive_Reference)
       return Word
    is
       Info : Primitive_Function_Info renames
@@ -151,14 +151,14 @@ package body Aqua.Primitives is
 
    function Get_Primitive
      (Name : String)
-      return Subroutine_Reference
+      return Primitive_Reference
    is
    begin
       for I in 1 .. Prim_Functions.Last_Index loop
          if Ada.Strings.Equal_Case_Insensitive
            (Prim_Functions (I).Name.all, Name)
          then
-            return Subroutine_Reference (I);
+            return Primitive_Reference (I);
          end if;
       end loop;
       return 0;

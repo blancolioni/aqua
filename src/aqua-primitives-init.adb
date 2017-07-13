@@ -23,7 +23,7 @@ package body Aqua.Primitives.Init is
    type Method_Record is
       record
          Name : String_Access;
-         Impl : Subroutine_Reference;
+         Impl : Primitive_Reference;
       end record;
 
    type Array_Of_Methods is
@@ -224,12 +224,12 @@ package body Aqua.Primitives.Init is
       begin
          Object_Class.Set_Property
            ("new",
-            Aqua.Words.To_Subroutine_Word
+            Aqua.Words.To_Primitive_Word
               (Get_Primitive ("object__new")));
 
          Object_Class.Set_Property
            ("clone",
-            Aqua.Words.To_Subroutine_Word
+            Aqua.Words.To_Primitive_Word
               (Get_Primitive ("object__clone")));
 
          Local_Object_Class :=
@@ -786,7 +786,7 @@ package body Aqua.Primitives.Init is
    begin
       for Method of Methods loop
          Base.Set_Property (Method.Name.all,
-                            Aqua.Words.To_Subroutine_Word (Method.Impl));
+                            Aqua.Words.To_Primitive_Word (Method.Impl));
       end loop;
 
       New_Primitive_Object (Name, Base);

@@ -27,7 +27,7 @@ package Aqua is
    type Address is new Payload;
    type External_Reference is new Payload;
    type String_Reference is new Payload;
-   type Subroutine_Reference is new Payload;
+   type Primitive_Reference is new Payload;
 
    type Aqua_Integer is range -2 ** 27 .. 2 ** 27 - 1;
 
@@ -37,7 +37,7 @@ package Aqua is
    Address_Tag    : constant := 1;
    String_Tag     : constant := 2;
    External_Tag   : constant := 3;
-   Subroutine_Tag : constant := 4;
+   Primitive_Tag  : constant := 4;
 
    function Get_Tag (Value : Word) return Word
    is (Value / 16#1000_0000#);
