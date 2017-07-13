@@ -1,16 +1,16 @@
 package Aqua.Words is
 
-   function Is_Subroutine_Reference
+   function Is_Primitive_Reference
      (Value : Word)
       return Boolean;
 
-   function Get_Subroutine_Reference
+   function Get_Primitive_Reference
      (Value : Word)
-      return Subroutine_Reference
-     with Pre => Is_Subroutine_Reference (Value);
+      return Primitive_Reference
+     with Pre => Is_Primitive_Reference (Value);
 
-   function To_Subroutine_Word
-     (Reference : Subroutine_Reference)
+   function To_Primitive_Word
+     (Reference : Primitive_Reference)
       return Word;
 
 end Aqua.Words;
