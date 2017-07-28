@@ -245,7 +245,7 @@ package body Aqua.CPU.Traps is
 
       if not Is_External_Reference (Target) then
          raise Constraint_Error
-           with "set: expected an object but found "
+           with "set: " & CPU.Show (Name) & ": expected an object but found "
            & CPU.Show (Target);
       end if;
 
