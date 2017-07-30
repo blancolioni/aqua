@@ -640,13 +640,19 @@ package body Aqua.Assembler is
    begin
 
       for Position in A.Labels.Iterate loop
-         if Element (Position).String_Constant then
-            String_Count := String_Count + 1;
-         elsif Element (Position).External
-           or else Element (Position).Deferred
-         then
-            External_Count := External_Count + 1;
-         end if;
+         declare
+            Info : constant Label_Info := Element (Position);
+         begin
+            if Info.String_Constant then
+               String_Count := String_Count + 1;
+            elsif Info.External
+              or else Info.Deferred
+              or else (not Info.Defined and then not Info.Register_Alias
+                       and then not Info.String_Constant)
+            then
+               External_Count := External_Count + 1;
+            end if;
+         end;
       end loop;
 
       Create (File, Path);
@@ -713,7 +719,11 @@ package body Aqua.Assembler is
             Label : constant String := Key (Position);
             Info  : constant Label_Info := Element (Position);
          begin
-            if Info.External or else Info.Deferred then
+            if Info.External
+              or else Info.Deferred
+              or else (not Info.Defined and then not Info.Register_Alias
+                       and then not Info.String_Constant)
+            then
                Write_Word (File, Word (Label'Length));
                Write_Word (File, Word (Info.References.Length));
                Write_Octet
