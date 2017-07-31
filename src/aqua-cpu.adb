@@ -294,11 +294,11 @@ package body Aqua.CPU is
    begin
       case Instruction is
          when A_Halt =>
-            declare
-               Msg : constant String := Aqua.IO.Hex_Image (PC - 1);
-            begin
-               raise Halt_Instruction with "PC = " & Msg;
-            end;
+            CPU.Show_Registers;
+            CPU.Show_Stack;
+            CPU.Report;
+            Ada.Text_IO.Put_Line ("HALT");
+            CPU.B := True;
          when A_Nop =>
             null;
          when A_Rts =>
@@ -565,10 +565,16 @@ package body Aqua.CPU is
 
    exception
       when E : others =>
-         raise Aqua.Execution.Execution_Error with
-         CPU.Image.Show_Source_Position
-           (Get_Address (PC) - 1)
-           & ": " & Ada.Exceptions.Exception_Message (E);
+         Ada.Text_IO.Put_Line
+           (CPU.Image.Show_Source_Position
+              (Get_Address (PC) - 1)
+            & ": " & Ada.Exceptions.Exception_Message (E));
+
+         CPU.Show_Registers;
+         CPU.Show_Stack;
+         CPU.Report;
+
+         raise;
 
    end Handle;
 
@@ -1184,7 +1190,27 @@ package body Aqua.CPU is
 
    begin
       return Recursive_Show (Value);
+   exception
+      when others =>
+         return "[" & Aqua.IO.Hex_Image (Value) & "]";
    end Show;
+
+   --------------------
+   -- Show_Registers --
+   --------------------
+
+   procedure Show_Registers
+     (CPU : in out Aqua_CPU_Type)
+   is
+   begin
+      for R in CPU.R'Range loop
+         if CPU.R (R) /= 16#BAAD_F00D# then
+            Ada.Text_IO.Put (Register_Name (R));
+            Ada.Text_IO.Set_Col (8);
+            Ada.Text_IO.Put_Line (CPU.Show (CPU.R (R)));
+         end if;
+      end loop;
+   end Show_Registers;
 
    ----------------
    -- Show_Stack --

@@ -16,6 +16,8 @@ package Aqua.Architecture is
 
    type Registers is array (Register_Index) of Word;
 
+   function Register_Name (R : Register_Index) return String;
+
    type Addressing_Mode is
      (Literal, Register,
       Autoincrement, Autodecrement,
@@ -130,5 +132,26 @@ package Aqua.Architecture is
       R       : in out Registers;
       Memory  : in out Aqua.Memory.Memory_Type'Class;
       Value   : Word);
+
+private
+
+   function Register_Name (R : Register_Index) return String
+   is (case R is
+          when 0 => "r0",
+          when 1 => "r1",
+          when 2 => "r2",
+          when 3 => "r3",
+          when 4 => "r4",
+          when 5 => "r5",
+          when 6 => "r6",
+          when 7 => "r7",
+          when 8 => "r8",
+          when 9 => "agg",
+          when 10 => "ctr",
+          when 11 => "pv",
+          when 12 => "op",
+          when 13 => "fp",
+          when 14 => "sp",
+          when 15 => "pc");
 
 end Aqua.Architecture;
