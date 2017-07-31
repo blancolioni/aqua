@@ -134,6 +134,9 @@ private
      (CPU : in out Aqua_CPU_Type;
       Value : Word);
 
+   procedure Show_Registers
+     (CPU : in out Aqua_CPU_Type);
+
    procedure Show_Stack
      (CPU : in out Aqua_CPU_Type);
 
