@@ -159,6 +159,9 @@ package body Aqua.CPU is
       return Aqua.Architecture.Operand_Type
    is (Get_Operand (Next_Octet (CPU)));
 
+   procedure Dump_Core
+     (CPU : in out Aqua_CPU_Type'Class);
+
    ------------------------------
    -- Convert_Triple_To_Double --
    ------------------------------
@@ -185,6 +188,32 @@ package body Aqua.CPU is
             return A_Xor;
       end case;
    end Convert_Triple_To_Double;
+
+   ---------------
+   -- Dump_Core --
+   ---------------
+
+   procedure Dump_Core
+     (CPU : in out Aqua_CPU_Type'Class)
+   is
+      use Ada.Text_IO;
+      File : File_Type;
+   begin
+      Create (File, Out_File, "aqua-core.txt");
+      Set_Output (File);
+
+      CPU.Show_Registers;
+      CPU.Show_Stack;
+      CPU.Report;
+
+      Set_Output (Standard_Output);
+      Close (File);
+   exception
+      when others =>
+         Ada.Text_IO.Put_Line
+           (Ada.Text_IO.Standard_Error,
+            "unabled to create core file");
+   end Dump_Core;
 
    -------------
    -- Execute --
@@ -294,10 +323,9 @@ package body Aqua.CPU is
    begin
       case Instruction is
          when A_Halt =>
-            CPU.Show_Registers;
-            CPU.Show_Stack;
+            CPU.Dump_Core;
             CPU.Report;
-            Ada.Text_IO.Put_Line ("HALT");
+            Ada.Text_IO.Put_Line ("HALT; core dumped");
             CPU.B := True;
          when A_Nop =>
             null;
@@ -570,9 +598,9 @@ package body Aqua.CPU is
               (Get_Address (PC) - 1)
             & ": " & Ada.Exceptions.Exception_Message (E));
 
-         CPU.Show_Registers;
-         CPU.Show_Stack;
+         CPU.Dump_Core;
          CPU.Report;
+         Ada.Text_IO.Put_Line ("core dumped");
 
          raise;
 
@@ -1220,6 +1248,11 @@ package body Aqua.CPU is
      (CPU : in out Aqua_CPU_Type)
    is
    begin
+      if Get_Address (CPU.R (R_SP)) < Address'Last / 2 then
+         Ada.Text_IO.Put_Line ("stack fault");
+         return;
+      end if;
+
       Ada.Text_IO.Put_Line ("---- stack dump");
       for A in Get_Address (CPU.R (R_SP)) .. Address'Last - 1 loop
          if A mod 4 = 0 then
