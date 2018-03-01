@@ -56,6 +56,12 @@ package Aqua.Execution is
       Value   : Aqua.Values.Property_Value)
       return Word;
 
+   function Return_Class_Instance
+     (Context    : in out Execution_Interface'Class;
+      Class_Name : String;
+      Item       : not null access External_Object_Interface'Class)
+      return Word;
+
    function To_Property_Value
      (Context : in out Execution_Interface'Class;
       Value   : Word)

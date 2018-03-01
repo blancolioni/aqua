@@ -1,4 +1,26 @@
+with Aqua.Objects;
+
 package body Aqua.Execution is
+
+   ---------------------------
+   -- Return_Class_Instance --
+   ---------------------------
+
+   function Return_Class_Instance
+     (Context    : in out Execution_Interface'Class;
+      Class_Name : String;
+      Item       : not null access External_Object_Interface'Class)
+      return Word
+   is
+      Instance : constant Aqua.Objects.Object_Access :=
+                   new Aqua.Objects.Root_Object_Type;
+   begin
+      Instance.Set_Property
+        (Class_Name,
+         Aqua.Values.To_Word_Value
+           (Context.To_Word (Item)));
+      return Context.To_Word (Instance);
+   end Return_Class_Instance;
 
    -----------------------
    -- To_Property_Value --
