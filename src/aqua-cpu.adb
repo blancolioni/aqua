@@ -285,6 +285,20 @@ package body Aqua.CPU is
                        (Get_Address (Original_PC))
                      & ": error: "
                      & Ada.Exceptions.Exception_Message (E));
+
+                  while PC /= 0 loop
+                     SP := FP;
+                     FP := CPU.Pop;
+                     PC := CPU.Pop;
+                     if PC /= 0 then
+                        Ada.Text_IO.Put_Line
+                          (Ada.Text_IO.Standard_Error,
+                           "  at "
+                           & CPU.Image.Show_Source_Position
+                             (Get_Address (PC)));
+                     end if;
+                  end loop;
+
                   CPU.B := True;
             end;
 
