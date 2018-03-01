@@ -8,7 +8,7 @@ package body Aqua.Objects.Arrays is
 
    procedure Append
      (Object : in out Root_Array_Type;
-      Value  : Word)
+      Value  : Aqua.Values.Property_Value)
    is
    begin
       Object.Vector.Append (Value);
@@ -21,7 +21,7 @@ package body Aqua.Objects.Arrays is
    function Get_Element
      (Object : Root_Array_Type;
       Index  : Aqua_Integer)
-      return Word
+      return Aqua.Values.Property_Value
    is
    begin
       return Object.Vector.Element (Positive (Index));
@@ -34,13 +34,14 @@ package body Aqua.Objects.Arrays is
    overriding function Get_Property
      (Object : in out Root_Array_Type;
       Name   : in String)
-      return Word
+      return Aqua.Values.Property_Value
    is
       Is_Index : Boolean := True;
    begin
       if Name = "length" then
-         return To_Integer_Word
-           (Aqua_Integer (Object.Vector.Length));
+         return Aqua.Values.To_Word_Value
+           (To_Integer_Word
+              (Aqua_Integer (Object.Vector.Length)));
       else
          for Ch of Name loop
             if Ch not in '0' .. '9' then
@@ -54,11 +55,11 @@ package body Aqua.Objects.Arrays is
                Index : constant Natural := Natural'Value (Name);
             begin
                if Index = 0 then
-                  return 0;
+                  return Aqua.Values.Null_Value;
                end if;
 
                if Index > Object.Vector.Last_Index then
-                  return 0;
+                  return Aqua.Values.Null_Value;
                end if;
 
                return Object.Vector.Element (Index);
@@ -118,7 +119,8 @@ package body Aqua.Objects.Arrays is
    is
    begin
       if Object_Vectors.Has_Element (It.Position) then
-         It.Current := Object_Vectors.Element (It.Position);
+         It.Current :=
+           Aqua.Values.To_Word (Object_Vectors.Element (It.Position));
          Object_Vectors.Next (It.Position);
          Finished := False;
       else
@@ -133,8 +135,8 @@ package body Aqua.Objects.Arrays is
    overriding procedure Scan_Properties
      (Object   : Root_Array_Type;
       Process  : not null access
-        procedure (Property_Name : String;
-                   Property_Value : Aqua.Word))
+        procedure (Name : String;
+                   Value : Aqua.Values.Property_Value))
    is
    begin
       for I in 1 .. Object.Vector.Last_Index loop
@@ -156,7 +158,7 @@ package body Aqua.Objects.Arrays is
    overriding procedure Set_Property
      (Object : in out Root_Array_Type;
       Name   : in     String;
-      Value  : in     Word)
+      Value  : in     Aqua.Values.Property_Value)
    is
       Array_Index : Boolean := True;
    begin
@@ -177,7 +179,7 @@ package body Aqua.Objects.Arrays is
             end if;
 
             while Index > Object.Vector.Last_Index loop
-               Object.Vector.Append (0);
+               Object.Vector.Append (Aqua.Values.Null_Value);
             end loop;
 
             Object.Vector.Replace_Element (Index, Value);
@@ -219,7 +221,7 @@ package body Aqua.Objects.Arrays is
       begin
          if Start <= Object.Vector.Last_Index then
             return (if Start = 1 then "" else ",")
-              & Recursive_Show (Object.Vector (Start))
+              & Recursive_Show (Aqua.Values.To_Word (Object.Vector (Start)))
               & Elements_Image (Start + 1);
          else
             return "]";

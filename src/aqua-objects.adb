@@ -12,9 +12,9 @@ package body Aqua.Objects is
    overriding function Get_Property
      (Object : in out Root_Object_Type;
       Name   : in String)
-      return Word
+      return Aqua.Values.Property_Value
    is
-      Result : Word;
+      Result : Aqua.Values.Property_Value;
    begin
       if Object.Map.Contains (Name) then
          Result := Object.Map.Element (Name);
@@ -27,9 +27,12 @@ package body Aqua.Objects is
                                         (Object_Primitive_Name);
          begin
             if Object_Primitive /= 0 then
-               Result := Aqua.Words.To_Primitive_Word (Object_Primitive);
+               Result :=
+                 Aqua.Values.To_Word_Value
+                   (Aqua.Words.To_Primitive_Word (Object_Primitive));
             else
-               Result := 0;
+               Result :=
+                 Aqua.Values.To_Word_Value (0);
             end if;
          end;
       end if;
@@ -100,8 +103,8 @@ package body Aqua.Objects is
    overriding procedure Scan_Properties
      (Object  : Root_Object_Type;
       Process : not null access
-        procedure (Property_Name  : String;
-                   Property_Value : Word))
+        procedure (Name  : String;
+                   Value : Aqua.Values.Property_Value))
    is
    begin
       for Position in Object.Map.Iterate loop
@@ -117,7 +120,7 @@ package body Aqua.Objects is
    overriding procedure Set_Property
      (Object : in out Root_Object_Type;
       Name   : in     String;
-      Value  : in     Word)
+      Value  : in     Aqua.Values.Property_Value)
    is
    begin
       if Object.Map.Contains (Name) then
@@ -125,6 +128,19 @@ package body Aqua.Objects is
       else
          Object.Map.Insert (Name, Value);
       end if;
+   end Set_Property;
+
+   ------------------
+   -- Set_Property --
+   ------------------
+
+   procedure Set_Property
+     (Object : in out Object_Interface'Class;
+      Name   : in     String;
+      Value  : in     Word)
+   is
+   begin
+      Object.Set_Property (Name, Aqua.Values.To_Word_Value (Value));
    end Set_Property;
 
    -------------------
@@ -158,7 +174,7 @@ package body Aqua.Objects is
    overriding function Show
      (Object         : Root_Object_Type;
       Recursive_Show : access
-        function (Value : Aqua.Word) return String)
+        function (Value : Word) return String)
       return String
    is
       use Ada.Strings.Unbounded;
@@ -172,7 +188,8 @@ package body Aqua.Objects is
             Result := Result & ", ";
          end if;
          Result := Result
-           & Key (Position) & " => " & Recursive_Show (Element (Position));
+           & Key (Position) & " => "
+           & Recursive_Show (Aqua.Values.To_Word (Element (Position)));
       end loop;
       if Result = Null_Unbounded_String then
          return "()";
@@ -192,7 +209,7 @@ package body Aqua.Objects is
    begin
       return Result : Root_Object_Iterator do
          Result.Position := Object.Map.First;
-         Result.Current  := 0;
+         Result.Current  := Aqua.Values.To_Word_Value (0);
       end return;
    end Start;
 
