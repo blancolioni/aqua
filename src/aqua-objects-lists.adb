@@ -39,12 +39,12 @@ package body Aqua.Objects.Lists is
    overriding procedure Scan_Properties
      (Object   : Root_List_Type;
       Process  : not null access
-        procedure (Property_Name : String;
-                   Property_Value : Aqua.Word))
+        procedure (Name : String;
+                   Value : Aqua.Values.Property_Value))
    is
    begin
       for Item of Object.List loop
-         Process ("", Item);
+         Process ("", Aqua.Values.To_Word_Value (Item));
       end loop;
    end Scan_Properties;
 

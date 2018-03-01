@@ -1,5 +1,7 @@
 private with Ada.Containers.Doubly_Linked_Lists;
 
+with Aqua.Values;
+
 package Aqua.Objects.Lists is
 
    type Root_List_Type is
@@ -8,14 +10,14 @@ package Aqua.Objects.Lists is
    overriding procedure Set_Property
      (Object : in out Root_List_Type;
       Name   : in     String;
-      Value  : in     Word)
+      Value  : in     Aqua.Values.Property_Value)
    is null;
 
    overriding function Get_Property
      (Object : in out Root_List_Type;
       Name   : in String)
-      return Word
-   is (0);
+      return Aqua.Values.Property_Value
+   is (Aqua.Values.To_Word_Value (0));
 
    overriding function Has_Property
      (Object : in Root_List_Type;
@@ -61,8 +63,8 @@ private
    overriding procedure Scan_Properties
      (Object   : Root_List_Type;
       Process  : not null access
-        procedure (Property_Name : String;
-                   Property_Value : Aqua.Word));
+        procedure (Name : String;
+                   Value : Aqua.Values.Property_Value));
 
    type Root_List_Iterator is
      new Aqua.Iterators.Aqua_Iterator_Interface with

@@ -1,8 +1,7 @@
-private with Ada.Containers.Indefinite_Hashed_Maps;
-private with Ada.Strings.Equal_Case_Insensitive;
-private with Ada.Strings.Hash_Case_Insensitive;
+private with WL.String_Maps;
 
 with Aqua.Iterators;
+with Aqua.Values;
 
 package Aqua.Objects is
 
@@ -13,13 +12,13 @@ package Aqua.Objects is
    procedure Set_Property
      (Object : in out Object_Interface;
       Name   : in     String;
-      Value  : in     Word)
+      Value  : in     Aqua.Values.Property_Value)
    is abstract;
 
    function Get_Property
      (Object : in out Object_Interface;
       Name   : in String)
-      return Word
+      return Aqua.Values.Property_Value
       is abstract;
 
    function Has_Property
@@ -31,9 +30,14 @@ package Aqua.Objects is
    procedure Scan_Properties
      (Object  : in Object_Interface;
       Process : not null access
-        procedure (Property_Name  : String;
-                   Property_Value : Word))
+        procedure (Name  : String;
+                   Value : Aqua.Values.Property_Value))
    is abstract;
+
+   procedure Set_Property
+     (Object : in out Object_Interface'Class;
+      Name   : in     String;
+      Value  : in     Word);
 
    type Object_Access is access all Object_Interface'Class;
 
@@ -43,12 +47,12 @@ package Aqua.Objects is
    overriding procedure Set_Property
      (Object : in out Root_Object_Type;
       Name   : in     String;
-      Value  : in     Word);
+      Value  : in     Aqua.Values.Property_Value);
 
    overriding function Get_Property
      (Object : in out Root_Object_Type;
       Name   : in String)
-      return Word;
+      return Aqua.Values.Property_Value;
 
    overriding function Has_Property
      (Object : in Root_Object_Type;
@@ -58,11 +62,8 @@ package Aqua.Objects is
 private
 
    package Object_Maps is
-     new Ada.Containers.Indefinite_Hashed_Maps
-       (Key_Type        => String,
-        Element_Type    => Word,
-        Hash            => Ada.Strings.Hash_Case_Insensitive,
-        Equivalent_Keys => Ada.Strings.Equal_Case_Insensitive);
+     new WL.String_Maps (Aqua.Values.Property_Value,
+                         Aqua.Values."=");
 
    type Root_Object_Type is
      new Object_Interface with
@@ -102,13 +103,13 @@ private
    overriding procedure Scan_Properties
      (Object  : Root_Object_Type;
       Process : not null access
-        procedure (Property_Name  : String;
-                   Property_Value : Word));
+        procedure (Name  : String;
+                   Value : Aqua.Values.Property_Value));
 
    type Root_Object_Iterator is
      new Aqua.Iterators.Aqua_Iterator_Interface with
       record
-         Current  : Word;
+         Current  : Aqua.Values.Property_Value;
          Position : Object_Maps.Cursor;
          Ref      : External_Reference := 0;
       end record;
@@ -145,6 +146,6 @@ private
    overriding function Current
      (It : Root_Object_Iterator)
       return Word
-   is (It.Current);
+   is (Aqua.Values.To_Word (It.Current));
 
 end Aqua.Objects;

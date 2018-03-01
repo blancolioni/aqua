@@ -7,6 +7,7 @@ with Ada.Text_IO;
 --  with Aqua.IO;
 with Aqua.Objects.Arrays;
 with Aqua.Objects.Lists;
+with Aqua.Values;
 with Aqua.Words;
 
 package body Aqua.Primitives.Init is
@@ -292,7 +293,7 @@ package body Aqua.Primitives.Init is
                    (Arr_External.all)'Access;
       Value  : constant Word := Arguments (2);
    begin
-      Arr.Append (Value);
+      Arr.Append (Context.To_Property_Value (Value));
       return Arguments (1);
    end Handle_Array_Append;
 
@@ -309,7 +310,7 @@ package body Aqua.Primitives.Init is
                  Aqua.Objects.Arrays.Root_Array_Type'Class
                    (Context.To_External_Object (Arguments (1)).all)'Access;
    begin
-      return Arr.Get_Element (1);
+      return Context.To_Word (Arr.Get_Element (1));
    end Handle_Array_First;
 
    -----------------------
@@ -325,7 +326,7 @@ package body Aqua.Primitives.Init is
                  Aqua.Objects.Arrays.Root_Array_Type'Class
                    (Context.To_External_Object (Arguments (1)).all)'Access;
    begin
-      return Arr.Get_Element (Arr.Last_Index);
+      return Context.To_Word (Arr.Get_Element (Arr.Last_Index));
    end Handle_Array_Last;
 
    ----------------------
@@ -401,7 +402,7 @@ package body Aqua.Primitives.Init is
       if not Object.Has_Property (Name) then
          return 0;
       else
-         return Object.Get_Property (Name);
+         return Context.To_Word (Object.Get_Property (Name));
       end if;
    end Handle_Get;
 
@@ -551,15 +552,15 @@ package body Aqua.Primitives.Init is
 
             procedure Copy_Property
               (Name : String;
-               Value : Word);
+               Value : Aqua.Values.Property_Value);
 
             -------------------
             -- Copy_Property --
             -------------------
 
             procedure Copy_Property
-              (Name : String;
-               Value : Word)
+              (Name  : String;
+               Value : Aqua.Values.Property_Value)
             is
             begin
                Item.Set_Property

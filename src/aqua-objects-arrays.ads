@@ -8,12 +8,12 @@ package Aqua.Objects.Arrays is
    overriding procedure Set_Property
      (Object : in out Root_Array_Type;
       Name   : in     String;
-      Value  : in     Word);
+      Value  : in     Aqua.Values.Property_Value);
 
    overriding function Get_Property
      (Object : in out Root_Array_Type;
       Name   : in String)
-      return Word;
+      return Aqua.Values.Property_Value;
 
    overriding function Has_Property
      (Object : in Root_Array_Type;
@@ -22,7 +22,7 @@ package Aqua.Objects.Arrays is
 
    procedure Append
      (Object : in out Root_Array_Type;
-      Value  : Word);
+      Value  : Aqua.Values.Property_Value);
 
    function Last_Index
      (Object : Root_Array_Type)
@@ -31,13 +31,14 @@ package Aqua.Objects.Arrays is
    function Get_Element
      (Object : Root_Array_Type;
       Index  : Aqua_Integer)
-      return Word
+      return Aqua.Values.Property_Value
      with Pre => Index in 1 .. Object.Last_Index;
 
 private
 
    package Object_Vectors is
-     new Ada.Containers.Vectors (Positive, Word);
+     new Ada.Containers.Vectors
+       (Positive, Aqua.Values.Property_Value, Aqua.Values."=");
 
    type Root_Array_Type is
      new Root_Object_Type with
@@ -68,8 +69,8 @@ private
    overriding procedure Scan_Properties
      (Object   : Root_Array_Type;
       Process  : not null access
-        procedure (Property_Name : String;
-                   Property_Value : Aqua.Word));
+        procedure (Name : String;
+                   Value : Aqua.Values.Property_Value));
 
    type Root_Array_Iterator is
      new Aqua.Iterators.Aqua_Iterator_Interface with

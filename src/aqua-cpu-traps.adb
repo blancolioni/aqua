@@ -4,6 +4,7 @@ with Aqua.IO;
 with Aqua.Iterators;
 with Aqua.Objects;
 with Aqua.Primitives;
+with Aqua.Values;
 with Aqua.Words;
 
 package body Aqua.CPU.Traps is
@@ -22,7 +23,7 @@ package body Aqua.CPU.Traps is
       use Aqua.Architecture;
       Arguments      : Array_Of_Words (1 .. Argument_Count);
       Target         : Word;
-      Value          : Word;
+      Value          : Aqua.Values.Property_Value;
    begin
 
       for I in 1 .. Argument_Count loop
@@ -52,12 +53,13 @@ package body Aqua.CPU.Traps is
             end if;
 
             Value :=
-              Aqua.Primitives.Call_Primitive
-                (CPU, Prim, Target & Arguments (1 .. Argument_Count));
+              Aqua.Values.To_Word_Value
+                (Aqua.Primitives.Call_Primitive
+                   (CPU, Prim, Target & Arguments (1 .. Argument_Count)));
             if Trace_Properties then
                Ada.Text_IO.Put_Line
                  (CPU.Show (Target) & "." & CPU.Show (Property_Name) & " -> "
-                  & CPU.Show (Value));
+                  & CPU.Show (Aqua.Values.To_Word (Value)));
             end if;
          end;
       elsif not Is_External_Reference (Target) then
@@ -101,20 +103,25 @@ package body Aqua.CPU.Traps is
             if Trace_Properties then
                Ada.Text_IO.Put_Line
                  (Target_Object.Name & "." & CPU.Show (Property_Name) & " -> "
-                  & CPU.Show (Value));
+                  & CPU.Show (Aqua.Values.To_Word (Value)));
             end if;
          end;
 
-         if Aqua.Words.Is_Primitive_Reference (Value) then
-            Value :=
-              Aqua.Primitives.Call_Primitive
-                (CPU, Aqua.Words.Get_Primitive_Reference (Value),
-                 Target & Arguments (1 .. Argument_Count));
-         end if;
+         declare
+            Word_Value : Word := CPU.To_Word (Value);
+         begin
+            if Aqua.Words.Is_Primitive_Reference (Word_Value) then
+               Word_Value :=
+                 Aqua.Primitives.Call_Primitive
+                   (CPU, Aqua.Words.Get_Primitive_Reference (Word_Value),
+                    Target & Arguments (1 .. Argument_Count));
+               Value := Aqua.Values.To_Word_Value (Word_Value);
+            end if;
+         end;
 
       end if;
 
-      CPU.R (R_PV) := Value;
+      CPU.R (R_PV) := CPU.To_Word (Value);
 
    end Handle_Get_Property;
 

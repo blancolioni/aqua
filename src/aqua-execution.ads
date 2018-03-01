@@ -1,3 +1,5 @@
+with Aqua.Values;
+
 package Aqua.Execution is
 
    Execution_Error : exception;
@@ -48,6 +50,16 @@ package Aqua.Execution is
       Item : not null access External_Object_Interface'Class)
       return Word
       is abstract;
+
+   function To_Word
+     (Context : in out Execution_Interface'Class;
+      Value   : Aqua.Values.Property_Value)
+      return Word;
+
+   function To_Property_Value
+     (Context : in out Execution_Interface'Class;
+      Value   : Word)
+      return Aqua.Values.Property_Value;
 
    function Pop
      (Context : in out Execution_Interface)
