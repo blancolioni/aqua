@@ -286,6 +286,8 @@ package body Aqua.CPU is
                      & ": error: "
                      & Ada.Exceptions.Exception_Message (E));
 
+                  CPU.Show_Registers;
+
                   while PC /= 0 loop
                      SP := FP;
                      FP := CPU.Pop;
@@ -300,6 +302,7 @@ package body Aqua.CPU is
                   end loop;
 
                   CPU.B := True;
+                  raise;
             end;
 
          end;
