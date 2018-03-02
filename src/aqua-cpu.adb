@@ -555,6 +555,10 @@ package body Aqua.CPU is
                Name_Word      : constant Word :=
                                   Next_Value (CPU, Word_32_Size);
             begin
+               if Trace_Code then
+                  Ada.Text_IO.Put
+                    (" " & CPU.Show (Name_Word));
+               end if;
                Aqua.CPU.Traps.Handle_Get_Property
                  (CPU, Argument_Count, Name_Word);
                Set_NZ (CPU, Word_32_Size, CPU.R (Aqua.Architecture.R_PV));
