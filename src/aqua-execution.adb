@@ -23,6 +23,37 @@ package body Aqua.Execution is
    end Return_Class_Instance;
 
    -----------------------
+   -- To_Class_Instance --
+   -----------------------
+
+   function To_Class_Instance
+     (Context    : in out Execution_Interface'Class;
+      Class_Name : String;
+      Value      : Word)
+      return access External_Object_Interface'Class
+   is
+      Box : constant access External_Object_Interface'Class :=
+              Context.To_External_Object (Value);
+   begin
+      if Box.all in Aqua.Objects.Object_Interface'Class then
+         if Aqua.Objects.Object_Access (Box).Has_Property (Class_Name) then
+            declare
+               Ext : constant Word :=
+                       Aqua.Values.To_Word
+                         (Aqua.Objects.Object_Access (Box)
+                          .Get_Property (Class_Name));
+            begin
+               return Context.To_External_Object (Ext);
+            end;
+         else
+            return Box;
+         end if;
+      else
+         return Box;
+      end if;
+   end To_Class_Instance;
+
+   -----------------------
    -- To_Property_Value --
    -----------------------
 
