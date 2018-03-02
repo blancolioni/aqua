@@ -130,6 +130,10 @@ package Aqua is
    function Name (Item : External_Object_Interface) return String
                   is abstract;
 
+   function Class_Name
+     (Item : External_Object_Interface) return String
+      is abstract;
+
    function Text (Item : External_Object_Interface) return String
                   is abstract;
 
