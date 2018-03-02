@@ -1218,7 +1218,8 @@ package body Aqua.CPU is
       function Recursive_Show (X : Word) return String is
       begin
          if Is_Address (X) then
-            return "@" & Aqua.IO.Hex_Image (Get_Address (X));
+            return "@" & Aqua.IO.Hex_Image (Get_Address (X))
+              & ": " & CPU.Show (CPU.Image.Get_Word (Get_Address (X)));
          elsif Is_Integer (X) then
             return Ada.Strings.Fixed.Trim
               (Aqua_Integer'Image (Get_Integer (X)),
