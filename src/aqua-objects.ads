@@ -77,6 +77,11 @@ private
       return String
    is ("[object]");
 
+   overriding function Class_Name
+     (Object : Root_Object_Type)
+      return String
+   is ("[object]");
+
    overriding function Text
      (Object : Root_Object_Type)
       return String
@@ -115,6 +120,11 @@ private
       end record;
 
    overriding function Name
+     (It : Root_Object_Iterator)
+      return String
+   is ("[object-iterator]");
+
+   overriding function Class_Name
      (It : Root_Object_Iterator)
       return String
    is ("[object-iterator]");

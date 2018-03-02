@@ -79,6 +79,11 @@ private
       return String
    is ("[list-iterator]");
 
+   overriding function Class_Name
+     (It : Root_List_Iterator)
+      return String
+   is ("[list-iterator]");
+
    overriding function Text
      (It : Root_List_Iterator)
       return String
