@@ -85,6 +85,11 @@ private
       return String
    is ("[array-iterator]");
 
+   overriding function Class_Name
+     (It : Root_Array_Iterator)
+      return String
+   is ("[array-iterator]");
+
    overriding function Text
      (It : Root_Array_Iterator)
       return String
