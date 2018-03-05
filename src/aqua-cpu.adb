@@ -569,6 +569,10 @@ package body Aqua.CPU is
                Name_Word      : constant Word :=
                                   Next_Value (CPU, Word_32_Size);
             begin
+               if Trace_Code then
+                  Ada.Text_IO.Put
+                    (" " & CPU.Show (Name_Word));
+               end if;
                Aqua.CPU.Traps.Handle_Set_Property
                  (CPU, Name_Word);
             end;
@@ -711,7 +715,8 @@ package body Aqua.CPU is
 
          if Trace_Code then
             Ada.Text_IO.Put_Line
-              ("branch: " & CPU.Show (CPU.R (R_PC)));
+              ("branch: "
+               & Aqua.IO.Hex_Image (CPU.R (R_PC)));
          end if;
 
       end if;
