@@ -1353,8 +1353,18 @@ package body Aqua.CPU is
       elsif CPU.Image.Have_String (Value) then
          return CPU.Image.To_String (Value);
       else
-         return CPU.Str (Natural (Get_String_Reference (Value))
-                         - CPU.Image.String_Count);
+         declare
+            Index : constant Integer :=
+                      Natural (Get_String_Reference (Value))
+                      - CPU.Image.String_Count;
+         begin
+            if Index in 1 .. CPU.Str.Last_Index then
+               return CPU.Str (Index);
+            else
+               return "ERROR: bad string reference:"
+                 & Integer'Image (Index);
+            end if;
+         end;
       end if;
    end To_String;
 
