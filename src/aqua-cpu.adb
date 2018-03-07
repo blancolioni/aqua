@@ -1358,7 +1358,7 @@ package body Aqua.CPU is
                       Natural (Get_String_Reference (Value))
                       - CPU.Image.String_Count;
          begin
-            if Index in 1 .. CPU.Str.Last_Index then
+            if Index in 0 .. CPU.Str.Last_Index then
                return CPU.Str (Index);
             else
                return "ERROR: bad string reference:"
