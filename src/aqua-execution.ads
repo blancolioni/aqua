@@ -6,9 +6,15 @@ package Aqua.Execution is
 
    type Execution_Interface is limited interface;
 
-   procedure Execute (Context   : in out Execution_Interface;
-                      Start     : Address;
-                      Arguments : Array_Of_Words)
+   function Environment_Name
+     (Context : Execution_Interface)
+      return String
+      is abstract;
+
+   procedure Execute (Context          : in out Execution_Interface;
+                      Environment_Name : String;
+                      Start            : Address;
+                      Arguments        : Array_Of_Words)
    is abstract;
 
    function Show (Context : in out Execution_Interface;

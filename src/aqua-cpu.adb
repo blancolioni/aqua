@@ -1,6 +1,5 @@
 with Ada.Containers.Ordered_Maps;
 with Ada.Exceptions;
-with Ada.Strings.Unbounded;
 
 with Ada.Text_IO;
 
@@ -19,6 +18,7 @@ package body Aqua.CPU is
    Trace_Properties : constant Boolean := False;
    Trace_Code       : constant Boolean := False;
    Trace_Stack      : constant Boolean := False;
+   Trace_Executions : constant Boolean := False;
 
    Current_Output : Ada.Text_IO.File_Type;
 
@@ -220,9 +220,10 @@ package body Aqua.CPU is
    -------------
 
    overriding procedure Execute
-     (CPU       : in out Aqua_CPU_Type;
-      Start     : Address;
-      Arguments : Array_Of_Words)
+     (CPU              : in out Aqua_CPU_Type;
+      Environment_Name : String;
+      Start            : Address;
+      Arguments        : Array_Of_Words)
    is
       use type Ada.Calendar.Time;
       use Aqua.Arithmetic;
@@ -231,8 +232,14 @@ package body Aqua.CPU is
       FP : Word renames CPU.R (Aqua.Architecture.R_FP);
    begin
 
-      if Trace_Code then
-         Ada.Text_IO.Put_Line ("start: " & Aqua.IO.Hex_Image (PC));
+      CPU.Set_Current_Environment (Environment_Name);
+
+      if Trace_Code or else Trace_Executions then
+         Ada.Text_IO.Put_Line
+           ("start: ["
+            & Environment_Name
+            & "] "
+            & Aqua.IO.Hex_Image (PC));
       end if;
 
       CPU.Start := Ada.Calendar.Clock;
@@ -1161,6 +1168,19 @@ package body Aqua.CPU is
                 & Natural'Image (Natural (CPU.Exec_Time * 1000.0))
                 & "ms");
    end Report;
+
+   -----------------------------
+   -- Set_Current_Environment --
+   -----------------------------
+
+   procedure Set_Current_Environment
+     (CPU  : in out Aqua_CPU_Type'Class;
+      Name : String)
+   is
+   begin
+      CPU.Current_Env :=
+        Ada.Strings.Unbounded.To_Unbounded_String (Name);
+   end Set_Current_Environment;
 
    ------------
    -- Set_NZ --
