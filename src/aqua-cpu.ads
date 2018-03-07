@@ -3,6 +3,7 @@ private with Ada.Containers.Doubly_Linked_Lists;
 private with Ada.Containers.Vectors;
 private with Ada.Containers.Indefinite_Hashed_Maps;
 private with Ada.Strings.Fixed.Hash;
+private with Ada.Strings.Unbounded;
 
 with Ada.Finalization;
 
@@ -30,9 +31,10 @@ package Aqua.CPU is
      (CPU : in out Aqua_CPU_Type);
 
    overriding procedure Execute
-     (CPU       : in out Aqua_CPU_Type;
-      Start     : Address;
-      Arguments : Array_Of_Words);
+     (CPU              : in out Aqua_CPU_Type;
+      Environment_Name : String;
+      Start            : Address;
+      Arguments        : Array_Of_Words);
 
    overriding function To_Word
      (CPU  : in out Aqua_CPU_Type;
@@ -70,6 +72,10 @@ package Aqua.CPU is
       Value : Word)
       return String;
 
+   overriding function Environment_Name
+     (CPU   : Aqua_CPU_Type)
+      return String;
+
    overriding procedure Report
      (CPU : Aqua_CPU_Type);
 
@@ -77,6 +83,10 @@ package Aqua.CPU is
      (CPU : Aqua_CPU_Type)
       return access Aqua.Execution.Loader_Interface'Class
    is (CPU.Load);
+
+   procedure Set_Current_Environment
+     (CPU  : in out Aqua_CPU_Type'Class;
+      Name : String);
 
 private
 
@@ -108,22 +118,23 @@ private
 
    type Aqua_CPU_Type
      (Image : access Aqua.Images.Root_Image_Type'Class;
-      Load : access Aqua.Execution.Loader_Interface'Class) is
+      Load  : access Aqua.Execution.Loader_Interface'Class) is
    limited new Ada.Finalization.Limited_Controlled
      and Aqua.Execution.Execution_Interface with
       record
-         R          : Aqua.Architecture.Registers :=
-                        (Architecture.R_PC => 0,
-                         Architecture.R_SP => 16#1FFF_FFFC#,
-                         others            => 16#BAAD_F00D#);
-         R_Stack    : List_Of_Saved_Registers.List;
-         N, Z, C, V : Boolean := False;
-         B          : Boolean := False;
-         Ext        : External_Object_Vectors.Vector;
-         Str        : Aqua.String_Vectors.Vector;
-         Str_Map    : String_Maps.Map;
-         Start      : Ada.Calendar.Time;
-         Exec_Time  : Duration := 0.0;
+         R           : Aqua.Architecture.Registers :=
+                         (Architecture.R_PC => 0,
+                          Architecture.R_SP => 16#1FFF_FFFC#,
+                          others            => 16#BAAD_F00D#);
+         R_Stack     : List_Of_Saved_Registers.List;
+         N, Z, C, V  : Boolean := False;
+         B           : Boolean := False;
+         Ext         : External_Object_Vectors.Vector;
+         Str         : Aqua.String_Vectors.Vector;
+         Str_Map     : String_Maps.Map;
+         Start       : Ada.Calendar.Time;
+         Exec_Time   : Duration := 0.0;
+         Current_Env : Ada.Strings.Unbounded.Unbounded_String;
       end record;
 
    overriding function Pop
@@ -139,5 +150,10 @@ private
 
    procedure Show_Stack
      (CPU : in out Aqua_CPU_Type);
+
+   overriding function Environment_Name
+     (CPU   : Aqua_CPU_Type)
+      return String
+   is (Ada.Strings.Unbounded.To_String (CPU.Current_Env));
 
 end Aqua.CPU;
