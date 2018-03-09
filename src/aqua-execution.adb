@@ -45,11 +45,15 @@ package body Aqua.Execution is
             begin
                return Context.To_External_Object (Ext);
             end;
-         else
-            return Box;
          end if;
-      else
+      end if;
+
+      if Box.Class_Name = Class_Name then
          return Box;
+      else
+         raise Constraint_Error with
+           "expected an object of class " & Class_Name
+           & "; found " & Box.Class_Name;
       end if;
    end To_Class_Instance;
 
