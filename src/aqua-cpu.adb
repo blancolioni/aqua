@@ -293,8 +293,7 @@ package body Aqua.CPU is
                      & ": error: "
                      & Ada.Exceptions.Exception_Message (E));
 
-                  CPU.Show_Registers;
-
+                  CPU.Dump_Core;
                   while PC /= 0 loop
                      SP := FP;
                      FP := CPU.Pop;
@@ -309,6 +308,8 @@ package body Aqua.CPU is
                   end loop;
 
                   CPU.B := True;
+                  CPU.Report;
+                  Ada.Text_IO.Put_Line ("core dumped");
                   raise;
             end;
 
@@ -622,19 +623,6 @@ package body Aqua.CPU is
                Traps.Handle_Iterator_Next (CPU, R);
             end;
       end case;
-
-   exception
-      when E : others =>
-         Ada.Text_IO.Put_Line
-           (CPU.Image.Show_Source_Position
-              (Get_Address (PC) - 1)
-            & ": " & Ada.Exceptions.Exception_Message (E));
-
-         CPU.Dump_Core;
-         CPU.Report;
-         Ada.Text_IO.Put_Line ("core dumped");
-
-         raise;
 
    end Handle;
 
