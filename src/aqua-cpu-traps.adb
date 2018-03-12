@@ -62,6 +62,29 @@ package body Aqua.CPU.Traps is
                   & CPU.Show (Aqua.Values.To_Word (Value)));
             end if;
          end;
+      elsif Is_Integer (Target) then
+         declare
+            Prim : constant Primitive_Reference :=
+                     Aqua.Primitives.Get_Primitive
+                       ("integer__" & CPU.Image.To_String (Property_Name));
+         begin
+            if Prim = 0 then
+               raise Constraint_Error
+                 with "property "
+                 & CPU.Show (Property_Name)
+                 & " not defined for integer values";
+            end if;
+
+            Value :=
+              Aqua.Values.To_Word_Value
+                (Aqua.Primitives.Call_Primitive
+                   (CPU, Prim, Target & Arguments (1 .. Argument_Count)));
+            if Trace_Properties then
+               Ada.Text_IO.Put_Line
+                 (CPU.Show (Target) & "." & CPU.Show (Property_Name) & " -> "
+                  & CPU.Show (Aqua.Values.To_Word (Value)));
+            end if;
+         end;
       elsif not Is_External_Reference (Target) then
          if Target = 0 then
             raise Runtime_Error

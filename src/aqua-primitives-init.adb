@@ -1,6 +1,7 @@
 with Ada.Calendar;
 with Ada.Characters.Handling;
 with Ada.Directories;
+with Ada.Strings.Fixed;
 with Ada.Strings.Unbounded;
 with Ada.Text_IO;
 
@@ -115,6 +116,11 @@ package body Aqua.Primitives.Init is
       Arguments : Array_Of_Words)
       return Word;
 
+   function Handle_Integer_To_String
+     (Context   : in out Aqua.Execution.Execution_Interface'Class;
+      Arguments : Array_Of_Words)
+      return Word;
+
    function Handle_To_Integer
      (Context : in out Aqua.Execution.Execution_Interface'Class;
       Arguments : Array_Of_Words)
@@ -193,6 +199,9 @@ package body Aqua.Primitives.Init is
 
       New_Primitive_Function ("list__new", 0, Handle_List_New'Access);
       New_Primitive_Function ("list__append", 2, Handle_List_Append'Access);
+
+      New_Primitive_Function ("integer__to_string", 1,
+                              Handle_Integer_To_String'Access);
 
       New_Primitive_Function ("string__to_lower", 1, Handle_To_Lower'Access);
       New_Primitive_Function ("string__to_integer", 1,
@@ -457,6 +466,22 @@ package body Aqua.Primitives.Init is
       end if;
       return Arguments (1);
    end Handle_Include;
+
+   ------------------------------
+   -- Handle_Integer_To_String --
+   ------------------------------
+
+   function Handle_Integer_To_String
+     (Context   : in out Aqua.Execution.Execution_Interface'Class;
+      Arguments : Array_Of_Words)
+      return Word
+   is
+      X : constant Aqua_Integer := Get_Integer (Arguments (1));
+      S : constant String := Aqua_Integer'Image (X);
+   begin
+      return Context.To_String_Word
+        (Ada.Strings.Fixed.Trim (S, Ada.Strings.Left));
+   end Handle_Integer_To_String;
 
    ------------------------
    -- Handle_List_Append --
