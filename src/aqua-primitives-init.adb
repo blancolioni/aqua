@@ -171,6 +171,16 @@ package body Aqua.Primitives.Init is
       Arguments : Array_Of_Words)
       return Word;
 
+   function Handle_Set_Col
+     (Context   : in out Aqua.Execution.Execution_Interface'Class;
+      Arguments : Array_Of_Words)
+      return Word;
+
+   function Handle_Col
+     (Context   : in out Aqua.Execution.Execution_Interface'Class;
+      Arguments : Array_Of_Words)
+      return Word;
+
    -----------------------
    -- Create_Primitives --
    -----------------------
@@ -226,6 +236,10 @@ package body Aqua.Primitives.Init is
                               Handle_New_Line'Access);
       New_Primitive_Function ("io__set_output", 2,
                               Handle_Set_Output'Access);
+      New_Primitive_Function ("io__set_col", 2,
+                              Handle_Set_Col'Access);
+      New_Primitive_Function ("io__col", 1,
+                              Handle_Col'Access);
       New_Primitive_Function ("io__get_timer", 1,
                               Handle_Get_Timer'Access);
 
@@ -268,6 +282,8 @@ package body Aqua.Primitives.Init is
                  ((new String'("put"), Get_Primitive ("io__put")),
                   (new String'("new_line"), Get_Primitive ("io__new_line")),
                   (new String'("put_line"), Get_Primitive ("io__put_line")),
+                  (new String'("set_col"), Get_Primitive ("io__set_col")),
+                  (new String'("col"), Get_Primitive ("io__col")),
                   (new String'("set_output"),
                    Get_Primitive ("io__set_output")),
                   (new String'("get_timer"),
@@ -370,6 +386,24 @@ package body Aqua.Primitives.Init is
    begin
       return Context.To_Word (Clone);
    end Handle_Clone;
+
+   ----------------
+   -- Handle_Col --
+   ----------------
+
+   function Handle_Col
+     (Context   : in out Aqua.Execution.Execution_Interface'Class;
+      Arguments : Array_Of_Words)
+      return Word
+   is
+      pragma Unreferenced (Context, Arguments);
+      Col : constant Ada.Text_IO.Count :=
+              (if Output_Redirected
+               then Ada.Text_IO.Col (Current_Output)
+               else Ada.Text_IO.Col);
+   begin
+      return To_Integer_Word (Aqua_Integer (Col));
+   end Handle_Col;
 
    ---------------------
    -- Handle_Contains --
@@ -684,6 +718,26 @@ package body Aqua.Primitives.Init is
       Object.Set_Property (Name, Value);
       return Arguments (1);
    end Handle_Set;
+
+   --------------------
+   -- Handle_Set_Col --
+   --------------------
+
+   function Handle_Set_Col
+     (Context   : in out Aqua.Execution.Execution_Interface'Class;
+      Arguments : Array_Of_Words)
+      return Word
+   is
+      pragma Unreferenced (Context);
+      Column : constant Aqua_Integer := Get_Integer (Arguments (2));
+   begin
+      if Output_Redirected then
+         Ada.Text_IO.Set_Col (Current_Output, Ada.Text_IO.Count (Column));
+      else
+         Ada.Text_IO.Set_Col (Ada.Text_IO.Count (Column));
+      end if;
+      return 1;
+   end Handle_Set_Col;
 
    -----------------------
    -- Handle_Set_Output --
