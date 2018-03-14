@@ -663,25 +663,14 @@ package body Aqua.Primitives.Init is
       Arguments : Array_Of_Words)
       return Word
    is
+      Text : constant String := Context.To_String (Arguments (2));
    begin
-      if not Is_String_Reference (Arguments (2)) then
-         Ada.Text_IO.Put_Line
-           (Ada.Text_IO.Standard_Error,
-            "expected a string in call to IO.Put_Line but found "
-            & Context.Show (Arguments (2)));
-         return 0;
+      if Output_Redirected then
+         Ada.Text_IO.Put_Line (Current_Output, Text);
       else
-         declare
-            Text : constant String := Context.To_String (Arguments (2));
-         begin
-            if Output_Redirected then
-               Ada.Text_IO.Put_Line (Current_Output, Text);
-            else
-               Ada.Text_IO.Put_Line (Text);
-            end if;
-            return 1;
-         end;
+         Ada.Text_IO.Put_Line (Text);
       end if;
+      return 1;
    end Handle_Put_Line;
 
    -------------------------
