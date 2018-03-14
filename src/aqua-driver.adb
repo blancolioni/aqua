@@ -115,7 +115,7 @@ begin
    begin
       Image.Load ("test.o32");
       Image.Link;
-      CPU.Execute (16#1000#, (1 => 0));
+      CPU.Execute ("self-test", 16#1000#, (1 => 0));
    end;
 
 end Aqua.Driver;
