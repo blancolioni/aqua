@@ -142,7 +142,8 @@ package body Aqua.CPU is
    procedure Set_NZ
      (CPU   : in out Aqua_CPU_Type'Class;
       Size  : Data_Size;
-      Value : Word);
+      Value : Word)
+     with Inline_Always;
 
    function Next_Value
      (CPU : in out Aqua_CPU_Type'Class;
