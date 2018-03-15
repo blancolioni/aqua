@@ -351,8 +351,16 @@ package body Aqua.CPU is
          when A_Halt =>
             CPU.Dump_Core;
             CPU.Report;
-            Ada.Text_IO.Put_Line ("HALT; core dumped");
+            Ada.Text_IO.Put_Line
+              (Ada.Text_IO.Standard_Error,
+               "HALT; core dumped");
+            if Is_String_Reference (CPU.R (0)) then
+               Ada.Text_IO.Put_Line
+                 (Ada.Text_IO.Standard_Error,
+                  "Message: " & CPU.To_String (CPU.R (0)));
+            end if;
             CPU.B := True;
+
          when A_Nop =>
             null;
          when A_Rts =>
