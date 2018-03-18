@@ -94,15 +94,27 @@ package body Aqua.Architecture is
                   return Result;
                end;
             when 3 =>
-               declare
-                  Result : constant Triple_Operand_Instruction :=
-                             Triple_Operand_Instruction'Val
-                               (Aqua_Instruction'Pos
-                                  (Triple_Operand_Instruction'First)
-                                + Low_Nybble);
-               begin
-                  return Result;
-               end;
+               if Low_Nybble < 8 then
+                  declare
+                     Result : constant Triple_Operand_Instruction :=
+                                Triple_Operand_Instruction'Val
+                                  (Aqua_Instruction'Pos
+                                     (Triple_Operand_Instruction'First)
+                                   + Low_Nybble);
+                  begin
+                     return Result;
+                  end;
+               else
+                  declare
+                     Result : constant Triple_Set_Instruction :=
+                                Triple_Set_Instruction'Val
+                                  (Aqua_Instruction'Pos
+                                     (Triple_Set_Instruction'First)
+                                   + (Low_Nybble - 8));
+                  begin
+                     return Result;
+                  end;
+               end if;
          end case;
       end if;
    end Calculate_Instruction;
@@ -136,6 +148,11 @@ package body Aqua.Architecture is
               + 2#0011_0000#
             + (Aqua_Instruction'Pos (Instruction)
                - Aqua_Instruction'Pos (Triple_Operand_Instruction'First));
+         when Triple_Set_Instruction =>
+            return (Data_Size'Pos (Size) + 1) * 64
+              + 2#0011_1000#
+            + (Aqua_Instruction'Pos (Instruction)
+               - Aqua_Instruction'Pos (Triple_Set_Instruction'First));
          when Single_Operand_Float_Instruction =>
             return (if Size = Float_32_Size then 0 else 1)
               + 2#1100_1000#

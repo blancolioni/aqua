@@ -491,6 +491,49 @@ package body Aqua.CPU is
                Aqua.Architecture.Write
                  (Dst, Size, Trace_Code, CPU.R, CPU.Image.all, Y);
             end;
+         when Triple_Set_Instruction =>
+            declare
+               Size         : constant Data_Size := Get_Size (Op);
+               Src_1, Src_2 : Operand_Type;
+               Dst          : Operand_Type;
+               X, Y         : Word;
+               R            : Boolean;
+            begin
+               Src_1 := Next_Operand (CPU);
+
+               Aqua.Architecture.Read
+                 (Src_1, Size, Trace_Code, CPU.R, CPU.Image.all, X);
+
+               Src_2 := Next_Operand (CPU);
+
+               Aqua.Architecture.Read
+                 (Src_2, Size, Trace_Code, CPU.R, CPU.Image.all, Y);
+
+               Dst := Next_Operand (CPU);
+
+               case Triple_Set_Instruction (Instruction) is
+                  when A_Seq_3 =>
+                     R := X = Y;
+                  when A_Sne_3 =>
+                     R := X /= Y;
+                  when A_Sgt_3 =>
+                     R := Get_Integer (X) > Get_Integer (Y);
+                  when A_Slt_3 =>
+                     R := Get_Integer (X) < Get_Integer (Y);
+                  when A_Sge_3 =>
+                     R := Get_Integer (X) >= Get_Integer (Y);
+                  when A_Sle_3 =>
+                     R := Get_Integer (X) <= Get_Integer (Y);
+               end case;
+
+               Y := Boolean'Pos (R);
+
+               Set_NZ (CPU, Size, Y);
+
+               Aqua.Architecture.Write
+                 (Dst, Size, Trace_Code, CPU.R, CPU.Image.all, Y);
+            end;
+
          when Single_Operand_Float_Instruction =>
             null;
          when Double_Operand_Float_Instruction =>
