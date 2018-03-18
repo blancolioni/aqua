@@ -50,6 +50,14 @@ package body Aqua.Debug is
                begin
                   return T_Img & Size_Image (Size) & " src1, src2, dst";
                end;
+            when Triple_Set_Instruction =>
+               declare
+                  Size  : constant Data_Size := Get_Size (Op);
+                  T_Img : constant String :=
+                            Img (Img'First .. Img'Last - 2);
+               begin
+                  return T_Img & Size_Image (Size) & " src1, src2, dst";
+               end;
             when Single_Operand_Float_Instruction =>
                declare
                   F_Img : String := Img;
