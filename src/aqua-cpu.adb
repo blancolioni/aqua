@@ -512,10 +512,20 @@ package body Aqua.CPU is
                Dst := Next_Operand (CPU);
 
                case Triple_Set_Instruction (Instruction) is
-                  when A_Seq_3 =>
-                     R := X = Y;
-                  when A_Sne_3 =>
-                     R := X /= Y;
+                  when A_Seq_3 | A_Sne_3 =>
+                     if Size = Word_32_Size
+                       and then Is_String_Reference (X)
+                       and then Is_String_Reference (Y)
+                     then
+                        R := X = Y
+                          or else (CPU.To_String (X) = CPU.To_String (Y));
+                     else
+                        R := X = Y;
+                     end if;
+
+                     if Instruction = A_Sne_3 then
+                        R := not R;
+                     end if;
                   when A_Sgt_3 =>
                      R := Get_Integer (X) > Get_Integer (Y);
                   when A_Slt_3 =>
