@@ -317,7 +317,10 @@ package body Aqua.CPU is
          end;
       end loop;
 
-      Aqua.Arithmetic.Inc (SP, 4 * Arguments'Length);
+      if Arguments'Length > 0 then
+         Aqua.Arithmetic.Inc (SP, 4 * Arguments'Length);
+      end if;
+
       PC := CPU.Pop;
 
       CPU.Exec_Time := CPU.Exec_Time + Ada.Calendar.Clock - CPU.Start;
@@ -1218,6 +1221,19 @@ package body Aqua.CPU is
                 & Natural'Image (Natural (CPU.Exec_Time * 1000.0))
                 & "ms");
    end Report;
+
+   ---------
+   -- Run --
+   ---------
+
+   procedure Run (CPU : in out Aqua_CPU_Type'Class) is
+      No_Arguments : Array_Of_Words (1 .. 0);
+   begin
+      CPU.Execute
+        (Environment_Name => "aqua",
+         Start            => CPU.Image.Start_Address,
+         Arguments        => No_Arguments);
+   end Run;
 
    -----------------------------
    -- Set_Current_Environment --

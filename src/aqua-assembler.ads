@@ -45,6 +45,10 @@ package Aqua.Assembler is
       Parent : String;
       Child  : String);
 
+   procedure Set_Start_Label
+     (A     : in out Root_Assembly_Type'Class;
+      Label : String);
+
    function Reference_Label
      (A        : in out Root_Assembly_Type'Class;
       Name     : String;
@@ -216,6 +220,7 @@ private
          Temporaries    : Temporary_Label_Vectors.Vector;
          String_Lits    : String_Vectors.Vector;
          Bindings       : Binding_Info_Vectors.Vector;
+         Start_Label    : Ada.Strings.Unbounded.Unbounded_String;
       end record;
 
    procedure Ensure_Label

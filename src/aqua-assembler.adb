@@ -565,6 +565,18 @@ package body Aqua.Assembler is
       A.Source_Locs.Append (New_Position);
    end Set_Source_Location;
 
+   ---------------------
+   -- Set_Start_Label --
+   ---------------------
+
+   procedure Set_Start_Label
+     (A     : in out Root_Assembly_Type'Class;
+      Label : String)
+   is
+   begin
+      A.Start_Label := Ada.Strings.Unbounded.To_Unbounded_String (Label);
+   end Set_Start_Label;
+
    -----------
    -- Start --
    -----------
@@ -716,6 +728,7 @@ package body Aqua.Assembler is
 
       for Position in A.Labels.Iterate loop
          declare
+            use type Ada.Strings.Unbounded.Unbounded_String;
             Label : constant String := Key (Position);
             Info  : constant Label_Info := Element (Position);
          begin
@@ -729,7 +742,8 @@ package body Aqua.Assembler is
                Write_Octet
                  (File,
                   Boolean'Pos (Info.Defined)
-                  + 2 * Boolean'Pos (Info.Deferred));
+                  + 2 * Boolean'Pos (Info.Deferred)
+                  + 4 * Boolean'Pos (Label = A.Start_Label));
                for Ch of Label loop
                   Write_Octet (File, Character'Pos (Ch));
                end loop;

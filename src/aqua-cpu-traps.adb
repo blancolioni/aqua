@@ -24,6 +24,8 @@ package body Aqua.CPU.Traps is
       Arguments      : Array_Of_Words (1 .. Argument_Count);
       Target         : Word;
       Value          : Aqua.Values.Property_Value;
+      Name           : constant String :=
+                         CPU.Image.To_String (Property_Name);
    begin
 
       for I in 1 .. Argument_Count loop
@@ -119,8 +121,6 @@ package body Aqua.CPU.Traps is
                               Object_Interface'Class
                                 (CPU.To_External_Object
                                    (Target).all)'Access;
-            Name : constant String :=
-                              CPU.Image.To_String (Property_Name);
          begin
             Value := Target_Object.Get_Property (Name);
             if Trace_Properties then
