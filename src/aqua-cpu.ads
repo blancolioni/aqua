@@ -88,6 +88,8 @@ package Aqua.CPU is
      (CPU  : in out Aqua_CPU_Type'Class;
       Name : String);
 
+   procedure Run (CPU : in out Aqua_CPU_Type'Class);
+
 private
 
    type External_Object_Access is

@@ -663,7 +663,8 @@ package body Aqua.Primitives.Init is
       Arguments : Array_Of_Words)
       return Word
    is
-      Text : constant String := Context.To_String (Arguments (2));
+      Text : constant String :=
+               Context.To_String (Arguments (2));
    begin
       if Output_Redirected then
          Ada.Text_IO.Put_Line (Current_Output, Text);

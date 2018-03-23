@@ -172,6 +172,11 @@ package body Aqua.Images is
                   "undefined reference: " & Key (Position));
                Have_Error := True;
             end if;
+
+            if Info.Start then
+               Image.Start := Get_Address (Info.Value);
+            end if;
+
          end;
       end loop;
       if Have_Error then
@@ -312,6 +317,7 @@ package body Aqua.Images is
             Flags    : Octet;
             Defined  : Boolean;
             Deferred : Boolean;
+            Start    : Boolean;
             Exists   : Boolean := False;
          begin
             Read_Word (File, Length);
@@ -320,6 +326,7 @@ package body Aqua.Images is
 
             Defined := (Flags and 1) = 1;
             Deferred := (Flags and 2) = 2;
+            Start := (Flags and 4) = 4;
 
             declare
                S : String (1 .. Natural (Length));
@@ -352,6 +359,8 @@ package body Aqua.Images is
                        (S & ": map contains deferred entry");
                   end if;
                end if;
+
+               Info.Start := Start;
 
                if Defined then
                   Info.Has_Value := True;
