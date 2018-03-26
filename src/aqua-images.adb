@@ -60,6 +60,24 @@ package body Aqua.Images is
       return Image.Code_Low;
    end Code_Low;
 
+   -------------------------
+   -- Get_Handler_Address --
+   -------------------------
+
+   function Get_Handler_Address
+     (Image        : Root_Image_Type'Class;
+      Trap_Address : Address)
+      return Address
+   is
+   begin
+      for Info of Image.Handlers loop
+         if Trap_Address in Info.Base_Address .. Info.Bound_Address then
+            return Info.Handler_Address;
+         end if;
+      end loop;
+      return 0;
+   end Get_Handler_Address;
+
    -----------------
    -- Have_String --
    -----------------
@@ -179,6 +197,62 @@ package body Aqua.Images is
 
          end;
       end loop;
+
+      for Handler of Image.Handlers loop
+         declare
+            procedure Check
+              (Label : Ada.Strings.Unbounded.Unbounded_String;
+               Addr  : out Address);
+
+            -----------
+            -- Check --
+            -----------
+
+            procedure Check
+              (Label : Ada.Strings.Unbounded.Unbounded_String;
+               Addr  : out Address)
+            is
+               Key : constant String := -Label;
+            begin
+               if not Image.Link_Map.Contains (Key)
+                 or else not Image.Link_Map.Element (Key).Has_Value
+               then
+                  Ada.Text_IO.Put_Line
+                    ("undefined reference to " & Key);
+                  Have_Error := True;
+               else
+                  declare
+                     Info : constant Link_Info :=
+                              Image.Link_Map.Element (Key);
+                  begin
+                     if Info.Is_String then
+                        Ada.Text_IO.Put_Line
+                          (Key
+                           & ": defined as string but referenced as address");
+                        Have_Error := True;
+                     else
+                        Addr := Get_Address (Info.Value);
+                     end if;
+                  end;
+               end if;
+            end Check;
+
+         begin
+            Check (Handler.Base_Label, Handler.Base_Address);
+            Check (Handler.Bound_Label, Handler.Bound_Address);
+            Check (Handler.Handler_Label, Handler.Handler_Address);
+
+            if not Have_Error then
+               Ada.Text_IO.Put_Line
+                 ((-Handler.Handler_Label)
+                  & ": "
+                  & Aqua.IO.Hex_Image (Handler.Base_Address)
+                  & " .. "
+                  & Aqua.IO.Hex_Image (Handler.Bound_Address));
+            end if;
+         end;
+      end loop;
+
       if Have_Error then
          raise Constraint_Error with "Link error";
       end if;
@@ -500,7 +574,8 @@ package body Aqua.Images is
               (Exception_Info'
                  (Base_Label    => +Base,
                   Bound_Label   => +Bound,
-                  Handler_Label => +Handler));
+                  Handler_Label => +Handler,
+                  others        => 0));
          end;
       end loop;
 
