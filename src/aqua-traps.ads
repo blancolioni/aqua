@@ -16,4 +16,5 @@ package Aqua.Traps is
 
    String_Substitute    : constant := 14;
 
+   Handle_Exception     : constant := 15;
 end Aqua.Traps;
