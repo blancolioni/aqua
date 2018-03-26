@@ -83,6 +83,11 @@ package Aqua.Images is
 
 private
 
+   function "+" (S : String) return Ada.Strings.Unbounded.Unbounded_String
+                 renames Ada.Strings.Unbounded.To_Unbounded_String;
+   function "-" (S : Ada.Strings.Unbounded.Unbounded_String) return String
+                 renames Ada.Strings.Unbounded.To_String;
+
    type Reference_Info is
       record
          Addr     : Address;
@@ -124,6 +129,16 @@ private
    package Binding_Info_Vectors is
      new Ada.Containers.Vectors (Positive, Binding_Info);
 
+   type Exception_Info is
+      record
+         Base_Label    : Ada.Strings.Unbounded.Unbounded_String;
+         Bound_Label   : Ada.Strings.Unbounded.Unbounded_String;
+         Handler_Label : Ada.Strings.Unbounded.Unbounded_String;
+      end record;
+
+   package Exception_Info_Vectors is
+     new Ada.Containers.Vectors (Positive, Exception_Info);
+
    type Source_Location is
       record
          Source_File : Ada.Strings.Unbounded.Unbounded_String;
@@ -139,6 +154,7 @@ private
       record
          Locations     : List_Of_Source_Locations.List;
          Bindings      : Binding_Info_Vectors.Vector;
+         Handlers      : Exception_Info_Vectors.Vector;
          String_Vector : Link_Vectors.Vector;
          Label_Vector  : Link_Vectors.Vector;
          Link_Map      : Link_Maps.Map;

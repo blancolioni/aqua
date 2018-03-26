@@ -1,6 +1,8 @@
 with Ada.Directories;
 with Ada.Strings.Unbounded;
 
+with Aqua.Version;
+
 package body Aqua.IO is
 
    Local_IO_Path : Ada.Strings.Unbounded.Unbounded_String;
@@ -30,7 +32,20 @@ package body Aqua.IO is
       end if;
       Octet_IO.Create (File.F, Octet_IO.Out_File,
                       Ada.Directories.Compose
-                        (To_String (Local_IO_Path), Name));
+                         (To_String (Local_IO_Path), Name));
+
+      for Ch of Aqua.Version.Name loop
+         Write_Octet (File, Character'Pos (Ch));
+      end loop;
+
+      File.Major := Aqua.Version.Major;
+      File.Minor := Aqua.Version.Minor;
+      File.Release := Aqua.Version.Release;
+
+      Write_Octet (File, File.Major);
+      Write_Octet (File, File.Minor);
+      Write_Octet (File, File.Release);
+
    end Create;
 
    ---------------------
@@ -142,7 +157,40 @@ package body Aqua.IO is
       end if;
       Octet_IO.Open (File.F, Octet_IO.In_File,
                     Ada.Directories.Compose
-                      (To_String (Local_IO_Path), Name));
+                       (To_String (Local_IO_Path), Name));
+
+      for Ch of Aqua.Version.Name loop
+         declare
+            X : Octet;
+         begin
+            Read_Octet (File, X);
+            if X /= Character'Pos (Ch) then
+               Octet_IO.Close (File.F);
+               raise Invalid_Header;
+            end if;
+         end;
+      end loop;
+
+      Read_Octet (File, File.Major);
+      Read_Octet (File, File.Minor);
+      Read_Octet (File, File.Release);
+
+      if File.Major > Aqua.Version.Major
+        or else (File.Major = Aqua.Version.Major
+                 and then File.Minor > Aqua.Version.Minor)
+      then
+         Octet_IO.Close (File.F);
+         raise Invalid_Version
+           with "aqua version "
+           & Character'Val (Aqua.Version.Major + 48)
+           & "." & Character'Val (Aqua.Version.Minor + 48)
+           & "." & Character'Val (Aqua.Version.Release + 48)
+           & " cannot read file version "
+           & Character'Val (File.Major + 48)
+           & "." & Character'Val (File.Minor + 48)
+           & "." & Character'Val (File.Release + 48);
+      end if;
+
    end Open;
 
    ------------------
@@ -236,9 +284,9 @@ package body Aqua.IO is
       Write_Word (File, To_Address_Word (Value));
    end Write_Address;
 
-   ----------------
+   -----------------
    -- Write_Octet --
-   ----------------
+   -----------------
 
    procedure Write_Octet
      (File  : File_Type;

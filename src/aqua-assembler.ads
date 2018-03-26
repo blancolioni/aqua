@@ -45,6 +45,11 @@ package Aqua.Assembler is
       Parent : String;
       Child  : String);
 
+   procedure Exception_Handler
+     (A                       : in out Root_Assembly_Type'Class;
+      Base_Label, Bound_Label : String;
+      Handler_Label           : String);
+
    procedure Set_Start_Label
      (A     : in out Root_Assembly_Type'Class;
       Label : String);
@@ -151,6 +156,11 @@ package Aqua.Assembler is
 
 private
 
+   function "+" (S : String) return Ada.Strings.Unbounded.Unbounded_String
+                 renames Ada.Strings.Unbounded.To_Unbounded_String;
+   function "-" (S : Ada.Strings.Unbounded.Unbounded_String) return String
+                 renames Ada.Strings.Unbounded.To_String;
+
    type Reference_Info is
       record
          Addr     : Address;
@@ -197,6 +207,16 @@ private
    package Binding_Info_Vectors is
      new Ada.Containers.Vectors (Positive, Binding_Info);
 
+   type Exception_Info is
+      record
+         Start_Label   : Ada.Strings.Unbounded.Unbounded_String;
+         End_Label     : Ada.Strings.Unbounded.Unbounded_String;
+         Handler_Label : Ada.Strings.Unbounded.Unbounded_String;
+      end record;
+
+   package Exception_Info_Vectors is
+     new Ada.Containers.Vectors (Positive, Exception_Info);
+
    type Source_Position is
       record
          Start    : Address;
@@ -220,6 +240,7 @@ private
          Temporaries    : Temporary_Label_Vectors.Vector;
          String_Lits    : String_Vectors.Vector;
          Bindings       : Binding_Info_Vectors.Vector;
+         Handlers       : Exception_Info_Vectors.Vector;
          Start_Label    : Ada.Strings.Unbounded.Unbounded_String;
       end record;
 
