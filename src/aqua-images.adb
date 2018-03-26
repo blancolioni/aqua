@@ -195,6 +195,7 @@ package body Aqua.Images is
       use Aqua.IO;
       File : File_Type;
       Binding_Count  : Word;
+      Handler_Count  : Word;
       Low            : Word;
       High           : Word;
       External_Count : Word;
@@ -208,6 +209,7 @@ package body Aqua.Images is
       Open (File, Name);
 
       Read_Word (File, Binding_Count);
+      Read_Word (File, Handler_Count);
       Read_Word (File, Low);
       Read_Word (File, High);
       Read_Word (File, External_Count);
@@ -217,6 +219,7 @@ package body Aqua.Images is
          Ada.Text_IO.Put_Line
            (Name
             & ": bindings:" & Word'Image (Binding_Count)
+            & "; handlers:" & Word'Image (Handler_Count)
             & "; externals:" & Word'Image (External_Count)
             & "; strings:" & Word'Image (String_Count)
             & " range "
@@ -483,6 +486,23 @@ package body Aqua.Images is
       Image.High := Image.High
         + (Get_Address (High) - Get_Address (Low) + 4);
       Image.Code_High := Image.High;
+
+      for I in 1 .. Handler_Count loop
+         declare
+            Base    : constant String :=
+                        Aqua.IO.Read_String_Literal (File);
+            Bound   : constant String :=
+                        Aqua.IO.Read_String_Literal (File);
+            Handler : constant String :=
+                        Aqua.IO.Read_String_Literal (File);
+         begin
+            Image.Handlers.Append
+              (Exception_Info'
+                 (Base_Label    => +Base,
+                  Bound_Label   => +Bound,
+                  Handler_Label => +Handler));
+         end;
+      end loop;
 
       Close (File);
 
