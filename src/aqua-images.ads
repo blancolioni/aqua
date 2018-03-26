@@ -77,6 +77,11 @@ package Aqua.Images is
       Addr  : Address)
       return String;
 
+   function Get_Handler_Address
+     (Image        : Root_Image_Type'Class;
+      Trap_Address : Address)
+      return Address;
+
    type Image_Type is access all Root_Image_Type'Class;
 
    function New_Image return Image_Type;
@@ -131,9 +136,12 @@ private
 
    type Exception_Info is
       record
-         Base_Label    : Ada.Strings.Unbounded.Unbounded_String;
-         Bound_Label   : Ada.Strings.Unbounded.Unbounded_String;
-         Handler_Label : Ada.Strings.Unbounded.Unbounded_String;
+         Base_Label      : Ada.Strings.Unbounded.Unbounded_String;
+         Bound_Label     : Ada.Strings.Unbounded.Unbounded_String;
+         Handler_Label   : Ada.Strings.Unbounded.Unbounded_String;
+         Base_Address    : Address;
+         Bound_Address   : Address;
+         Handler_Address : Address;
       end record;
 
    package Exception_Info_Vectors is
