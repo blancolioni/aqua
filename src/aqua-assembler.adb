@@ -292,6 +292,23 @@ package body Aqua.Assembler is
       end if;
    end Ensure_Label;
 
+   -----------------------
+   -- Exception_Handler --
+   -----------------------
+
+   procedure Exception_Handler
+     (A                       : in out Root_Assembly_Type'Class;
+      Base_Label, Bound_Label : String;
+      Handler_Label           : String)
+   is
+   begin
+      A.Handlers.Append
+        (Exception_Info'
+           (Start_Label   => +Base_Label,
+            End_Label     => +Bound_Label,
+            Handler_Label => +Handler_Label));
+   end Exception_Handler;
+
    ----------
    -- Free --
    ----------
@@ -669,6 +686,7 @@ package body Aqua.Assembler is
 
       Create (File, Path);
       Write_Word (File, Word (A.Bindings.Length));
+      Write_Word (File, Word (A.Handlers.Length));
       Write_Address (File, A.Low);
       Write_Address (File, A.High);
       Write_Word (File, External_Count);
@@ -841,6 +859,12 @@ package body Aqua.Assembler is
                Write_Octet (File, Boolean'Pos (Ref.Relative));
             end loop;
          end;
+      end loop;
+
+      for Handler of A.Handlers loop
+         Write_String_Literal (File, -Handler.Start_Label);
+         Write_String_Literal (File, -Handler.End_Label);
+         Write_String_Literal (File, -Handler.Handler_Label);
       end loop;
 
       Close (File);
