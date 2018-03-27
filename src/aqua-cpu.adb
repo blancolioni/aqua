@@ -95,6 +95,24 @@ package body Aqua.CPU is
       Src  : Aqua.Word;
       Dst  : in out Aqua.Word);
 
+   procedure Handle_And
+     (CPU  : in out Aqua_CPU_Type'Class;
+      Size : Aqua.Data_Size;
+      Src  : Aqua.Word;
+      Dst  : in out Aqua.Word);
+
+   procedure Handle_Or
+     (CPU  : in out Aqua_CPU_Type'Class;
+      Size : Aqua.Data_Size;
+      Src  : Aqua.Word;
+      Dst  : in out Aqua.Word);
+
+   procedure Handle_Xor
+     (CPU  : in out Aqua_CPU_Type'Class;
+      Size : Aqua.Data_Size;
+      Src  : Aqua.Word;
+      Dst  : in out Aqua.Word);
+
    procedure Handle_Clr
      (Size : Aqua.Data_Size;
       Dst  : in out Aqua.Word);
@@ -115,6 +133,9 @@ package body Aqua.CPU is
         A_Div  => Handle_Div'Access,
         A_Sub  => Handle_Sub'Access,
         A_Mul  => Handle_Mul'Access,
+        A_And  => Handle_And'Access,
+        A_Or   => Handle_Or'Access,
+        A_Xor  => Handle_Xor'Access,
         others => null);
 
    Single_Operand : constant array (Single_Operand_Instruction)
@@ -727,6 +748,25 @@ package body Aqua.CPU is
       end if;
    end Handle_Add;
 
+   ----------------
+   -- Handle_And --
+   ----------------
+
+   procedure Handle_And
+     (CPU  : in out Aqua_CPU_Type'Class;
+      Size : Aqua.Data_Size;
+      Src  : Aqua.Word;
+      Dst  : in out Aqua.Word)
+   is
+      pragma Unreferenced (CPU);
+      R : constant Word :=
+            (Src and Payload_Mask) and (Dst and Payload_Mask);
+   begin
+      Aqua.Set
+        (Dst, Size,
+         (R and Payload_Mask) or (Dst and not Payload_Mask));
+   end Handle_And;
+
    -------------------
    -- Handle_Branch --
    -------------------
@@ -916,6 +956,25 @@ package body Aqua.CPU is
          (R and Payload_Mask) or (Dst and not Payload_Mask));
    end Handle_Mul;
 
+   ---------------
+   -- Handle_Or --
+   ---------------
+
+   procedure Handle_Or
+     (CPU  : in out Aqua_CPU_Type'Class;
+      Size : Aqua.Data_Size;
+      Src  : Aqua.Word;
+      Dst  : in out Aqua.Word)
+   is
+      pragma Unreferenced (CPU);
+      R : constant Word :=
+            (Src and Payload_Mask) or (Dst and Payload_Mask);
+   begin
+      Aqua.Set
+        (Dst, Size,
+         (R and Payload_Mask) or (Dst and not Payload_Mask));
+   end Handle_Or;
+
    ----------------
    -- Handle_Sub --
    ----------------
@@ -1104,6 +1163,25 @@ package body Aqua.CPU is
               with "unimplemented trap:" & Natural'Image (Index);
       end case;
    end Handle_Trap;
+
+   ----------------
+   -- Handle_Xor --
+   ----------------
+
+   procedure Handle_Xor
+     (CPU  : in out Aqua_CPU_Type'Class;
+      Size : Aqua.Data_Size;
+      Src  : Aqua.Word;
+      Dst  : in out Aqua.Word)
+   is
+      pragma Unreferenced (CPU);
+      R : constant Word :=
+            (Src and Payload_Mask) xor (Dst and Payload_Mask);
+   begin
+      Aqua.Set
+        (Dst, Size,
+         (R and Payload_Mask) or (Dst and not Payload_Mask));
+   end Handle_Xor;
 
    ----------------
    -- Initialize --
