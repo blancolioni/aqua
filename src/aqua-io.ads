@@ -2,6 +2,9 @@ private with Ada.Sequential_IO;
 
 package Aqua.IO is
 
+   Invalid_Header  : exception;
+   Invalid_Version : exception;
+
    procedure Set_IO_Path
      (Path : String);
    --  Aqua will only read or write files contained in the directory
@@ -79,7 +82,8 @@ private
 
    type File_Type is limited
       record
-         F : Octet_IO.File_Type;
+         F                     : Octet_IO.File_Type;
+         Major, Minor, Release : Octet;
       end record;
 
 end Aqua.IO;
