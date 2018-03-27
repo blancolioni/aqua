@@ -242,7 +242,7 @@ package body Aqua.Images is
             Check (Handler.Bound_Label, Handler.Bound_Address);
             Check (Handler.Handler_Label, Handler.Handler_Address);
 
-            if not Have_Error then
+            if Trace_Link and then not Have_Error then
                Ada.Text_IO.Put_Line
                  ((-Handler.Handler_Label)
                   & ": "
