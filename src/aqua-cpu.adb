@@ -1071,22 +1071,33 @@ package body Aqua.CPU is
             CPU.Report;
 
          when Aqua.Traps.Handle_Exception =>
-            declare
-               Trap_Word : constant Word := CPU.Pop;
-               Trap_Addr : constant Address := Get_Address (Trap_Word);
-               Handler_Addr : constant Address :=
-                                CPU.Image.Get_Handler_Address (Trap_Addr);
-            begin
-               if Handler_Addr = 0 then
-                  raise Aqua.Execution.Execution_Error with
-                    "unhandled exception at "
-                    & Aqua.IO.Hex_Image (Trap_Addr)
-                    & ": "
-                    & CPU.Show (CPU.R (0));
-               else
-                  CPU.R (Architecture.R_PC) := Trap_Word;
-               end if;
-            end;
+
+            loop
+               declare
+                  Trap_Word : constant Word := CPU.Pop;
+                  Trap_Addr : constant Address := Get_Address (Trap_Word);
+                  Handler_Addr : constant Address :=
+                                   CPU.Image.Get_Handler_Address (Trap_Addr);
+               begin
+
+                  if Trap_Addr = 0 then
+                     raise Aqua.Execution.Execution_Error with
+                       "unhandled exception at "
+                       & Aqua.IO.Hex_Image (Trap_Addr)
+                       & ": "
+                       & CPU.Show (CPU.R (0));
+
+                  elsif Handler_Addr = 0 then
+                     CPU.R (R_SP) := CPU.R (R_FP);
+                     CPU.R (R_FP) := CPU.Pop;
+
+                  else
+                     CPU.R (Architecture.R_PC) :=
+                       To_Address_Word (Handler_Addr);
+                     exit;
+                  end if;
+               end;
+            end loop;
 
          when others =>
             raise Constraint_Error
