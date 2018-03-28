@@ -90,6 +90,10 @@ package Aqua.CPU is
 
    procedure Run (CPU : in out Aqua_CPU_Type'Class);
 
+   procedure Set_Option
+     (Name  : String;
+      Value : String);
+
 private
 
    type External_Object_Access is

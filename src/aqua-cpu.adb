@@ -16,7 +16,7 @@ package body Aqua.CPU is
    use Aqua.Architecture;
 
    Trace_Properties : constant Boolean := False;
-   Trace_Code       : constant Boolean := False;
+   Trace_Code       : Boolean := False;
    Trace_Stack      : constant Boolean := False;
    Trace_Executions : constant Boolean := False;
 
@@ -1380,6 +1380,20 @@ package body Aqua.CPU is
             CPU.N := (X and Payload_Mask) >= 16#0080_0000#;
       end case;
    end Set_NZ;
+
+   ----------------
+   -- Set_Option --
+   ----------------
+
+   procedure Set_Option
+     (Name  : String;
+      Value : String)
+   is
+   begin
+      if Name = "trace-code" then
+         Trace_Code := Boolean'Value (Value);
+      end if;
+   end Set_Option;
 
    ----------
    -- Show --
