@@ -1309,9 +1309,8 @@ package body Aqua.CPU is
            (CPU.Image.Heap_High - CPU.Image.Code_High)
          & " stack ="
          & Address'Image (Address'Last - Get_Address (CPU.R (R_SP)) + 1)
-         & " free ="
-         & Address'Image
-           (Get_Address (CPU.R (R_SP)) - CPU.Image.Heap_High));
+         & " allocated ="
+         & Natural'Image (CPU.Image.Used_Memory));
 
       Put_Line ("Objects:" & Natural'Image (CPU.Ext.Last_Index + 1)
                 & "/"

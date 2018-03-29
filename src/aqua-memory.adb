@@ -1,5 +1,21 @@
 package body Aqua.Memory is
 
+   -----------------
+   -- Ensure_Page --
+   -----------------
+
+   procedure Ensure_Page
+     (Mem  : in out Memory_Type;
+      Addr : Address)
+   is
+      D : constant Directory_Address := Addr / Page_Size;
+   begin
+      if Mem.Directory (D) = null then
+         Mem.Directory (D) := new Page_Type'(others => 0);
+         Mem.Page_Count := Mem.Page_Count + 1;
+      end if;
+   end Ensure_Page;
+
    --------------
    -- Get_Octet --
    --------------
@@ -9,8 +25,13 @@ package body Aqua.Memory is
       Addr   : Address)
       return Octet
    is
+      Page : constant Page_Access := Get_Page (Memory, Addr);
    begin
-      return Memory.Mem (Addr);
+      if Page = null then
+         return 0;
+      else
+         return Page (Addr mod Page_Size);
+      end if;
    end Get_Octet;
 
    ---------------
@@ -51,7 +72,8 @@ package body Aqua.Memory is
       Value  : Octet)
    is
    begin
-      Memory.Mem (Addr) := Value;
+      Ensure_Page (Memory, Addr);
+      Memory.Directory (Addr / Page_Size) (Addr mod Page_Size) := Value;
    end Set_Octet;
 
    ---------------
