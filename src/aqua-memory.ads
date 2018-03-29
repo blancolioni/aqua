@@ -41,13 +41,44 @@ package Aqua.Memory is
       Value  : Word)
      with Inline_Always;
 
+   function Used_Memory
+     (Memory : Memory_Type'Class)
+     return Natural;
+
 private
 
-   type Memory_Array is array (Address) of Octet;
+   Page_Bits : constant := 12;
+   Page_Size : constant := 2 ** Page_Bits;
+   subtype Page_Address is Address range 0 .. Page_Size - 1;
+
+   Directory_Bits : constant := Payload_Bits - Page_Bits;
+   Directory_Size : constant := 2 ** Directory_Bits;
+   subtype Directory_Address is Address range 0 .. Directory_Size - 1;
+
+   type Page_Type is array (Page_Address) of Octet;
+   type Page_Access is access Page_Type;
+
+   type Directory_Type is array (Directory_Address) of Page_Access;
 
    type Memory_Type is tagged
       record
-         Mem : Memory_Array;
+         Directory  : Directory_Type;
+         Page_Count : Natural := 0;
       end record;
+
+   function Get_Page
+     (Mem : Memory_Type;
+      Addr : Address)
+      return Page_Access
+   is (Mem.Directory (Addr / Page_Size));
+
+   procedure Ensure_Page
+     (Mem : in out Memory_Type;
+      Addr : Address);
+
+   function Used_Memory
+     (Memory : Memory_Type'Class)
+      return Natural
+   is (Memory.Page_Count * Page_Size);
 
 end Aqua.Memory;
