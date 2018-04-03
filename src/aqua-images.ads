@@ -77,6 +77,11 @@ package Aqua.Images is
       Addr  : Address)
       return String;
 
+   function Show_Known_Source_Position
+     (Image : Root_Image_Type'Class;
+      Addr  : Address)
+      return String;
+
    function Get_Handler_Address
      (Image        : Root_Image_Type'Class;
       Trap_Address : Address)
