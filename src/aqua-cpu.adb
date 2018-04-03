@@ -7,7 +7,6 @@ with Aqua.Arithmetic;
 with Aqua.CPU.Traps;
 with Aqua.Debug;
 with Aqua.IO;
-with Aqua.Objects;
 with Aqua.Primitives;
 with Aqua.Traps;
 
@@ -15,12 +14,9 @@ package body Aqua.CPU is
 
    use Aqua.Architecture;
 
-   Trace_Properties : constant Boolean := False;
    Trace_Code       : Boolean := False;
    Trace_Stack      : constant Boolean := False;
    Trace_Executions : constant Boolean := False;
-
-   Current_Output : Ada.Text_IO.File_Type;
 
    type Branch_Info is
       record
@@ -249,9 +245,11 @@ package body Aqua.CPU is
    is
       use type Ada.Calendar.Time;
       use Aqua.Arithmetic;
+      use Ada.Strings.Unbounded;
       PC : Word renames CPU.R (Aqua.Architecture.R_PC);
       SP : Word renames CPU.R (Aqua.Architecture.R_SP);
       FP : Word renames CPU.R (Aqua.Architecture.R_FP);
+      Last_Source : Ada.Strings.Unbounded.Unbounded_String;
    begin
 
       CPU.Set_Current_Environment (Environment_Name);
@@ -285,12 +283,24 @@ package body Aqua.CPU is
             Original_PC : constant Word := PC;
          begin
             if Trace_Code then
+               declare
+                  Loc : constant String :=
+                          CPU.Image.Show_Source_Position
+                            (Get_Address (Original_PC));
+               begin
+                  if Last_Source /= Loc then
+                     Last_Source := To_Unbounded_String (Loc);
+                     if Loc'Length < 16 then
+                        Ada.Text_IO.Put (Loc);
+                     else
+                        Ada.Text_IO.Put
+                          ("..." & Loc (Loc'Last - 12 .. Loc'Last));
+                     end if;
+                  end if;
+               end;
+               Ada.Text_IO.Set_Col (20);
                Ada.Text_IO.Put
-                 (Aqua.IO.Hex_Image (Get_Address (FP))
-                  & " "
-                  & Aqua.IO.Hex_Image (Get_Address (SP))
-                  & " "
-                  & Aqua.IO.Hex_Image (Get_Address (PC))
+                 (Aqua.IO.Hex_Image (Get_Address (PC))
                   & ": ");
 
                Ada.Text_IO.Put
@@ -306,6 +316,7 @@ package body Aqua.CPU is
                if Trace_Code then
                   Ada.Text_IO.New_Line;
                end if;
+
             exception
                when E : Runtime_Error =>
                   Ada.Text_IO.Put_Line
@@ -432,6 +443,10 @@ package body Aqua.CPU is
 
                Set_NZ (CPU, Size, X);
 
+               if Trace_Code then
+                  Ada.Text_IO.Put (" " & Aqua.IO.Hex_Image (X));
+               end if;
+
                if Instruction = A_Tst then
                   null;
                elsif Dst.Mode = Register and then not Dst.Deferred then
@@ -476,6 +491,10 @@ package body Aqua.CPU is
 
                Double_Operand (Instruction) (CPU, Size, X, Y);
 
+               if Trace_Code then
+                  Ada.Text_IO.Put (" " & Aqua.IO.Hex_Image (Y));
+               end if;
+
                Set_NZ (CPU, Size, Y);
 
                if Instruction = A_Cmp then
@@ -514,6 +533,11 @@ package body Aqua.CPU is
 
                Aqua.Architecture.Write
                  (Dst, Size, Trace_Code, CPU.R, CPU.Image.all, Y);
+
+               if Trace_Code then
+                  Ada.Text_IO.Put (" " & Aqua.IO.Hex_Image (Y));
+               end if;
+
             end;
          when Triple_Set_Instruction =>
             declare
@@ -566,6 +590,11 @@ package body Aqua.CPU is
 
                Aqua.Architecture.Write
                  (Dst, Size, Trace_Code, CPU.R, CPU.Image.all, Y);
+
+               if Trace_Code then
+                  Ada.Text_IO.Put (" " & Aqua.IO.Hex_Image (Y));
+               end if;
+
             end;
 
          when Single_Operand_Float_Instruction =>
@@ -702,6 +731,7 @@ package body Aqua.CPU is
 
          when A_Iterator_Start =>
             Traps.Handle_Iterator_Start (CPU);
+
          when A_Iterator_Next =>
             declare
                R : constant Register_Index := Register_Index (Op mod 16);
@@ -709,6 +739,11 @@ package body Aqua.CPU is
                Traps.Handle_Iterator_Next (CPU, R);
             end;
       end case;
+
+      if PC < 16#1000# then
+         raise Runtime_Error with
+           "PC = " & Aqua.IO.Hex_Image (PC);
+      end if;
 
    end Handle;
 
@@ -1009,154 +1044,37 @@ package body Aqua.CPU is
       end if;
 
       case Index is
-         when Aqua.Traps.Allocate =>
-            declare
-               New_Item : constant External_Object_Access :=
-                            new Aqua.Objects.Root_Object_Type;
-            begin
-               CPU.Ext.Append (New_Item);
-               CPU.Push
-                 (To_External_Word
-                    (External_Reference
-                         (CPU.Ext.Last_Index)));
-            end;
-         when Aqua.Traps.Join_Strings =>
-            declare
-               Right_Word : constant Word := CPU.Pop;
-               Left_Word  : constant Word := CPU.Pop;
-               pragma Assert (Is_Integer (Right_Word)
-                              or else Is_String_Reference (Right_Word));
-               pragma Assert (Is_Integer (Right_Word)
-                              or else Is_String_Reference (Left_Word));
-               Result     : constant String :=
-                              CPU.To_String (Left_Word)
-                            & CPU.To_String (Right_Word);
-            begin
-               CPU.Push
-                 (CPU.To_String_Word (Result));
-            end;
+         when Aqua.Traps.Get_Data_Segment_Start =>
+            CPU.R (0) := To_Address_Word (16#100_0000#);
 
-         when Aqua.Traps.IO_Put_String =>
-            declare
-               W : constant Word := CPU.Pop;
-               S : constant String := CPU.To_String (W);
-            begin
-               Ada.Text_IO.Put (S);
-            end;
-
-         when Aqua.Traps.IO_Put_Char =>
-            declare
-               W : constant Word := CPU.Pop;
-               Ch : constant Character :=
-                      Character'Val (Get_Integer (W));
-            begin
-               if Ch = Character'Val (10) then
-                  Ada.Text_IO.New_Line;
-               else
-                  Ada.Text_IO.Put (Ch);
-               end if;
-            end;
-
-         when Aqua.Traps.String_Substitute =>
-            declare
-               Replace_With    : constant Word := CPU.Pop;
-               Replace_String  : constant Word := CPU.Pop;
-               Base_Text       : constant Word := CPU.Pop;
-            begin
-
-               if Trace_Properties then
-                  Ada.Text_IO.Put_Line
-                    ("sub: "
-                     & CPU.Show (Base_Text)
-                     & ": ["
-                     & CPU.Show (Replace_String)
-                     & "] -> ["
-                     & CPU.Show (Replace_With)
-                     & "]");
-               end if;
-
-               pragma Assert (Is_String_Reference (Base_Text));
-               pragma Assert (Is_String_Reference (Replace_String));
-               pragma Assert (Is_String_Reference (Replace_With));
-
-               declare
-                  use Ada.Strings.Fixed;
-                  use Ada.Strings.Unbounded;
-                  Result : Unbounded_String;
-                  S : constant String := CPU.To_String (Base_Text);
-                  X : constant String := CPU.To_String (Replace_String);
-                  Y : constant String := CPU.To_String (Replace_With);
-                  Index : Positive := S'First;
-               begin
-                  while Index <= S'Length - X'Length loop
-                     if S (Index .. Index + X'Length - 1) = X then
-                        Result := Result & Y;
-                        Index := Index + X'Length;
-                     else
-                        Result := Result & S (Index);
-                        Index := Index + 1;
-                     end if;
-                  end loop;
-
-                  Result := Result & S (Index .. S'Last);
-
-                  CPU.Push (CPU.To_String_Word (To_String (Result)));
-               end;
-            end;
-
-         when Aqua.Traps.IO_Set_Output =>
-            declare
-               Name_Value : constant Word := CPU.Pop;
-            begin
-               if Name_Value = 0
-                 or else (Is_String_Reference (Name_Value)
-                          and then CPU.To_String (Name_Value) = "")
-               then
-                  Ada.Text_IO.Set_Output (Ada.Text_IO.Standard_Output);
-                  Ada.Text_IO.Close (Current_Output);
-               elsif not Is_String_Reference (Name_Value) then
-                  raise Constraint_Error
-                    with "Set_Output: expected a string,but found "
-                    & CPU.Show (Name_Value);
-               else
-                  Ada.Text_IO.Create (Current_Output,
-                                      Ada.Text_IO.Out_File,
-                                      CPU.To_String (Name_Value));
-                  Ada.Text_IO.Set_Output (Current_Output);
-               end if;
-            end;
-
-         when Aqua.Traps.Report_State =>
-            CPU.Report;
-
-         when Aqua.Traps.Handle_Exception =>
-
-            loop
-               declare
-                  Trap_Word : constant Word := CPU.Pop;
-                  Trap_Addr : constant Address := Get_Address (Trap_Word);
-                  Handler_Addr : constant Address :=
-                                   CPU.Image.Get_Handler_Address (Trap_Addr);
-               begin
-
-                  if Trap_Addr = 0 then
-                     raise Aqua.Execution.Execution_Error with
-                       "unhandled exception at "
-                       & Aqua.IO.Hex_Image (Trap_Addr)
-                       & ": "
-                       & CPU.Show (CPU.R (0));
-
-                  elsif Handler_Addr = 0 then
-                     CPU.R (R_SP) := CPU.R (R_FP);
-                     CPU.R (R_FP) := CPU.Pop;
-
-                  else
-                     CPU.R (Architecture.R_PC) :=
-                       To_Address_Word (Handler_Addr);
-                     exit;
-                  end if;
-               end;
-            end loop;
+--           when Aqua.Traps.Handle_Exception =>
+--
+--              loop
+--                 declare
+--                    Trap_Word : constant Word := CPU.Pop;
+--                    Trap_Addr : constant Address := Get_Address (Trap_Word);
+--                    Handler_Addr : constant Address :=
+--                                  CPU.Image.Get_Handler_Address (Trap_Addr);
+--                 begin
+--
+--                    if Trap_Addr = 0 then
+--                       raise Aqua.Execution.Execution_Error with
+--                         "unhandled exception at "
+--                         & Aqua.IO.Hex_Image (Trap_Addr)
+--                         & ": "
+--                         & CPU.Show (CPU.R (0));
+--
+--                    elsif Handler_Addr = 0 then
+--                       CPU.R (R_SP) := CPU.R (R_FP);
+--                       CPU.R (R_FP) := CPU.Pop;
+--
+--                    else
+--                       CPU.R (Architecture.R_PC) :=
+--                         To_Address_Word (Handler_Addr);
+--                       exit;
+--                    end if;
+--                 end;
+--              end loop;
 
          when others =>
             raise Constraint_Error

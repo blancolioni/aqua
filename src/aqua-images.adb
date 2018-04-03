@@ -630,6 +630,48 @@ package body Aqua.Images is
       end if;
    end Show;
 
+   --------------------------------
+   -- Show_Known_Source_Position --
+   --------------------------------
+
+   function Show_Known_Source_Position
+     (Image : Root_Image_Type'Class;
+      Addr  : Address)
+      return String
+   is
+      use Ada.Strings, Ada.Strings.Fixed;
+      use Ada.Strings.Unbounded;
+      File_Name : Unbounded_String := To_Unbounded_String ("unknown");
+      Line      : Natural := 0;
+      Column    : Natural := 0;
+   begin
+      for Loc of Image.Locations loop
+         if Loc.Start > Addr then
+            declare
+               Name : constant String := To_String (File_Name);
+            begin
+               if Name /= "" then
+                  if Line > 1 or else Column > 1 then
+                     return Ada.Directories.Simple_Name (To_String (File_Name))
+                       & ":" & Trim (Natural'Image (Line), Left)
+                       & ":" & Trim (Natural'Image (Column), Left);
+                  else
+                     return Ada.Directories.Simple_Name
+                       (To_String (File_Name));
+                  end if;
+               end if;
+            end;
+         else
+            File_Name := Loc.Source_File;
+            Line      := Loc.Line;
+            Column    := Loc.Column;
+         end if;
+      end loop;
+
+      return "";
+
+   end Show_Known_Source_Position;
+
    --------------------------
    -- Show_Source_Position --
    --------------------------
@@ -651,7 +693,7 @@ package body Aqua.Images is
                Name : constant String := To_String (File_Name);
             begin
                if Name /= "" then
-                  return Ada.Directories.Simple_Name (To_String (File_Name))
+                  return Ada.Directories.Base_Name (To_String (File_Name))
                     & ":" & Trim (Natural'Image (Line), Left)
                     & ":" & Trim (Natural'Image (Column), Left);
                end if;
