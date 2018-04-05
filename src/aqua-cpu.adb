@@ -15,6 +15,8 @@ package body Aqua.CPU is
    use Aqua.Architecture;
 
    Trace_Code       : Boolean := False;
+   Trace_FP         : constant Boolean := True;
+   Trace_SP         : constant Boolean := True;
    Trace_Stack      : constant Boolean := False;
    Trace_Executions : constant Boolean := False;
 
@@ -299,6 +301,16 @@ package body Aqua.CPU is
                   end if;
                end;
                Ada.Text_IO.Set_Col (20);
+               if Trace_FP then
+                  Ada.Text_IO.Put
+                    (Aqua.IO.Hex_Image (Get_Address (FP)) & " ");
+               end if;
+
+               if Trace_SP then
+                  Ada.Text_IO.Put
+                    (Aqua.IO.Hex_Image (Get_Address (SP)) & " ");
+               end if;
+
                Ada.Text_IO.Put
                  (Aqua.IO.Hex_Image (Get_Address (PC))
                   & ": ");
