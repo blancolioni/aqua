@@ -10,6 +10,7 @@ with Aqua.IO;
 with Aqua.Loaders;
 with Aqua.Primitives.Init;
 
+with Aqua.Drivers;
 with Aqua.Paths;
 
 procedure Aqua.Driver is
@@ -113,6 +114,7 @@ begin
       Image  : constant Aqua.Images.Image_Type := Aqua.Images.New_Image;
       CPU    : Aqua.CPU.Aqua_CPU_Type (Image, Loader);
    begin
+      Image.Install_Driver (16#1FFF_0000#, Aqua.Drivers.Text_Writer);
       Image.Load ("test.o32");
       Image.Link;
       CPU.Execute ("self-test", 16#1000#, (1 => 0));

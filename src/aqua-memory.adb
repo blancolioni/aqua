@@ -1,3 +1,5 @@
+with Aqua.IO;
+
 package body Aqua.Memory is
 
    -----------------
@@ -11,7 +13,10 @@ package body Aqua.Memory is
       D : constant Directory_Address := Addr / Page_Size;
    begin
       if Mem.Directory (D) = null then
-         Mem.Directory (D) := new Page_Type'(others => 0);
+         Mem.Directory (D) :=
+           new Page_Type'(Data => (others => 0),
+                          Flags => (others => <>),
+                          Driver_Map => <>);
          Mem.Page_Count := Mem.Page_Count + 1;
       end if;
    end Ensure_Page;
@@ -30,7 +35,22 @@ package body Aqua.Memory is
       if Page = null then
          return 0;
       else
-         return Page (Addr mod Page_Size);
+         if Page.Flags (Flag_Driver) then
+            for Position in Page.Driver_Map.Iterate loop
+               declare
+                  Driver : constant Aqua.Drivers.Aqua_Driver :=
+                             Driver_Maps.Element (Position);
+                  Base   : constant Address := Driver_Maps.Key (Position);
+                  Bound  : constant Address :=
+                             Base + Driver.Address_Count;
+               begin
+                  if Addr in Base .. Bound then
+                     return Driver.Get_Octet (Addr - Base);
+                  end if;
+               end;
+            end loop;
+         end if;
+         return Page.Data (Addr mod Page_Size);
       end if;
    end Get_Octet;
 
@@ -62,9 +82,65 @@ package body Aqua.Memory is
       return It;
    end Get_Value;
 
+   --------------------
+   -- Install_Driver --
+   --------------------
+
+   procedure Install_Driver
+     (Memory : in out Memory_Type'Class;
+      Start  : Address;
+      Driver : Aqua.Drivers.Aqua_Driver)
+   is
+      Start_Page : constant Address := Start / Page_Size;
+      End_Page   : constant Address :=
+                     (Start + Driver.Address_Count - 1) / Page_Size;
+      Start_Address : constant Address :=
+                        Start mod Page_Size;
+   begin
+      if Start_Page /= End_Page then
+         raise Constraint_Error with
+           "driver crosses page boundary";
+      end if;
+
+      Memory.Ensure_Page (Start);
+
+      declare
+         Page : constant Page_Access := Memory.Directory (Start_Page);
+      begin
+         if Page.Driver_Map.Contains (Start_Address) then
+            raise Constraint_Error with
+              "driver conflict at " & Aqua.IO.Hex_Image (Start);
+         end if;
+
+         Page.Flags (Flag_Driver) := True;
+         Page.Flags (Flag_R) := True;
+         Page.Flags (Flag_W) := True;
+         Page.Flags (Flag_X) := False;
+
+         Page.Driver_Map.Insert (Start, Driver);
+
+      end;
+
+   end Install_Driver;
+
    --------------
+   -- Set_Flag --
+   --------------
+
+   procedure Set_Flag
+     (Memory : in out Memory_Type'Class;
+      Addr   : Address;
+      Flag   : Page_Flag;
+      Value  : Boolean)
+   is
+   begin
+      Ensure_Page (Memory, Addr);
+      Memory.Directory (Addr / Page_Size).Flags (Flag) := Value;
+   end Set_Flag;
+
+   ---------------
    -- Set_Octet --
-   --------------
+   ---------------
 
    procedure Set_Octet
      (Memory : in out Memory_Type'Class;
@@ -73,7 +149,27 @@ package body Aqua.Memory is
    is
    begin
       Ensure_Page (Memory, Addr);
-      Memory.Directory (Addr / Page_Size) (Addr mod Page_Size) := Value;
+      declare
+         Page : constant Page_Access := Memory.Directory (Addr / Page_Size);
+      begin
+         Page.Data (Addr mod Page_Size) := Value;
+         if Page.Flags (Flag_Driver) then
+            for Position in Page.Driver_Map.Iterate loop
+               declare
+                  Driver : constant Aqua.Drivers.Aqua_Driver :=
+                             Driver_Maps.Element (Position);
+                  Base : constant Address := Driver_Maps.Key (Position);
+                  Bound : constant Address :=
+                             Base + Driver.Address_Count;
+               begin
+                  if Addr in Base .. Bound then
+                     Driver.Set_Octet (Addr - Base, Value);
+                  end if;
+               end;
+            end loop;
+         end if;
+      end;
+
    end Set_Octet;
 
    ---------------
