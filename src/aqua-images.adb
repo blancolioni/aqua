@@ -187,7 +187,9 @@ package body Aqua.Images is
             then
                Ada.Text_IO.Put_Line
                  (Ada.Text_IO.Standard_Error,
-                  "undefined reference: " & Key (Position));
+                  (-Info.Defn_File)
+                  & ": undefined reference: "
+                  & Key (Position));
                Have_Error := True;
             end if;
 
@@ -428,7 +430,9 @@ package body Aqua.Images is
                   if Info.Has_Value and then Defined then
                      Ada.Text_IO.Put_Line
                        (Ada.Text_IO.Standard_Error,
-                        "redefined: " & S);
+                        "multiple definitions for " & S
+                        & " in " & (-Info.Defn_File)
+                        & " and " & Ada.Directories.Base_Name (Name));
                   end if;
 
                   if Trace_Load and then Deferred then
@@ -438,6 +442,7 @@ package body Aqua.Images is
                end if;
 
                Info.Start := Start;
+               Info.Defn_File := +(Ada.Directories.Base_Name (Name));
 
                if Defined then
                   Info.Has_Value := True;
