@@ -110,11 +110,12 @@ private
 
    type Link_Info is
       record
-         Value      : Word;
-         References : List_Of_References.List;
-         Has_Value  : Boolean := False;
-         Is_String  : Boolean := False;
-         Start      : Boolean := False;
+         Value          : Word;
+         References     : List_Of_References.List;
+         Defn_File      : Ada.Strings.Unbounded.Unbounded_String;
+         Has_Value      : Boolean := False;
+         Is_String      : Boolean := False;
+         Start          : Boolean := False;
       end record;
 
    package Link_Vectors is
