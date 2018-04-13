@@ -68,10 +68,6 @@ package Aqua.IO is
       return String;
 
    function Hex_Image
-     (Value : Address)
-      return String;
-
-   function Hex_Image
      (Value : Octet)
       return String;
 

@@ -10,16 +10,36 @@ package body Aqua.Memory is
      (Mem  : in out Memory_Type;
       Addr : Address)
    is
-      D : constant Directory_Address := Addr / Page_Size;
+      T : constant Table_Address_Range := Table_Address (Addr);
+      D : constant Directory_Address_Range := Directory_Address (Addr);
    begin
-      if Mem.Directory (D) = null then
-         Mem.Directory (D) :=
+      if Mem.Table (T) = null then
+         Mem.Table (T) := new Directory_Type'(others => null);
+      end if;
+
+      if Mem.Table (T) (D) = null then
+         Mem.Table (T) (D) :=
            new Page_Type'(Data => (others => 0),
                           Flags => (others => <>),
                           Driver_Map => <>);
          Mem.Page_Count := Mem.Page_Count + 1;
       end if;
    end Ensure_Page;
+
+   -----------------
+   -- Flag_Is_Set --
+   -----------------
+
+   function Flag_Is_Set
+     (Memory : Memory_Type'Class;
+      Addr   : Address;
+      Flag   : Page_Flag)
+      return Boolean
+   is
+      Page : constant Page_Access := Memory.Get_Page (Addr);
+   begin
+      return Page /= null and then Page.Flags (Flag);
+   end Flag_Is_Set;
 
    --------------
    -- Get_Octet --
@@ -53,6 +73,25 @@ package body Aqua.Memory is
          return Page.Data (Addr mod Page_Size);
       end if;
    end Get_Octet;
+
+   --------------
+   -- Get_Page --
+   --------------
+
+   function Get_Page
+     (Mem  : Memory_Type;
+      Addr : Address)
+      return Page_Access
+   is
+      T : constant Table_Address_Range := Table_Address (Addr);
+      D : constant Directory_Address_Range := Directory_Address (Addr);
+   begin
+      if Mem.Table (T) = null then
+         return null;
+      else
+         return Mem.Table (T) (D);
+      end if;
+   end Get_Page;
 
    ---------------
    -- Get_Value --
@@ -105,7 +144,7 @@ package body Aqua.Memory is
       Memory.Ensure_Page (Start);
 
       declare
-         Page : constant Page_Access := Memory.Directory (Start_Page);
+         Page : constant Page_Access := Memory.Get_Page (Start);
       begin
          if Page.Driver_Map.Contains (Start_Address) then
             raise Constraint_Error with
@@ -135,7 +174,7 @@ package body Aqua.Memory is
    is
    begin
       Ensure_Page (Memory, Addr);
-      Memory.Directory (Addr / Page_Size).Flags (Flag) := Value;
+      Memory.Get_Page (Addr).Flags (Flag) := Value;
    end Set_Flag;
 
    ---------------
@@ -150,7 +189,7 @@ package body Aqua.Memory is
    begin
       Ensure_Page (Memory, Addr);
       declare
-         Page : constant Page_Access := Memory.Directory (Addr / Page_Size);
+         Page : constant Page_Access := Memory.Get_Page (Addr);
       begin
          Page.Data (Addr mod Page_Size) := Value;
          if Page.Flags (Flag_Driver) then

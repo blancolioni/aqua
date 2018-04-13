@@ -77,11 +77,6 @@ package Aqua.Assembler is
       Forward : Boolean)
       return Word;
 
-   function Reference_String
-     (A : in out Root_Assembly_Type'Class;
-      X : String)
-      return Word;
-
    function Reference_Property_Name
      (A    : in out Root_Assembly_Type'Class;
       Name : String)
@@ -177,7 +172,6 @@ private
          Defined         : Boolean := False;
          External        : Boolean := False;
          Register_Alias  : Boolean := False;
-         String_Constant : Boolean := False;
          Named_Number    : Boolean := False;
          Deferred        : Boolean := False;
          Value           : Word    := 0;
@@ -238,7 +232,6 @@ private
          Next_String    : Word    := 0;
          Labels         : Label_Maps.Map;
          Temporaries    : Temporary_Label_Vectors.Vector;
-         String_Lits    : String_Vectors.Vector;
          Bindings       : Binding_Info_Vectors.Vector;
          Handlers       : Exception_Info_Vectors.Vector;
          Start_Label    : Ada.Strings.Unbounded.Unbounded_String;
@@ -246,7 +239,6 @@ private
 
    procedure Ensure_Label
      (A         : in out Root_Assembly_Type'Class;
-      Name      : String;
-      Is_String : Boolean);
+      Name      : String);
 
 end Aqua.Assembler;
