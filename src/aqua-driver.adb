@@ -7,8 +7,6 @@ with Aqua.CPU;
 with Aqua.Debug;
 with Aqua.Images;
 with Aqua.IO;
-with Aqua.Loaders;
-with Aqua.Primitives.Init;
 
 with Aqua.Drivers;
 with Aqua.Paths;
@@ -47,7 +45,6 @@ procedure Aqua.Driver is
 
 begin
    Aqua.IO.Set_IO_Path (Aqua.Paths.Config_Path);
-   Aqua.Primitives.Init.Create_Primitives;
 
    if Ada.Command_Line.Argument_Count = 1
      and then Ada.Command_Line.Argument (1) = "opcodes"
@@ -109,10 +106,8 @@ begin
    end if;
 
    declare
-      Loader : constant Aqua.Loaders.Null_Loader_Access :=
-                 new Aqua.Loaders.Null_Loader;
       Image  : constant Aqua.Images.Image_Type := Aqua.Images.New_Image;
-      CPU    : Aqua.CPU.Aqua_CPU_Type (Image, Loader);
+      CPU    : Aqua.CPU.Aqua_CPU_Type (Image);
    begin
       Image.Install_Driver (16#1FFF_0000#, Aqua.Drivers.Text_Writer);
       Image.Load ("test.o32");

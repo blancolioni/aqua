@@ -51,23 +51,6 @@ package Aqua.Images is
      (Image : Root_Image_Type'Class)
       return Address;
 
-   function Have_String
-     (Image : Root_Image_Type'Class;
-      Value : Word)
-      return Boolean
-     with Pre => Is_String_Reference (Value);
-
-   function String_Count
-     (Image : Root_Image_Type'Class)
-      return Natural;
-
-   function To_String
-     (Image : Root_Image_Type'Class;
-      Value : Word)
-      return String
-     with Pre => Is_String_Reference (Value)
-     and then Image.Have_String (Value);
-
    function Show (Image : Root_Image_Type'Class;
                   Value : Word)
                   return String;
@@ -114,7 +97,6 @@ private
          References     : List_Of_References.List;
          Defn_File      : Ada.Strings.Unbounded.Unbounded_String;
          Has_Value      : Boolean := False;
-         Is_String      : Boolean := False;
          Start          : Boolean := False;
       end record;
 

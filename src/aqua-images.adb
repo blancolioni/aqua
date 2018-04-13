@@ -2,12 +2,11 @@ with Ada.Directories;
 with Ada.Strings.Fixed;
 with Ada.Text_IO;
 
-with Aqua.Arithmetic;
 with Aqua.IO;
 
 package body Aqua.Images is
 
-   Trace_Link : constant Boolean := False;
+   Trace_Link : constant Boolean := True;
    Trace_Load : constant Boolean := False;
    Trace_Code : constant Boolean := False;
 
@@ -78,20 +77,6 @@ package body Aqua.Images is
       return 0;
    end Get_Handler_Address;
 
-   -----------------
-   -- Have_String --
-   -----------------
-
-   function Have_String
-     (Image : Root_Image_Type'Class;
-      Value : Word)
-      return Boolean
-   is
-   begin
-      return Natural (Get_String_Reference (Value))
-        <= Image.String_Vector.Last_Index;
-   end Have_String;
-
    ---------------
    -- Heap_High --
    ---------------
@@ -135,22 +120,12 @@ package body Aqua.Images is
                if Trace_Link then
                   Ada.Text_IO.Put (" " & Aqua.IO.Hex_Image (Ref.Addr));
                end if;
-               if Info.Is_String then
-                  declare
-                     Addr : constant Address := Ref.Addr;
-                     Index : constant String_Reference :=
-                               String_Reference (Info.Value);
-                     Value : constant Word := To_String_Word (Index);
-                  begin
-                     Image.Set_Word (Addr, Value);
-                  end;
-               elsif Ref.Branch then
+               if Ref.Branch then
                   declare
                      Target : constant Address :=
-                                Aqua.Arithmetic.Relative_Address
-                                  (Ref.Addr, Get_Address (Info.Value));
+                                Ref.Addr - Info.Value;
                   begin
-                     if Ref.Addr > Get_Address (Info.Value) then
+                     if Ref.Addr > Info.Value then
                         Ada.Text_IO.Put_Line
                           ("branch backward: "
                            & IO.Hex_Image (Ref.Addr)
@@ -164,10 +139,7 @@ package body Aqua.Images is
                   end;
                elsif Ref.Relative then
                   declare
-                     W : constant Word :=
-                           To_Address_Word
-                             (Aqua.Arithmetic.Relative_Address
-                                (Ref.Addr, Get_Address (Info.Value)));
+                     W : constant Word := Info.Value - Ref.Addr;
                   begin
                      Image.Set_Word
                        (Ref.Addr, W);
@@ -194,7 +166,7 @@ package body Aqua.Images is
             end if;
 
             if Info.Start then
-               Image.Start := Get_Address (Info.Value);
+               Image.Start := Info.Value;
             end if;
 
          end;
@@ -227,14 +199,7 @@ package body Aqua.Images is
                      Info : constant Link_Info :=
                               Image.Link_Map.Element (Key);
                   begin
-                     if Info.Is_String then
-                        Ada.Text_IO.Put_Line
-                          (Key
-                           & ": defined as string but referenced as address");
-                        Have_Error := True;
-                     else
-                        Addr := Get_Address (Info.Value);
-                     end if;
+                     Addr := Info.Value;
                   end;
                end if;
             end Check;
@@ -275,7 +240,6 @@ package body Aqua.Images is
       Low            : Word;
       High           : Word;
       External_Count : Word;
-      String_Count   : Word;
    begin
 
       if Trace_Load then
@@ -289,7 +253,6 @@ package body Aqua.Images is
       Read_Word (File, Low);
       Read_Word (File, High);
       Read_Word (File, External_Count);
-      Read_Word (File, String_Count);
 
       if Trace_Load then
          Ada.Text_IO.Put_Line
@@ -297,13 +260,12 @@ package body Aqua.Images is
             & ": bindings:" & Word'Image (Binding_Count)
             & "; handlers:" & Word'Image (Handler_Count)
             & "; externals:" & Word'Image (External_Count)
-            & "; strings:" & Word'Image (String_Count)
             & " range "
             & Hex_Image (Low) & " - " & Hex_Image (High)
             & "; new range "
-            & Hex_Image (Image.High + Get_Address (Low))
+            & Hex_Image (Image.High + Low)
             & " - "
-            & Hex_Image (Image.High + Get_Address (High)));
+            & Hex_Image (Image.High + High));
       end if;
 
       for I in 1 .. Binding_Count loop
@@ -389,7 +351,7 @@ package body Aqua.Images is
          Ada.Text_IO.New_Line;
       end if;
 
-      for I in 1 .. External_Count + String_Count loop
+      for I in 1 .. External_Count loop
          declare
             Length   : Word;
             Refs     : Word;
@@ -420,12 +382,6 @@ package body Aqua.Images is
                if Image.Link_Map.Contains (S) then
                   Exists := True;
                   Info := Image.Link_Map (S);
-                  if Info.Is_String /= (I > External_Count) then
-                     Ada.Text_IO.Put_Line
-                       (Ada.Text_IO.Standard_Error,
-                        "defined as both string and label: "
-                        & S);
-                  end if;
 
                   if Info.Has_Value and then Defined then
                      Ada.Text_IO.Put_Line
@@ -448,67 +404,44 @@ package body Aqua.Images is
                   Info.Has_Value := True;
                end if;
 
-               if I <= External_Count then
-                  if Trace_Load then
-                     if Exists then
-                        Ada.Text_IO.Put ("e");
-                     else
-                        Ada.Text_IO.Put ("-");
-                     end if;
-                     if Info.Has_Value then
-                        Ada.Text_IO.Put ("v");
-                     else
-                        Ada.Text_IO.Put ("-");
-                     end if;
-                     if Deferred then
-                        Ada.Text_IO.Put ("d");
-                     else
-                        Ada.Text_IO.Put ("-");
-                     end if;
-
+               if Trace_Load then
+                  if Exists then
+                     Ada.Text_IO.Put ("e");
+                  else
                      Ada.Text_IO.Put ("-");
-
-                     Ada.Text_IO.Put
-                       (Integer'Image (Integer (I)) & ": "
-                        & S);
-                     Ada.Text_IO.Set_Col (60);
+                  end if;
+                  if Info.Has_Value then
+                     Ada.Text_IO.Put ("v");
+                  else
+                     Ada.Text_IO.Put ("-");
+                  end if;
+                  if Deferred then
+                     Ada.Text_IO.Put ("d");
+                  else
+                     Ada.Text_IO.Put ("-");
                   end if;
 
-                  Image.Label_Vector.Append (S);
+                  Ada.Text_IO.Put ("-");
 
-                  if Defined then
-                     Read_Word (File, Info.Value);
+                  Ada.Text_IO.Put
+                    (Integer'Image (Integer (I)) & ": "
+                     & S);
+                  Ada.Text_IO.Set_Col (60);
+               end if;
 
-                     if Is_Address (Info.Value) then
-                        Info.Value :=
-                          To_Address_Word
-                            (Get_Address (Info.Value)
-                             - Get_Address (Low)
-                             + Image.High);
-                     end if;
+               Image.Label_Vector.Append (S);
 
-                  end if;
+               if Defined then
+                  Read_Word (File, Info.Value);
+                  Info.Value := Info.Value - Low + Image.High;
+               end if;
 
-                  if Info.Has_Value and then Trace_Load then
-                     Ada.Text_IO.Put (Aqua.IO.Hex_Image (Info.Value));
-                  end if;
+               if Info.Has_Value and then Trace_Load then
+                  Ada.Text_IO.Put (Aqua.IO.Hex_Image (Info.Value));
+               end if;
 
-                  Info.Is_String := False;
-
-                  if Trace_Load then
-                     Ada.Text_IO.Set_Col (72);
-                  end if;
-
-               else
-                  if Trace_Load then
-                     Ada.Text_IO.Put_Line
-                       ("s ["
-                        & S & "]");
-                  end if;
-                  Image.String_Vector.Append (S);
-                  Info.Value := Word (Image.String_Vector.Last_Index);
-                  Info.Is_String := True;
-                  Info.Has_Value := True;
+               if Trace_Load then
+                  Ada.Text_IO.Set_Col (72);
                end if;
 
                for J in 1 .. Refs loop
@@ -563,7 +496,7 @@ package body Aqua.Images is
       end loop;
 
       Image.High := Image.High
-        + (Get_Address (High) - Get_Address (Low) + 4);
+        + (High - Low + 4);
       Image.Code_High := Image.High;
 
       for I in 1 .. Handler_Count loop
@@ -618,22 +551,7 @@ package body Aqua.Images is
    function Show (Image : Root_Image_Type'Class;
                   Value : Word)
                   return String
-   is
-   begin
-      if Is_Address (Value) then
-         return Aqua.IO.Hex_Image (Get_Address (Value));
-      elsif Is_Integer (Value) then
-         return "#" & Aqua_Integer'Image (Get_Integer (Value));
-      elsif Is_External_Reference (Value) then
-         return "[" & Aqua.IO.Hex_Image (Value) & "]";
-      elsif Is_String_Reference (Value) then
-         return '"'
-           & Image.String_Vector (Natural (Get_String_Reference (Value)))
-           & '"';
-      else
-         return Aqua.IO.Hex_Image (Value);
-      end if;
-   end Show;
+   is (Aqua.IO.Hex_Image (Value));
 
    --------------------------------
    -- Show_Known_Source_Position --
@@ -713,30 +631,5 @@ package body Aqua.Images is
       return "unknown";
 
    end Show_Source_Position;
-
-   ------------------
-   -- String_Count --
-   ------------------
-
-   function String_Count
-     (Image : Root_Image_Type'Class)
-      return Natural
-   is
-   begin
-      return Image.String_Vector.Last_Index + 1;
-   end String_Count;
-
-   ---------------
-   -- To_String --
-   ---------------
-
-   function To_String
-     (Image : Root_Image_Type'Class;
-      Value : Word)
-      return String
-   is
-   begin
-      return Image.String_Vector (Natural (Get_String_Reference (Value)));
-   end To_String;
 
 end Aqua.Images;
