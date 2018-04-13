@@ -600,8 +600,6 @@ package body Aqua.CPU is
                      R := X > Y;
                   when A_Slt_3 =>
                      R := X < Y;
-                     Ada.Text_IO.New_Line;
-                     Ada.Text_IO.Put_Line ("slt:" & X'Img & Y'Img & R'Img);
                   when A_Sge_3 =>
                      R := X >= Y;
                   when A_Sle_3 =>

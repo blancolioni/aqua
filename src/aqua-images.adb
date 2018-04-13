@@ -6,7 +6,7 @@ with Aqua.IO;
 
 package body Aqua.Images is
 
-   Trace_Link : constant Boolean := True;
+   Trace_Link : constant Boolean := False;
    Trace_Load : constant Boolean := False;
    Trace_Code : constant Boolean := False;
 
