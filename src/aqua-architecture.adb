@@ -222,6 +222,10 @@ package body Aqua.Architecture is
               "cannot get address of literal mode";
          when Register =>
             if Operand.Deferred then
+               if Trace then
+                  Ada.Text_IO.Put
+                    (" " & Aqua.IO.Hex_Image (R (Operand.Register)));
+               end if;
                return R (Operand.Register);
             else
                raise Program_Error
@@ -246,10 +250,6 @@ package body Aqua.Architecture is
                               Memory.Get_Value (R (R_PC), Index_Size);
             begin
 
-               if Trace then
-                  Ada.Text_IO.Put (" " & Aqua.IO.Hex_Image (A, Index_Size));
-               end if;
-
                if Operand.Mode = Indexed_16 then
                   if A < 32768 then
                      Result := Result + Address (A);
@@ -272,6 +272,10 @@ package body Aqua.Architecture is
 
       if Operand.Deferred then
          Result := Memory.Get_Value (Result, Word_32_Size);
+      end if;
+
+      if Trace then
+         Ada.Text_IO.Put (" " & Aqua.IO.Hex_Image (Result));
       end if;
 
       return Result;

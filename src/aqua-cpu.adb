@@ -432,6 +432,9 @@ package body Aqua.CPU is
             null;
          when A_Rts =>
             PC := CPU.Pop;
+            if Trace_Code then
+               Ada.Text_IO.Put (" " & Aqua.IO.Hex_Image (PC));
+            end if;
          when A_Return =>
             declare
                Top : Saved_Registers renames
@@ -593,6 +596,10 @@ package body Aqua.CPU is
 
                case Triple_Set_Instruction (Instruction) is
                   when A_Seq_3 =>
+                     if Trace_Code then
+                        Ada.Text_IO.Put (" " & Aqua.IO.Hex_Image (X)
+                                         & " " & Aqua.IO.Hex_Image (Y));
+                     end if;
                      R := X = Y;
                   when A_Sne_3 =>
                      R := X /= Y;
@@ -1022,6 +1029,10 @@ package body Aqua.CPU is
          when Word_32_Size =>
             PC := PC + 4;
       end case;
+
+      if Trace_Code then
+         Ada.Text_IO.Put (" " & Aqua.IO.Hex_Image (Result, Size));
+      end if;
       return Result;
    end Next_Value;
 
