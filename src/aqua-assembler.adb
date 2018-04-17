@@ -26,12 +26,12 @@ package body Aqua.Assembler is
       W    : Word;
       Size : Aqua.Data_Size)
    is
+      Rec : Segment_Record renames A.Segment_List (A.Current_Segment);
    begin
-      A.High :=
-        Address'Max (A.High, A.PC + Address (Data_Octets (Size)));
-      A.Low  := Address'Min (A.Low, A.PC);
-      A.Set_Value (A.PC, Size, W);
-      A.PC := A.PC + Address (Data_Octets (Size));
+      pragma Assert (Rec.Initialised);
+      A.Set_Flags (Rec.Bound, R => True, W => True);
+      A.Set_Value (Rec.Bound, Size, W);
+      Rec.Bound := Rec.Bound + Address (Data_Octets (Size));
    end Append;
 
    ------------------
@@ -84,7 +84,7 @@ package body Aqua.Assembler is
 --           Ensure_Label (A, Child_String, True);
 --        end if;
       Info := (To_Unbounded_String (Group),
-               A.PC,
+               A.Segment_List.First_Element.Bound,
                Before,
                To_Unbounded_String (Parent),
                To_Unbounded_String (Child));
@@ -109,6 +109,28 @@ package body Aqua.Assembler is
       end if;
       return Offset mod 65536;
    end Branch_Offset;
+
+   ------------------
+   -- Code_Segment --
+   ------------------
+
+   procedure Code_Segment
+     (A    : in out Root_Assembly_Type)
+   is
+   begin
+      A.Set_Segment ("code");
+   end Code_Segment;
+
+   ------------------
+   -- Data_Segment --
+   ------------------
+
+   procedure Data_Segment
+     (A    : in out Root_Assembly_Type)
+   is
+   begin
+      A.Set_Segment ("data");
+   end Data_Segment;
 
    ---------------------------
    -- Define_Exported_Label --
@@ -157,7 +179,7 @@ package body Aqua.Assembler is
       Name : String)
    is
    begin
-      A.Define_Value (Name, A.PC);
+      A.Define_Value (Name, A.Current);
    end Define_Label;
 
    -----------------
@@ -398,10 +420,11 @@ package body Aqua.Assembler is
       declare
          Info : Label_Info := A.Labels (Name);
       begin
-         Info.References.Append ((A.PC, Relative => False, Branch => True));
+         Info.References.Append
+           ((A.Current, Relative => False, Branch => True));
          A.Labels (Name) := Info;
          if Info.Defined then
-            return Branch_Offset (A.PC, Info.Value);
+            return Branch_Offset (A.Current, Info.Value);
          else
             return 0;
          end if;
@@ -428,14 +451,14 @@ package body Aqua.Assembler is
             Info.Deferred := True;
          end if;
 
-         Info.References.Append ((A.PC, Relative, False));
+         Info.References.Append ((A.Current, Relative, False));
          A.Labels (Name) := Info;
 
          if Info.Defined then
             if Relative then
                declare
                   Target : constant Address := Info.Value;
-                  Addr   : constant Address := A.PC;
+                  Addr   : constant Address := A.Current;
                   Offset : constant Address := Target - Addr;
                   Index  : constant Word := Offset;
                begin
@@ -449,21 +472,6 @@ package body Aqua.Assembler is
          end if;
       end;
    end Reference_Label;
-
-   -----------------------------
-   -- Reference_Property_Name --
-   -----------------------------
-
-   function Reference_Property_Name
-     (A    : in out Root_Assembly_Type'Class;
-      Name : String)
-      return Word
-   is
-   begin
-      A.Ensure_Label (Name);
-      A.Labels (Name).References.Append ((A.PC, False, False));
-      return A.Next_String - 1;
-   end Reference_Property_Name;
 
    --------------------------------------
    -- Reference_Temporary_Branch_Label --
@@ -526,6 +534,35 @@ package body Aqua.Assembler is
       A.Labels (Name).Deferred := True;
    end Set_Deferred;
 
+   -----------------
+   -- Set_Segment --
+   -----------------
+
+   procedure Set_Segment
+     (A    : in out Root_Assembly_Type;
+      Name : String)
+   is
+      use Ada.Strings.Unbounded;
+      Found : Boolean := False;
+   begin
+      for Position in A.Segment_List.Iterate loop
+         if Segment_Lists.Element (Position).Name = Name then
+            if not Segment_Lists.Element (Position).Initialised then
+               raise Constraint_Error with
+                 "cannot set current segment to "
+                 & Name & ": segment is not initialised";
+            end if;
+            A.Current_Segment := Position;
+            Found := True;
+            exit;
+         end if;
+      end loop;
+
+      if not Found then
+         raise Constraint_Error with "unknown segment: " & Name;
+      end if;
+   end Set_Segment;
+
    ---------------------
    -- Set_Source_File --
    ---------------------
@@ -549,7 +586,7 @@ package body Aqua.Assembler is
       Column : Natural)
    is
       New_Position : constant Source_Position :=
-                       (A.PC, Line, Column);
+                       (A.Current, Line, Column);
    begin
       A.Source_Locs.Append (New_Position);
    end Set_Source_Location;
@@ -605,6 +642,54 @@ package body Aqua.Assembler is
             end if;
          end;
       end loop;
+
+      declare
+         procedure Add_Segment
+           (Name        : String;
+            Base        : Address;
+            Size        : Word := 0;
+            Readable    : Boolean := True;
+            Writable    : Boolean := False;
+            Executable  : Boolean := False;
+            Initialised : Boolean := True);
+
+         -----------------
+         -- Add_Segment --
+         -----------------
+
+         procedure Add_Segment
+           (Name        : String;
+            Base        : Address;
+            Size        : Word := 0;
+            Readable    : Boolean := True;
+            Writable    : Boolean := False;
+            Executable  : Boolean := False;
+            Initialised : Boolean := True)
+         is
+            Rec : constant Segment_Record :=
+                    Segment_Record'
+                      (Name        => +Name,
+                       R           => Readable,
+                       W           => Writable,
+                       X           => Executable,
+                       Initialised => Initialised,
+                       Base        => Base,
+                       Bound       => Base + Size);
+         begin
+            A.Segment_List.Append (Rec);
+         end Add_Segment;
+
+      begin
+         Add_Segment ("code", 16#0000_0000#, Executable => True);
+         Add_Segment ("text", 16#1000_0000#);
+         Add_Segment ("data", 16#2000_0000#, Writable => True);
+         Add_Segment ("heap", 16#4000_0000#,
+                      Size => 16#4000_0000#,
+                      Writable => True, Initialised => False);
+      end;
+
+      A.Current_Segment := A.Segment_List.First;
+
    end Start;
 
    ---------------------------
@@ -623,6 +708,17 @@ package body Aqua.Assembler is
       Post (Post'First) := '.';
       return Pre & Post;
    end Temporary_Label_Image;
+
+   ------------------
+   -- Text_Segment --
+   ------------------
+
+   procedure Text_Segment
+     (A    : in out Root_Assembly_Type)
+   is
+   begin
+      A.Set_Segment ("text");
+   end Text_Segment;
 
    -----------------
    -- Write_Image --
@@ -654,9 +750,26 @@ package body Aqua.Assembler is
       Create (File, Path);
       Write_Word (File, Word (A.Bindings.Length));
       Write_Word (File, Word (A.Handlers.Length));
-      Write_Address (File, A.Low);
-      Write_Address (File, A.High);
+      Write_Word (File, Word (A.Segment_List.Length));
       Write_Word (File, External_Count);
+      Write_Word (File, Word (A.Source_Locs.Length));
+
+      for Segment of A.Segment_List loop
+         Write_String_Literal
+           (File, Ada.Strings.Unbounded.To_String (Segment.Name));
+
+         declare
+            Flags : constant Octet :=
+                      (if Segment.R then 1 else 0)
+                      + (if Segment.W then 2 else 0)
+                      + (if Segment.X then 4 else 0)
+                      + (if Segment.Initialised then 8 else 0);
+         begin
+            Write_Octet (File, Flags);
+            Write_Word (File, Segment.Base);
+            Write_Word (File, Segment.Bound);
+         end;
+      end loop;
 
       for Binding of A.Bindings loop
          declare
@@ -699,15 +812,18 @@ package body Aqua.Assembler is
          Write_String_Literal (File, S (2 .. S'Last - 1));
       end;
 
-      Write_Word (File, Word (A.Source_Locs.Length));
       for Loc of A.Source_Locs loop
          Write_Word (File, Word (Loc.Line));
          Write_Word (File, Word (Loc.Column));
          Write_Address (File, Loc.Start);
       end loop;
 
-      for Addr in A.Low .. A.High loop
-         Write_Octet (File, A.Get_Octet (Addr));
+      for Segment of A.Segment_List loop
+         if Segment.Initialised and then Segment.Bound > Segment.Base then
+            for Addr in Segment.Base .. Segment.Bound - 1 loop
+               Write_Octet (File, A.Get_Octet (Addr));
+            end loop;
+         end if;
       end loop;
 
       for Position in A.Labels.Iterate loop

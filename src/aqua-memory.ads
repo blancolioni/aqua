@@ -68,6 +68,17 @@ package Aqua.Memory is
       Start  : Address;
       Driver : Aqua.Drivers.Aqua_Driver);
 
+   procedure Set_Access_Flags
+     (Memory  : in out Memory_Type'Class;
+      Base    : Address;
+      Bound   : Address;
+      R, W, X : Boolean);
+
+   procedure Set_Flags
+     (Memory  : in out Memory_Type'Class;
+      Addr    : Address;
+      R, W, X : Boolean := False);
+
 private
 
    Page_Bits : constant := 12;
@@ -94,6 +105,9 @@ private
 
    type Page_Flags is array (Page_Flag) of Boolean with Component_Size => 1;
 
+   type Directory_Page_Flags is array (Directory_Address_Range) of Page_Flags
+     with Component_Size => 4;
+
    package Driver_Maps is
      new Ada.Containers.Ordered_Maps (Address, Aqua.Drivers.Aqua_Driver,
                                       "=" => Aqua.Drivers."=");
@@ -102,14 +116,20 @@ private
       record
          Data       : Page_Data;
          Driver_Map : Driver_Maps.Map;
-         Flags      : Page_Flags;
       end record;
 
    type Page_Access is access Page_Type;
 
-   type Directory_Type is array (Directory_Address_Range) of Page_Access;
+   type Directory_Page_Array is
+     array (Directory_Address_Range) of Page_Access;
 
-   type Directory_Access is access Directory_Type;
+   type Directory_Entry is
+      record
+         Pages : Directory_Page_Array;
+         Flags : Directory_Page_Flags;
+      end record;
+
+   type Directory_Access is access Directory_Entry;
 
    type Table_Type is array (Table_Address_Range) of Directory_Access;
 

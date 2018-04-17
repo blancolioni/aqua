@@ -35,30 +35,6 @@ package body Aqua.Images is
       end loop;
    end Bind;
 
-   ---------------
-   -- Code_High --
-   ---------------
-
-   function Code_High
-     (Image : Root_Image_Type'Class)
-      return Address
-   is
-   begin
-      return Image.Code_High;
-   end Code_High;
-
-   --------------
-   -- Code_Low --
-   --------------
-
-   function Code_Low
-     (Image : Root_Image_Type'Class)
-      return Address
-   is
-   begin
-      return Image.Code_Low;
-   end Code_Low;
-
    -------------------------
    -- Get_Handler_Address --
    -------------------------
@@ -76,24 +52,6 @@ package body Aqua.Images is
       end loop;
       return 0;
    end Get_Handler_Address;
-
-   ---------------
-   -- Heap_High --
-   ---------------
-
-   function Heap_High (Image : Root_Image_Type'Class) return Address is
-   begin
-      return Image.High;
-   end Heap_High;
-
-   --------------
-   -- Heap_Low --
-   --------------
-
-   function Heap_Low (Image : Root_Image_Type'Class) return Address is
-   begin
-      return Image.Low;
-   end Heap_Low;
 
    ----------
    -- Link --
@@ -166,6 +124,8 @@ package body Aqua.Images is
             end if;
 
             if Info.Start then
+               Ada.Text_IO.Put_Line
+                 ("start: " & Aqua.IO.Hex_Image (Info.Value));
                Image.Start := Info.Value;
             end if;
 
@@ -220,6 +180,15 @@ package body Aqua.Images is
          end;
       end loop;
 
+      for Segment of Image.Segment_Map loop
+         Image.Set_Access_Flags
+           (Segment.Base,
+            Segment.Bound,
+            R => Segment.R,
+            W => Segment.W,
+            X => Segment.X);
+      end loop;
+
       if Have_Error then
          raise Constraint_Error with "Link error";
       end if;
@@ -234,12 +203,43 @@ package body Aqua.Images is
       Name  : in     String)
    is
       use Aqua.IO;
-      File : File_Type;
-      Binding_Count  : Word;
-      Handler_Count  : Word;
-      Low            : Word;
-      High           : Word;
-      External_Count : Word;
+      File             : File_Type;
+      Binding_Count    : Word;
+      Handler_Count    : Word;
+      Segment_Count    : Word;
+      External_Count   : Word;
+      Source_Loc_Count : Word;
+
+      package Segment_Lists is
+         new Ada.Containers.Doubly_Linked_Lists (Segment_Record);
+
+      Segments         : Segment_Lists.List;
+
+      function Convert_Address
+        (Addr : Address)
+         return Address;
+
+      ---------------------
+      -- Convert_Address --
+      ---------------------
+
+      function Convert_Address
+        (Addr : Address)
+         return Address
+      is
+      begin
+         for Segment of Segments loop
+            if Addr >= Segment.Base
+              and then Addr < Segment.Bound
+            then
+               return Image.Segment_Map.Element (-Segment.Name).Bound
+                 + Addr - Segment.Base;
+            end if;
+         end loop;
+         raise Constraint_Error with
+           "bad address: " & Aqua.IO.Hex_Image (Addr);
+      end Convert_Address;
+
    begin
 
       if Trace_Load then
@@ -250,23 +250,60 @@ package body Aqua.Images is
 
       Read_Word (File, Binding_Count);
       Read_Word (File, Handler_Count);
-      Read_Word (File, Low);
-      Read_Word (File, High);
+      Read_Word (File, Segment_Count);
       Read_Word (File, External_Count);
+      Read_Word (File, Source_Loc_Count);
 
       if Trace_Load then
          Ada.Text_IO.Put_Line
            (Name
             & ": bindings:" & Word'Image (Binding_Count)
             & "; handlers:" & Word'Image (Handler_Count)
+            & "; segments:" & Word'Image (Segment_Count)
             & "; externals:" & Word'Image (External_Count)
-            & " range "
-            & Hex_Image (Low) & " - " & Hex_Image (High)
-            & "; new range "
-            & Hex_Image (Image.High + Low)
-            & " - "
-            & Hex_Image (Image.High + High));
+            & "; source locs:" & Word'Image (Source_Loc_Count));
       end if;
+
+      for I in 1 .. Segment_Count loop
+         declare
+            Name    : constant String := Read_String_Literal (File);
+            Rec     : Segment_Record;
+            Flags   : Octet;
+         begin
+            Read_Octet (File, Flags);
+            Read_Word (File, Rec.Base);
+            Read_Word (File, Rec.Bound);
+
+            Rec.R := (Flags and 1) = 1;
+            Rec.W := (Flags and 2) = 2;
+            Rec.X := (Flags and 4) = 4;
+            Rec.Initialised := (Flags and 8) = 8;
+
+            if Trace_Load then
+               Ada.Text_IO.Put (Name);
+               Ada.Text_IO.Set_Col (12);
+               Ada.Text_IO.Put
+                 (if Rec.R then "r" else "-");
+               Ada.Text_IO.Put
+                 (if Rec.W then "w" else "-");
+               Ada.Text_IO.Put
+                 (if Rec.X then "x" else "-");
+               Ada.Text_IO.Put
+                 (if Rec.Initialised then "i" else "-");
+
+               Ada.Text_IO.Put (" ");
+               Ada.Text_IO.Put
+                 (Aqua.IO.Hex_Image (Rec.Base)
+                  & " "
+                  & Aqua.IO.Hex_Image (Rec.Bound));
+               Ada.Text_IO.New_Line;
+            end if;
+
+            Rec.Name := Ada.Strings.Unbounded.To_Unbounded_String (Name);
+            Segments.Append (Rec);
+
+         end;
+      end loop;
 
       for I in 1 .. Binding_Count loop
          declare
@@ -296,7 +333,8 @@ package body Aqua.Images is
             end if;
 
             Read_Address (File, Start);
-            Binding.Start := Start + Image.High;
+            Binding.Start := Start;
+--              Binding.Start := Start + Image.High;
 
             Image.Bindings.Append (Binding);
 
@@ -307,44 +345,78 @@ package body Aqua.Images is
          use Ada.Strings.Unbounded;
          Source_File_Name : constant Unbounded_String :=
                               To_Unbounded_String (Read_String_Literal (File));
-         Position_Count   : Word;
          Start            : Address;
          Line, Column     : Word;
       begin
-         Read_Word (File, Position_Count);
-         for I in 1 .. Position_Count loop
+         for I in 1 .. Source_Loc_Count loop
             Read_Word (File, Line);
             Read_Word (File, Column);
             Read_Address (File, Start);
             Image.Locations.Append
-              ((Source_File_Name, Start + Image.High,
+              ((Source_File_Name, Start + Image.Code_Base,
                Natural (Line), Natural (Column)));
          end loop;
       end;
 
-      for Addr in 0 .. High - Low loop
+      for Segment of Segments loop
+         if Segment.Initialised and then Segment.Bound > Segment.Base then
+            declare
+               Rec : constant Segment_Record :=
+                       Image.Segment_Map.Element (-Segment.Name);
+            begin
 
-         if Trace_Code then
-            if Addr mod 16 = 0 then
-               if Addr > 0 then
+               if Trace_Load then
+                  Ada.Text_IO.Put_Line
+                    ("Reading segment "
+                     & (-Rec.Name)
+                     & ": source "
+                     & Aqua.IO.Hex_Image (Segment.Base)
+                     & " .. "
+                     & Aqua.IO.Hex_Image (Segment.Bound)
+                     & "; destination "
+                     & Aqua.IO.Hex_Image (Rec.Bound));
+               end if;
+
+               Image.Set_Access_Flags
+                 (Base  => Rec.Bound,
+                  Bound => Rec.Bound + (Segment.Bound - Segment.Base),
+                  R     => True,
+                  W     => True,
+                  X     => False);
+
+               for Addr in Segment.Base .. Segment.Bound - 1 loop
+
+                  declare
+                     Target : constant Address :=
+                                Addr - Segment.Base + Rec.Bound;
+                     X      : Octet;
+                  begin
+                     if Trace_Code then
+                        if Target mod 16 = 0 then
+                           if Addr > Segment.Base then
+                              Ada.Text_IO.New_Line;
+                           end if;
+                           Ada.Text_IO.Put
+                             (Aqua.IO.Hex_Image (Target));
+                        end if;
+                     end if;
+
+                     Read_Octet (File, X);
+
+                     if Trace_Code then
+                        Ada.Text_IO.Put (" " & Aqua.IO.Hex_Image (X));
+                     end if;
+
+                     Image.Set_Octet (Target, X);
+                  end;
+               end loop;
+
+               if Trace_Code then
                   Ada.Text_IO.New_Line;
                end if;
-               Ada.Text_IO.Put (Aqua.IO.Hex_Image (Address (Addr)
-                                + Image.High));
-            end if;
+
+            end;
          end if;
-
-         declare
-            X : Octet;
-         begin
-            Read_Octet (File, X);
-
-            if Trace_Code then
-               Ada.Text_IO.Put (" " & Aqua.IO.Hex_Image (X));
-            end if;
-
-            Image.Set_Octet (Image.High + Address (Addr), X);
-         end;
       end loop;
 
       if Trace_Code then
@@ -433,7 +505,7 @@ package body Aqua.Images is
 
                if Defined then
                   Read_Word (File, Info.Value);
-                  Info.Value := Info.Value - Low + Image.High;
+                  Info.Value := Convert_Address (Info.Value);
                end if;
 
                if Info.Has_Value and then Trace_Load then
@@ -452,52 +524,34 @@ package body Aqua.Images is
                      Read_Address (File, Addr);
                      Read_Octet (File, Relative);
                      Info.References.Append
-                       ((Addr     => Addr + Image.High,
+                       ((Addr     => Convert_Address (Addr),
                          Relative => Boolean'Val (Relative mod 2),
                          Branch   => Boolean'Val (Relative / 2 mod 2)));
                      if Trace_Load then
-                        if I <= External_Count then
-                           Ada.Text_IO.Put
-                             (" " & Aqua.IO.Hex_Image (Addr + Image.High));
-                           Ada.Text_IO.Put
-                             ((if Relative mod 2 = 1 then "r" else ""));
-                           Ada.Text_IO.Put
-                             ((if Relative / 2 mod 2 = 1 then "b" else ""));
-                        end if;
+                        Ada.Text_IO.Put
+                          (" " & Aqua.IO.Hex_Image (Convert_Address (Addr)));
+                        Ada.Text_IO.Put
+                          ((if Relative mod 2 = 1 then "r" else ""));
+                        Ada.Text_IO.Put
+                          ((if Relative / 2 mod 2 = 1 then "b" else ""));
                      end if;
                   end;
                end loop;
 
                if Trace_Load then
-                  if I <= External_Count then
-                     Ada.Text_IO.New_Line;
-                  end if;
+                  Ada.Text_IO.New_Line;
                end if;
 
                if Image.Link_Map.Contains (S) then
-                  if Trace_Load then
-                     Ada.Text_IO.Put ("updating: ");
-                  end if;
                   Image.Link_Map (S) := Info;
                else
-                  if Trace_Load then
-                     Ada.Text_IO.Put ("inserting: ");
-                  end if;
                   Image.Link_Map.Insert (S, Info);
-               end if;
-
-               if Trace_Load then
-                  Ada.Text_IO.Put_Line (S);
                end if;
 
             end;
          end;
 
       end loop;
-
-      Image.High := Image.High
-        + (High - Low + 4);
-      Image.Code_High := Image.High;
 
       for I in 1 .. Handler_Count loop
          declare
@@ -517,6 +571,17 @@ package body Aqua.Images is
          end;
       end loop;
 
+      for Segment of Segments loop
+         if Segment.Initialised and then Segment.Bound > Segment.Base then
+            declare
+               Rec : Segment_Record renames
+                       Image.Segment_Map (-Segment.Name);
+            begin
+               Rec.Bound := Rec.Bound + (Segment.Bound - Segment.Base);
+            end;
+         end if;
+      end loop;
+
       Close (File);
 
    end Load;
@@ -526,8 +591,52 @@ package body Aqua.Images is
    ---------------
 
    function New_Image return Image_Type is
+
+      Image : constant Image_Type := new Root_Image_Type;
+
+      procedure Add_Segment
+        (Name        : String;
+         Base        : Address;
+         Size        : Word := 0;
+         Readable    : Boolean := True;
+         Writable    : Boolean := False;
+         Executable  : Boolean := False;
+         Initialised : Boolean := True);
+
+      -----------------
+      -- Add_Segment --
+      -----------------
+
+      procedure Add_Segment
+        (Name        : String;
+         Base        : Address;
+         Size        : Word := 0;
+         Readable    : Boolean := True;
+         Writable    : Boolean := False;
+         Executable  : Boolean := False;
+         Initialised : Boolean := True)
+      is
+         Rec : constant Segment_Record :=
+                 Segment_Record'
+                   (Name        => +Name,
+                    R           => Readable,
+                    W           => Writable,
+                    X           => Executable,
+                    Initialised => Initialised,
+                    Base        => Base,
+                    Bound       => Base + Size);
+      begin
+         Image.Segment_Map.Insert (Name, Rec);
+      end Add_Segment;
+
    begin
-      return new Root_Image_Type;
+      Add_Segment ("code", 16#0000_1000#, Executable => True);
+      Add_Segment ("text", 16#1000_0000#);
+      Add_Segment ("data", 16#2000_0000#, Writable => True);
+      Add_Segment ("heap", 16#4000_0000#,
+                   Size     => 16#4000_0000#,
+                   Writable => True, Initialised => False);
+      return Image;
    end New_Image;
 
    ----------
@@ -543,6 +652,32 @@ package body Aqua.Images is
    begin
       null;
    end Save;
+
+   ------------------
+   -- Segment_Base --
+   ------------------
+
+   function Segment_Base
+     (Image : Root_Image_Type'Class;
+      Name  : String)
+      return Address
+   is
+   begin
+      return Image.Segment_Map.Element (Name).Base;
+   end Segment_Base;
+
+   -------------------
+   -- Segment_Bound --
+   -------------------
+
+   function Segment_Bound
+     (Image : Root_Image_Type'Class;
+      Name  : String)
+      return Address
+   is
+   begin
+      return Image.Segment_Map.Element (Name).Bound;
+   end Segment_Bound;
 
    ----------
    -- Show --

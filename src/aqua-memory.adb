@@ -1,3 +1,5 @@
+with Ada.Text_IO;
+
 with Aqua.IO;
 
 package body Aqua.Memory is
@@ -14,16 +16,20 @@ package body Aqua.Memory is
       D : constant Directory_Address_Range := Directory_Address (Addr);
    begin
       if Mem.Table (T) = null then
-         Mem.Table (T) := new Directory_Type'(others => null);
+         Mem.Page_Count := Mem.Page_Count + 1;
+         Mem.Table (T) :=
+           new Directory_Entry'
+             (Pages => (others => null),
+              Flags => (others => (others => False)));
       end if;
 
-      if Mem.Table (T) (D) = null then
-         Mem.Table (T) (D) :=
+      if Mem.Table (T).Pages (D) = null then
+         Mem.Table (T).Pages (D) :=
            new Page_Type'(Data => (others => 0),
-                          Flags => (others => <>),
                           Driver_Map => <>);
          Mem.Page_Count := Mem.Page_Count + 1;
       end if;
+
    end Ensure_Page;
 
    -----------------
@@ -36,9 +42,14 @@ package body Aqua.Memory is
       Flag   : Page_Flag)
       return Boolean
    is
-      Page : constant Page_Access := Memory.Get_Page (Addr);
+      T : constant Address := Table_Address (Addr);
+      D : constant Address := Directory_Address (Addr);
    begin
-      return Page /= null and then Page.Flags (Flag);
+      if Memory.Table (T) = null then
+         return False;
+      else
+         return Memory.Table (T).Flags (D) (Flag);
+      end if;
    end Flag_Is_Set;
 
    --------------
@@ -50,12 +61,15 @@ package body Aqua.Memory is
       Addr   : Address)
       return Octet
    is
-      Page : constant Page_Access := Get_Page (Memory, Addr);
+      Page      : constant Page_Access := Get_Page (Memory, Addr);
    begin
       if Page = null then
          return 0;
+      elsif not Memory.Flag_Is_Set (Addr, Flag_R) then
+         raise Constraint_Error with
+           "page not readable: address: " & Aqua.IO.Hex_Image (Addr);
       else
-         if Page.Flags (Flag_Driver) then
+         if Memory.Flag_Is_Set (Addr, Flag_Driver) then
             for Position in Page.Driver_Map.Iterate loop
                declare
                   Driver : constant Aqua.Drivers.Aqua_Driver :=
@@ -89,7 +103,7 @@ package body Aqua.Memory is
       if Mem.Table (T) = null then
          return null;
       else
-         return Mem.Table (T) (D);
+         return Mem.Table (T).Pages (D);
       end if;
    end Get_Page;
 
@@ -151,16 +165,36 @@ package body Aqua.Memory is
               "driver conflict at " & Aqua.IO.Hex_Image (Start);
          end if;
 
-         Page.Flags (Flag_Driver) := True;
-         Page.Flags (Flag_R) := True;
-         Page.Flags (Flag_W) := True;
-         Page.Flags (Flag_X) := False;
+         Memory.Table (Table_Address (Start))
+           .Flags (Directory_Address (Start)) :=
+             (Flag_R => True, Flag_W => True, Flag_X => False,
+              Flag_Driver => True);
 
          Page.Driver_Map.Insert (Start, Driver);
 
       end;
 
    end Install_Driver;
+
+   ----------------------
+   -- Set_Access_Flags --
+   ----------------------
+
+   procedure Set_Access_Flags
+     (Memory  : in out Memory_Type'Class;
+      Base    : Address;
+      Bound   : Address;
+      R, W, X : Boolean)
+   is
+      Page : Address := (Base / Page_Size) * Page_Size;
+   begin
+      while Page < Bound loop
+         Memory.Set_Flag (Page, Flag_R, R);
+         Memory.Set_Flag (Page, Flag_W, W);
+         Memory.Set_Flag (Page, Flag_X, X);
+         Page := Page + Page_Size;
+      end loop;
+   end Set_Access_Flags;
 
    --------------
    -- Set_Flag --
@@ -172,10 +206,39 @@ package body Aqua.Memory is
       Flag   : Page_Flag;
       Value  : Boolean)
    is
+      T : constant Table_Address_Range := Table_Address (Addr);
+      D : constant Directory_Address_Range := Directory_Address (Addr);
    begin
-      Ensure_Page (Memory, Addr);
-      Memory.Get_Page (Addr).Flags (Flag) := Value;
+      if Memory.Table (T) = null then
+         Memory.Page_Count := Memory.Page_Count + 1;
+         Memory.Table (T) :=
+           new Directory_Entry'
+             (Pages => (others => null),
+              Flags => (others => (others => False)));
+      end if;
+      Memory.Table (T).Flags (D) (Flag) := Value;
    end Set_Flag;
+
+   ---------------
+   -- Set_Flags --
+   ---------------
+
+   procedure Set_Flags
+     (Memory  : in out Memory_Type'Class;
+      Addr    : Address;
+      R, W, X : Boolean := False)
+   is
+   begin
+      if R then
+         Memory.Set_Flag (Addr, Flag_R, True);
+      end if;
+      if W then
+         Memory.Set_Flag (Addr, Flag_W, True);
+      end if;
+      if X then
+         Memory.Set_Flag (Addr, Flag_X, True);
+      end if;
+   end Set_Flags;
 
    ---------------
    -- Set_Octet --
@@ -188,11 +251,24 @@ package body Aqua.Memory is
    is
    begin
       Ensure_Page (Memory, Addr);
+      if not Memory.Flag_Is_Set (Addr, Flag_W) then
+         raise Constraint_Error with
+           "page not writable: address: " & Aqua.IO.Hex_Image (Addr);
+      end if;
+
       declare
          Page : constant Page_Access := Memory.Get_Page (Addr);
       begin
+
+         if False then
+            Ada.Text_IO.Put_Line ("[" & Aqua.IO.Hex_Image (Addr)
+                                  & "]<-"
+                                  & Aqua.IO.Hex_Image
+                                    (Word (Value), Word_8_Size));
+         end if;
+
          Page.Data (Addr mod Page_Size) := Value;
-         if Page.Flags (Flag_Driver) then
+         if Memory.Flag_Is_Set (Addr, Flag_Driver) then
             for Position in Page.Driver_Map.Iterate loop
                declare
                   Driver : constant Aqua.Drivers.Aqua_Driver :=
