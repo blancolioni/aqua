@@ -947,7 +947,7 @@ package body Aqua.CPU is
 
       case Index is
          when Aqua.Traps.Get_Data_Segment_Start =>
-            CPU.R (0) := 16#1000_0000#;
+            CPU.R (0) := CPU.Image.Segment_Base ("heap");
 
 --           when Aqua.Traps.Handle_Exception =>
 --
@@ -1095,19 +1095,19 @@ package body Aqua.CPU is
       use Ada.Calendar;
       use Ada.Text_IO;
    begin
-      Put_Line
-        ("Memory:"
-         & " reserved ="
-         & Address'Image (CPU.Image.Code_Low)
-         & " code ="
-         & Address'Image (CPU.Image.Code_High - CPU.Image.Code_Low)
-         & " heap ="
-         & Address'Image
-           (CPU.Image.Heap_High - CPU.Image.Code_High)
-         & " stack ="
-         & Address'Image (Default_Stack_Top - CPU.R (R_SP) + 1)
-         & " allocated ="
-         & Natural'Image (CPU.Image.Used_Memory));
+--        Put_Line
+--          ("Memory:"
+--           & " reserved ="
+--           & Address'Image (CPU.Image.Code_Low)
+--           & " code ="
+--           & Address'Image (CPU.Image.Code_High - CPU.Image.Code_Low)
+--           & " heap ="
+--           & Address'Image
+--             (CPU.Image.Heap_High - CPU.Image.Code_High)
+--           & " stack ="
+--           & Address'Image (Default_Stack_Top - CPU.R (R_SP) + 1)
+--           & " allocated ="
+--           & Natural'Image (CPU.Image.Used_Memory));
 
       Put_Line ("CPU time:"
                 & Natural'Image (Natural (CPU.Exec_Time * 1000.0))

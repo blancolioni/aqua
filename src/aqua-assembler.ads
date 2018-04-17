@@ -25,6 +25,19 @@ package Aqua.Assembler is
       Line   : Natural;
       Column : Natural);
 
+   procedure Set_Segment
+     (A    : in out Root_Assembly_Type;
+      Name : String);
+
+   procedure Code_Segment
+     (A    : in out Root_Assembly_Type);
+
+   procedure Text_Segment
+     (A    : in out Root_Assembly_Type);
+
+   procedure Data_Segment
+     (A    : in out Root_Assembly_Type);
+
    procedure Append_Octet
      (A : in out Root_Assembly_Type'Class;
       X : Octet);
@@ -75,11 +88,6 @@ package Aqua.Assembler is
      (A       : in out Root_Assembly_Type'Class;
       Label   : Natural;
       Forward : Boolean)
-      return Word;
-
-   function Reference_Property_Name
-     (A    : in out Root_Assembly_Type'Class;
-      Name : String)
       return Word;
 
    procedure Define_Label
@@ -221,24 +229,36 @@ private
    package Source_Position_Lists is
      new Ada.Containers.Doubly_Linked_Lists (Source_Position);
 
+   type Segment_Record is
+      record
+         Name        : Ada.Strings.Unbounded.Unbounded_String;
+         R, W, X     : Boolean := False;
+         Initialised : Boolean := False;
+         Base, Bound : Address;
+      end record;
+
+   package Segment_Lists is
+     new Ada.Containers.Doubly_Linked_Lists (Segment_Record);
+
    type Root_Assembly_Type is
      new Aqua.Memory.Memory_Type with
       record
-         Source_Path    : Ada.Strings.Unbounded.Unbounded_String;
-         Source_Locs    : Source_Position_Lists.List;
-         Low            : Address := Address'Last;
-         High           : Address := 0;
-         PC             : Address := 0;
-         Next_String    : Word    := 0;
-         Labels         : Label_Maps.Map;
-         Temporaries    : Temporary_Label_Vectors.Vector;
-         Bindings       : Binding_Info_Vectors.Vector;
-         Handlers       : Exception_Info_Vectors.Vector;
-         Start_Label    : Ada.Strings.Unbounded.Unbounded_String;
+         Source_Path     : Ada.Strings.Unbounded.Unbounded_String;
+         Source_Locs     : Source_Position_Lists.List;
+         Labels          : Label_Maps.Map;
+         Segment_List    : Segment_Lists.List;
+         Current_Segment : Segment_Lists.Cursor;
+         Temporaries     : Temporary_Label_Vectors.Vector;
+         Bindings        : Binding_Info_Vectors.Vector;
+         Handlers        : Exception_Info_Vectors.Vector;
+         Start_Label     : Ada.Strings.Unbounded.Unbounded_String;
       end record;
 
    procedure Ensure_Label
      (A         : in out Root_Assembly_Type'Class;
       Name      : String);
+
+   function Current (A : Root_Assembly_Type'Class) return Address
+   is (Segment_Lists.Element (A.Current_Segment).Bound);
 
 end Aqua.Assembler;

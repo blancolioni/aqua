@@ -5,6 +5,8 @@ private with Ada.Containers.Vectors;
 private with Ada.Strings.Fixed.Less_Case_Insensitive;
 private with Ada.Strings.Unbounded;
 
+private with WL.String_Maps;
+
 with Aqua.Memory;
 
 package Aqua.Images is
@@ -31,22 +33,6 @@ package Aqua.Images is
      (Image : Root_Image_Type'Class;
       Path  : String);
 
-   function Heap_Low
-     (Image : Root_Image_Type'Class)
-      return Address;
-
-   function Heap_High
-     (Image : Root_Image_Type'Class)
-      return Address;
-
-   function Code_Low
-     (Image : Root_Image_Type'Class)
-      return Address;
-
-   function Code_High
-     (Image : Root_Image_Type'Class)
-      return Address;
-
    function Start_Address
      (Image : Root_Image_Type'Class)
       return Address;
@@ -68,6 +54,24 @@ package Aqua.Images is
    function Get_Handler_Address
      (Image        : Root_Image_Type'Class;
       Trap_Address : Address)
+      return Address;
+
+   function Segment_Base
+     (Image : Root_Image_Type'Class;
+      Name  : String)
+      return Address;
+
+   function Segment_Bound
+     (Image : Root_Image_Type'Class;
+      Name  : String)
+      return Address;
+
+   function Code_Base
+     (Image : Root_Image_Type'Class)
+      return Address;
+
+   function Code_Bound
+     (Image : Root_Image_Type'Class)
       return Address;
 
    type Image_Type is access all Root_Image_Type'Class;
@@ -146,6 +150,17 @@ private
    package List_Of_Source_Locations is
      new Ada.Containers.Doubly_Linked_Lists (Source_Location);
 
+   type Segment_Record is
+      record
+         Name        : Ada.Strings.Unbounded.Unbounded_String;
+         R, W, X     : Boolean := False;
+         Initialised : Boolean := False;
+         Base, Bound : Address;
+      end record;
+
+   package Segment_Maps is
+     new WL.String_Maps (Segment_Record);
+
    type Root_Image_Type is new Aqua.Memory.Memory_Type with
       record
          Locations     : List_Of_Source_Locations.List;
@@ -154,16 +169,23 @@ private
          String_Vector : Link_Vectors.Vector;
          Label_Vector  : Link_Vectors.Vector;
          Link_Map      : Link_Maps.Map;
+         Segment_Map   : Segment_Maps.Map;
          Start         : Address := 16#1000#;
-         Low           : Address := 16#1000#;
-         High          : Address := 16#1000#;
-         Code_Low      : Address := 16#1000#;
-         Code_High     : Address := 16#1000#;
       end record;
 
    function Start_Address
      (Image : Root_Image_Type'Class)
       return Address
    is (Image.Start);
+
+   function Code_Base
+     (Image : Root_Image_Type'Class)
+      return Address
+   is (Image.Segment_Map.Element ("code").Base);
+
+   function Code_Bound
+     (Image : Root_Image_Type'Class)
+      return Address
+   is (Image.Segment_Map.Element ("code").Bound);
 
 end Aqua.Images;
