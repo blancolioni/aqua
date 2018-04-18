@@ -6,6 +6,8 @@ with Aqua.Debug;
 with Aqua.IO;
 with Aqua.Traps;
 
+with Aqua.Options;
+
 package body Aqua.CPU is
 
    use Aqua.Architecture;
@@ -250,6 +252,8 @@ package body Aqua.CPU is
       FP : Word renames CPU.R (Aqua.Architecture.R_FP);
       Last_Source : Ada.Strings.Unbounded.Unbounded_String;
    begin
+
+      Trace_Code := Aqua.Options.Trace_Code;
 
       CPU.Set_Current_Environment (Environment_Name);
 
@@ -1162,20 +1166,6 @@ package body Aqua.CPU is
             CPU.N := X >= 16#8000_0000#;
       end case;
    end Set_NZ;
-
-   ----------------
-   -- Set_Option --
-   ----------------
-
-   procedure Set_Option
-     (Name  : String;
-      Value : String)
-   is
-   begin
-      if Name = "trace-code" then
-         Trace_Code := Boolean'Value (Value);
-      end if;
-   end Set_Option;
 
    ----------
    -- Show --
