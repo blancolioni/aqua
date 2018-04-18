@@ -129,8 +129,8 @@ private
      and Aqua.Execution.Execution_Interface with
       record
          R           : Aqua.Architecture.Registers :=
-                         (Architecture.R_PC => 0,
-                          Architecture.R_SP => 16#1FFF_FFFC#,
+                         (Architecture.R_PC => 16#1FFF_FFFC#,
+                          Architecture.R_SP => 16#1800_0000#,
                           others            => 16#BAAD_F00D#);
          R_Stack     : List_Of_Saved_Registers.List;
          N, Z, C, V  : Boolean := False;
