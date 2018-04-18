@@ -1,3 +1,6 @@
+private with Ada.Containers.Ordered_Maps;
+with Aqua.Drivers;
+
 package Aqua.Memory is
 
    type Memory_Type is tagged private;
@@ -43,7 +46,12 @@ package Aqua.Memory is
 
    function Used_Memory
      (Memory : Memory_Type'Class)
-     return Natural;
+      return Natural;
+
+   procedure Install_Driver
+     (Memory : in out Memory_Type'Class;
+      Start  : Address;
+      Driver : Aqua.Drivers.Aqua_Driver);
 
 private
 
@@ -55,7 +63,23 @@ private
    Directory_Size : constant := 2 ** Directory_Bits;
    subtype Directory_Address is Address range 0 .. Directory_Size - 1;
 
-   type Page_Type is array (Page_Address) of Octet;
+   type Page_Data is array (Page_Address) of Octet;
+
+   type Page_Flag is (Flag_R, Flag_W, Flag_X, Flag_Driver);
+
+   type Page_Flags is array (Page_Flag) of Boolean with Component_Size => 1;
+
+   package Driver_Maps is
+     new Ada.Containers.Ordered_Maps (Address, Aqua.Drivers.Aqua_Driver,
+                                      "=" => Aqua.Drivers."=");
+
+   type Page_Type is
+      record
+         Data       : Page_Data;
+         Driver_Map : Driver_Maps.Map;
+         Flags      : Page_Flags;
+      end record;
+
    type Page_Access is access Page_Type;
 
    type Directory_Type is array (Directory_Address) of Page_Access;
@@ -65,6 +89,20 @@ private
          Directory  : Directory_Type;
          Page_Count : Natural := 0;
       end record;
+
+   function Flag_Is_Set
+     (Memory : Memory_Type'Class;
+      Addr   : Address;
+      Flag   : Page_Flag)
+      return Boolean
+   is (Memory.Directory (Addr / Page_Size) /= null
+       and then Memory.Directory (Addr / Page_Size).Flags (Flag));
+
+   procedure Set_Flag
+     (Memory : in out Memory_Type'Class;
+      Addr   : Address;
+      Flag   : Page_Flag;
+      Value  : Boolean);
 
    function Get_Page
      (Mem : Memory_Type;
