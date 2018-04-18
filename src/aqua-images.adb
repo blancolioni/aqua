@@ -4,10 +4,11 @@ with Ada.Text_IO;
 
 with Aqua.Arithmetic;
 with Aqua.IO;
+with Aqua.Options;
 
 package body Aqua.Images is
 
-   Trace_Link : constant Boolean := False;
+   Trace_Link : Boolean := False;
    Trace_Load : constant Boolean := False;
    Trace_Code : constant Boolean := False;
 
@@ -120,6 +121,9 @@ package body Aqua.Images is
       use Link_Maps;
       Have_Error : Boolean := False;
    begin
+
+      Trace_Link := Aqua.Options.Trace_Link;
+
       for Position in Image.Link_Map.Iterate loop
          declare
             Info : constant Link_Info := Element (Position);
