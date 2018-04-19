@@ -956,6 +956,18 @@ package body Aqua.CPU is
          when Aqua.Traps.Get_Data_Segment_Start =>
             CPU.R (0) := CPU.Image.Segment_Base ("heap");
 
+         when Aqua.Traps.End_Execution =>
+            declare
+               Exit_Code : constant Word := CPU.Pop;
+            begin
+               if Exit_Code /= 0 then
+                  Ada.Text_IO.Put_Line
+                    (Ada.Text_IO.Standard_Error,
+                     "exited with code" & Exit_Code'Img);
+               end if;
+               CPU.B := True;
+            end;
+
 --           when Aqua.Traps.Handle_Exception =>
 --
 --              loop
