@@ -1,4 +1,6 @@
 private with Ada.Containers.Ordered_Maps;
+private with Ada.Containers.Doubly_Linked_Lists;
+
 with Aqua.Drivers;
 
 package Aqua.Memory is
@@ -79,6 +81,9 @@ package Aqua.Memory is
       Addr    : Address;
       R, W, X : Boolean := False);
 
+   procedure Begin_Transaction (Memory : in out Memory_Type'Class);
+   procedure End_Transaction (Memory : in out Memory_Type'Class);
+
 private
 
    Page_Bits : constant := 12;
@@ -133,10 +138,15 @@ private
 
    type Table_Type is array (Table_Address_Range) of Directory_Access;
 
+   package Changed_Driver_Lists is
+     new Ada.Containers.Doubly_Linked_Lists
+       (Aqua.Drivers.Aqua_Driver, Aqua.Drivers."=");
+
    type Memory_Type is tagged
       record
          Table      : Table_Type;
          Page_Count : Natural := 0;
+         Changes    : Changed_Driver_Lists.List;
       end record;
 
    function Flag_Is_Set
