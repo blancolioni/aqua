@@ -101,8 +101,16 @@ package body Aqua.Drivers is
       end if;
 
       if Driver.Changed_Word (R_Character) then
-         Ada.Wide_Wide_Text_IO.Put
-           (Wide_Wide_Character'Val (Driver.Get_Word (R_Character)));
+         declare
+            W : constant Word := Driver.Get_Word (R_Character);
+         begin
+            if W = 10 then
+               Ada.Wide_Wide_Text_IO.New_Line;
+            else
+               Ada.Wide_Wide_Text_IO.Put
+                 (Wide_Wide_Character'Val (Driver.Get_Word (R_Character)));
+            end if;
+         end;
       end if;
 
       Driver.Set_Word
