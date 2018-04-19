@@ -326,7 +326,10 @@ package body Aqua.CPU is
             PC := PC + 1;
 
             begin
+               CPU.Image.Begin_Transaction;
                Handle (CPU, Op);
+               CPU.Image.End_Transaction;
+
                if Trace_Code then
                   Ada.Text_IO.New_Line;
                end if;

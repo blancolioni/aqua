@@ -4,6 +4,27 @@ with Aqua.IO;
 
 package body Aqua.Memory is
 
+   -----------------------
+   -- Begin_Transaction --
+   -----------------------
+
+   procedure Begin_Transaction (Memory : in out Memory_Type'Class) is
+   begin
+      null;
+   end Begin_Transaction;
+
+   ---------------------
+   -- End_Transaction --
+   ---------------------
+
+   procedure End_Transaction (Memory : in out Memory_Type'Class) is
+   begin
+      for Driver of Memory.Changes loop
+         Driver.Update;
+      end loop;
+      Memory.Changes.Clear;
+   end End_Transaction;
+
    -----------------
    -- Ensure_Page --
    -----------------
@@ -74,12 +95,13 @@ package body Aqua.Memory is
                declare
                   Driver : constant Aqua.Drivers.Aqua_Driver :=
                              Driver_Maps.Element (Position);
-                  Base   : constant Address := Driver_Maps.Key (Position);
-                  Bound  : constant Address :=
-                             Base + Driver.Address_Count;
+                  First   : constant Address := Driver_Maps.Key (Position);
+                  Last    : constant Address :=
+                              First + Address (Driver.Last_Address);
                begin
-                  if Addr in Base .. Bound then
-                     return Driver.Get_Octet (Addr - Base);
+                  if Addr in First .. Last then
+                     return Driver.Get_Octet
+                       (Aqua.Drivers.Driver_Register_Range (Addr - First));
                   end if;
                end;
             end loop;
@@ -146,7 +168,7 @@ package body Aqua.Memory is
    is
       Start_Page : constant Address := Start / Page_Size;
       End_Page   : constant Address :=
-                     (Start + Driver.Address_Count - 1) / Page_Size;
+                     (Start + Address (Driver.Last_Address)) / Page_Size;
       Start_Address : constant Address :=
                         Start mod Page_Size;
    begin
@@ -273,12 +295,17 @@ package body Aqua.Memory is
                declare
                   Driver : constant Aqua.Drivers.Aqua_Driver :=
                              Driver_Maps.Element (Position);
-                  Base : constant Address := Driver_Maps.Key (Position);
-                  Bound : constant Address :=
-                             Base + Driver.Address_Count;
+                  First   : constant Address := Driver_Maps.Key (Position);
+                  Last    : constant Address :=
+                              First + Address (Driver.Last_Address);
                begin
-                  if Addr in Base .. Bound then
-                     Driver.Set_Octet (Addr - Base, Value);
+                  if Addr in First .. Last then
+                     Driver.Set_Octet
+                       (Aqua.Drivers.Driver_Register_Range (Addr - First),
+                        Value);
+                     if not Memory.Changes.Contains (Driver) then
+                        Memory.Changes.Append (Driver);
+                     end if;
                   end if;
                end;
             end loop;

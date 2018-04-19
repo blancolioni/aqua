@@ -2,53 +2,75 @@ with Ada.Wide_Wide_Text_IO;
 
 package body Aqua.Drivers is
 
-   type Text_Writer_Registers is
-     array (Address range 0 .. 7) of Octet;
+   Text_Writer_Register_Count : constant Driver_Register_Count := 8;
+
+   R_Character : constant Driver_Register_Range := 0;
+   R_Col       : constant Driver_Register_Range := 4;
 
    type Text_Writer_Driver is
-     new Aqua_Driver_Interface with
-      record
-         Rs : Text_Writer_Registers := (others => 255);
-      end record;
+     new Root_Aqua_Driver with null record;
 
-   overriding function Address_Count
-     (Driver : Text_Writer_Driver)
-      return Address
-   is (Text_Writer_Registers'Length);
+   overriding procedure Update
+     (Driver : in out Text_Writer_Driver);
 
-   overriding function Get_Octet
-     (Driver : Text_Writer_Driver;
-      Addr   : Address)
-      return Octet
-   is (Driver.Rs (Addr));
+   -------------------
+   -- Clear_Changes --
+   -------------------
 
-   overriding procedure Set_Octet
-     (Driver : in out Text_Writer_Driver;
-      Addr   : Address;
-      Value  : Octet);
+   procedure Clear_Changes
+     (Driver : in out Root_Aqua_Driver'Class)
+   is
+   begin
+      Driver.Changed := (others => False);
+   end Clear_Changes;
+
+   --------------
+   -- Get_Word --
+   --------------
+
+   function Get_Word
+     (Driver : Root_Aqua_Driver'Class;
+      Addr   : Driver_Register_Range)
+      return Word
+   is
+   begin
+      return X : Word := 0 do
+         for I in reverse Driver_Register_Range range 0 .. 3 loop
+            X := X * 256 + Word (Driver.Get_Octet (Addr + I));
+         end loop;
+      end return;
+   end Get_Word;
 
    ---------------
    -- Set_Octet --
    ---------------
 
-   overriding procedure Set_Octet
-     (Driver : in out Text_Writer_Driver;
-      Addr   : Address;
+   procedure Set_Octet
+     (Driver : in out Root_Aqua_Driver'Class;
+      Addr   : Driver_Register_Range;
       Value  : Octet)
    is
    begin
       Driver.Rs (Addr) := Value;
-      if Addr = 0 and then Value /= 0 then
-         declare
-            W : Word := 0;
-         begin
-            for X in reverse Address range 4 .. 7 loop
-               W := W * 256 + Word (Driver.Rs (X));
-            end loop;
-            Ada.Wide_Wide_Text_IO.Put (Wide_Wide_Character'Val (W));
-         end;
-      end if;
+      Driver.Changed (Addr) := True;
    end Set_Octet;
+
+   --------------
+   -- Set_Word --
+   --------------
+
+   procedure Set_Word
+     (Driver : in out Root_Aqua_Driver'Class;
+      Addr   : Driver_Register_Range;
+      Value  : Word)
+   is
+      It : Word := Value;
+   begin
+      for I in Driver_Register_Range range 0 .. 3 loop
+         Driver.Set_Octet (Addr + I, Octet (It mod 256));
+         It := It / 256;
+      end loop;
+   end Set_Word;
 
    -----------------
    -- Text_Writer --
@@ -56,7 +78,36 @@ package body Aqua.Drivers is
 
    function Text_Writer return Aqua_Driver is
    begin
-      return new Text_Writer_Driver;
+      return new Text_Writer_Driver (Text_Writer_Register_Count - 1);
    end Text_Writer;
+
+   ------------
+   -- Update --
+   ------------
+
+   overriding procedure Update
+     (Driver : in out Text_Writer_Driver)
+   is
+   begin
+      if Driver.Changed_Word (R_Col) then
+         declare
+            New_Col : constant Word := Driver.Get_Word (R_Col);
+         begin
+            if New_Col > 0 then
+               Ada.Wide_Wide_Text_IO.Set_Col
+                 (Ada.Wide_Wide_Text_IO.Count (New_Col));
+            end if;
+         end;
+      end if;
+
+      if Driver.Changed_Word (R_Character) then
+         Ada.Wide_Wide_Text_IO.Put
+           (Wide_Wide_Character'Val (Driver.Get_Word (R_Character)));
+      end if;
+
+      Driver.Set_Word
+        (R_Col, Word (Ada.Wide_Wide_Text_IO.Col));
+      Driver.Clear_Changes;
+   end Update;
 
 end Aqua.Drivers;
