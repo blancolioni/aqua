@@ -83,23 +83,8 @@ package body Aqua.Debug is
                return Img & " destination";
             when A_Call =>
                return Img & Octet'Image (Op mod 8) & ", destination";
-            when A_Get_Property =>
-               return Img & Octet'Image (Op mod 16);
-            when A_Set_Property =>
-               return Img;
             when A_Trap =>
                return Img & Octet'Image (Op mod 16);
-            when A_Allocate =>
-               return Img;
-            when A_Iterator_Start =>
-               return Img;
-            when A_Iterator_Next =>
-               declare
-                  R_Image : String := Octet'Image (Op mod 16);
-               begin
-                  R_Image (R_Image'First) := 'r';
-                  return Img & " " & R_Image;
-               end;
          end case;
       end;
    exception

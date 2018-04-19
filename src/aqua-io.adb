@@ -81,18 +81,6 @@ package body Aqua.IO is
    ---------------
 
    function Hex_Image
-     (Value : Address)
-      return String
-   is
-   begin
-      return Hex_Image (Word (Value));
-   end Hex_Image;
-
-   ---------------
-   -- Hex_Image --
-   ---------------
-
-   function Hex_Image
      (Value : Octet)
       return String
    is
@@ -204,7 +192,7 @@ package body Aqua.IO is
       W : Word;
    begin
       Read_Word (File, W);
-      Value := Get_Address (W);
+      Value := W;
    end Read_Address;
 
    ---------------
@@ -281,7 +269,7 @@ package body Aqua.IO is
       Value : Address)
    is
    begin
-      Write_Word (File, To_Address_Word (Value));
+      Write_Word (File, Value);
    end Write_Address;
 
    -----------------

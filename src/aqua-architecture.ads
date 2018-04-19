@@ -38,10 +38,7 @@ package Aqua.Architecture is
       A_Br, A_Bne, A_Beq, A_Bge, A_Blt, A_Bgt, A_Ble, A_Bpl, A_Bmi,
       A_Bhi, A_Blos, A_Bvc, A_Bvs, A_Bcc, A_Bcs,
       A_Jmp, A_Jsr, A_Goto, A_Call,
-      A_Trap,
-      A_Get_Property, A_Set_Property,
-      A_Allocate,
-      A_Iterator_Start, A_Iterator_Next);
+      A_Trap);
 
    subtype No_Operand_Instruction is
      Aqua_Instruction range A_Halt .. A_Return;
@@ -62,11 +59,6 @@ package Aqua.Architecture is
      Aqua_Instruction range A_Br .. A_Bcs;
    subtype Jump_Instruction is
      Aqua_Instruction range A_Jmp .. A_Jsr;
-   subtype Property_Instruction is
-     Aqua_Instruction range A_Get_Property .. A_Set_Property;
-   subtype Iteration_Instruction is
-     Aqua_Instruction range A_Iterator_Start .. A_Iterator_Next;
-
    subtype Sized_Instruction is
      Aqua_Instruction range A_Clr .. A_Xor_3;
 
