@@ -29,15 +29,15 @@ package body Aqua.Architecture is
             when 1 =>
                return A_Trap;
             when 2 =>
-               return A_Get_Property;
+               return A_Halt;
             when 3 =>
                case Low_Nybble is
                   when 0 =>
-                     return A_Set_Property;
+                     return A_Halt;
                   when 1 =>
-                     return A_Iterator_Start;
+                     return A_Halt;
                   when 2 =>
-                     return A_Allocate;
+                     return A_Halt;
                   when 4 =>
                      return A_Jmp;
                   when 5 =>
@@ -59,7 +59,7 @@ package body Aqua.Architecture is
             return Result;
          end;
       elsif Size_Bits = 2 and then Op_Count_Bits = 0 then
-         return A_Iterator_Next;
+         return A_Halt;
       elsif Size_Bits = 3 and then Op_Count_Bits = 0 then
          declare
             Result : constant Float_Instruction :=
@@ -167,16 +167,6 @@ package body Aqua.Architecture is
             return 2#0100_0001# +
               (Aqua_Instruction'Pos (Instruction)
                - Aqua_Instruction'Pos (Branch_Instruction'First));
-         when A_Get_Property =>
-            return 2#00100000# + Immediate mod 16;
-         when A_Set_Property =>
-            return 2#00110000#;
-         when A_Iterator_Start =>
-            return 2#00110001#;
-         when A_Allocate =>
-            return 2#00110010#;
-         when A_Iterator_Next =>
-            return 2#10000000# + Immediate mod 16;
          when A_Jmp =>
             return 2#00110100#;
          when A_Jsr =>
@@ -232,19 +222,23 @@ package body Aqua.Architecture is
               "cannot get address of literal mode";
          when Register =>
             if Operand.Deferred then
-               return Get_Address (R (Operand.Register));
+               if Trace then
+                  Ada.Text_IO.Put
+                    (" " & Aqua.IO.Hex_Image (R (Operand.Register)));
+               end if;
+               return R (Operand.Register);
             else
                raise Program_Error
                  with "cannot get address of register mode";
             end if;
          when Autoincrement =>
-            Result := Get_Address (R (Operand.Register));
+            Result := R (Operand.Register);
             R (Operand.Register) := R (Operand.Register) + Auto_Size;
          when Autodecrement =>
             R (Operand.Register) := R (Operand.Register) - Auto_Size;
-            Result := Get_Address (R (Operand.Register));
+            Result := R (Operand.Register);
          when Indexed | Indexed_8 | Indexed_16 =>
-            Result := Get_Address (R (Operand.Register));
+            Result := R (Operand.Register);
             declare
                Index_Size : constant Data_Size :=
                               (if Operand.Mode = Indexed
@@ -253,13 +247,8 @@ package body Aqua.Architecture is
                                then Word_16_Size
                                else Word_8_Size);
                A : constant Word :=
-                              Memory.Get_Value (Get_Address (R (R_PC)),
-                                                Index_Size);
+                              Memory.Get_Value (R (R_PC), Index_Size);
             begin
-
-               if Trace then
-                  Ada.Text_IO.Put (" " & Aqua.IO.Hex_Image (A, Index_Size));
-               end if;
 
                if Operand.Mode = Indexed_16 then
                   if A < 32768 then
@@ -274,19 +263,7 @@ package body Aqua.Architecture is
                      Result := Result - Address (256 - A);
                   end if;
                else
-                  if Is_Integer (A) then
-                     declare
-                        I : constant Aqua_Integer := Get_Integer (A);
-                     begin
-                        if I < 0 then
-                           Result := Result - Address (abs I);
-                        else
-                           Result := Result + Address (I);
-                        end if;
-                     end;
-                  else
-                     Result := Result + Get_Address (A);
-                  end if;
+                  Result := Result + A;
                end if;
 
                R (R_PC) := R (R_PC) + Data_Octets (Index_Size);
@@ -294,7 +271,11 @@ package body Aqua.Architecture is
       end case;
 
       if Operand.Deferred then
-         Result := Get_Address (Memory.Get_Value (Result, Word_32_Size));
+         Result := Memory.Get_Value (Result, Word_32_Size);
+      end if;
+
+      if Trace then
+         Ada.Text_IO.Put (" " & Aqua.IO.Hex_Image (Result));
       end if;
 
       return Result;

@@ -1,13 +1,9 @@
-with Ada.Containers.Ordered_Maps;
 with Ada.Exceptions;
 
 with Ada.Text_IO;
 
-with Aqua.Arithmetic;
-with Aqua.CPU.Traps;
 with Aqua.Debug;
 with Aqua.IO;
-with Aqua.Primitives;
 with Aqua.Traps;
 
 with Aqua.Options;
@@ -21,6 +17,8 @@ package body Aqua.CPU is
    Trace_SP         : constant Boolean := True;
    Trace_Stack      : constant Boolean := False;
    Trace_Executions : constant Boolean := False;
+
+   Default_Stack_Top : constant := 16#8000_0000#;
 
    type Branch_Info is
       record
@@ -167,7 +165,7 @@ package body Aqua.CPU is
      with Inline_Always;
 
    function Next_Value
-     (CPU : in out Aqua_CPU_Type'Class;
+     (CPU  : in out Aqua_CPU_Type'Class;
       Size : Data_Size)
       return Word;
 
@@ -248,7 +246,6 @@ package body Aqua.CPU is
       Arguments        : Array_Of_Words)
    is
       use type Ada.Calendar.Time;
-      use Aqua.Arithmetic;
       use Ada.Strings.Unbounded;
       PC : Word renames CPU.R (Aqua.Architecture.R_PC);
       SP : Word renames CPU.R (Aqua.Architecture.R_SP);
@@ -277,7 +274,7 @@ package body Aqua.CPU is
 
       CPU.Push (0);
 
-      PC := To_Address_Word (Start);
+      PC := Start;
       CPU.B := False;
 
       while not CPU.B
@@ -285,14 +282,14 @@ package body Aqua.CPU is
       loop
          declare
             Op : constant Octet :=
-                   CPU.Image.Get_Octet (Get_Address (PC));
+                   CPU.Image.Get_Octet (PC);
             Original_PC : constant Word := PC;
          begin
             if Trace_Code then
                declare
                   Loc : constant String :=
                           CPU.Image.Show_Source_Position
-                            (Get_Address (Original_PC));
+                            (Original_PC);
                begin
                   if Last_Source /= Loc then
                      Last_Source := To_Unbounded_String (Loc);
@@ -307,16 +304,16 @@ package body Aqua.CPU is
                Ada.Text_IO.Set_Col (20);
                if Trace_FP then
                   Ada.Text_IO.Put
-                    (Aqua.IO.Hex_Image (Get_Address (FP)) & " ");
+                    (Aqua.IO.Hex_Image (FP) & " ");
                end if;
 
                if Trace_SP then
                   Ada.Text_IO.Put
-                    (Aqua.IO.Hex_Image (Get_Address (SP)) & " ");
+                    (Aqua.IO.Hex_Image (SP) & " ");
                end if;
 
                Ada.Text_IO.Put
-                 (Aqua.IO.Hex_Image (Get_Address (PC))
+                 (Aqua.IO.Hex_Image (PC)
                   & ": ");
 
                Ada.Text_IO.Put
@@ -325,7 +322,8 @@ package body Aqua.CPU is
                   & Aqua.Debug.Opcode_Image (Op));
 
             end if;
-            Inc (PC);
+
+            PC := PC + 1;
 
             begin
                Handle (CPU, Op);
@@ -338,7 +336,7 @@ package body Aqua.CPU is
                   Ada.Text_IO.Put_Line
                     (Ada.Text_IO.Standard_Error,
                      CPU.Image.Show_Source_Position
-                       (Get_Address (Original_PC))
+                       (Original_PC)
                      & ": error: "
                      & Ada.Exceptions.Exception_Message (E));
 
@@ -351,8 +349,7 @@ package body Aqua.CPU is
                         Ada.Text_IO.Put_Line
                           (Ada.Text_IO.Standard_Error,
                            "  at "
-                           & CPU.Image.Show_Source_Position
-                             (Get_Address (PC)));
+                           & CPU.Image.Show_Source_Position (PC));
                      end if;
                   end loop;
 
@@ -366,7 +363,7 @@ package body Aqua.CPU is
       end loop;
 
       if Arguments'Length > 0 then
-         Aqua.Arithmetic.Inc (SP, 4 * Arguments'Length);
+         SP := SP + 4 * Word (Arguments'Length);
       end if;
 
       PC := CPU.Pop;
@@ -405,17 +402,43 @@ package body Aqua.CPU is
             Ada.Text_IO.Put_Line
               (Ada.Text_IO.Standard_Error,
                "HALT; core dumped");
-            if Is_String_Reference (CPU.R (0)) then
-               Ada.Text_IO.Put_Line
-                 (Ada.Text_IO.Standard_Error,
-                  "Message: " & CPU.To_String (CPU.R (0)));
-            end if;
+
+            declare
+               Addr : Address := CPU.R (0);
+            begin
+               if CPU.Image.Can_Read (Addr) then
+                  declare
+                     Length : constant Natural :=
+                                Natural
+                                  (Word'Min
+                                     (1024,
+                                      CPU.Image.Get_Word (Addr)));
+                     S      : String (1 .. Length) := (others => ' ');
+                  begin
+                     Addr := Addr + 4;
+                     for I in 1 .. Length loop
+                        exit when not CPU.Image.Can_Read (Addr);
+                        S (I) :=
+                          Character'Val (CPU.Image.Get_Word (Addr) mod 256);
+                        Addr := Addr + 4;
+                     end loop;
+
+                     Ada.Text_IO.Put_Line
+                       (Ada.Text_IO.Standard_Error,
+                        "Message: " & S);
+                  end;
+               end if;
+            end;
+
             CPU.B := True;
 
          when A_Nop =>
             null;
          when A_Rts =>
             PC := CPU.Pop;
+            if Trace_Code then
+               Ada.Text_IO.Put (" " & Aqua.IO.Hex_Image (PC));
+            end if;
          when A_Return =>
             declare
                Top : Saved_Registers renames
@@ -576,28 +599,22 @@ package body Aqua.CPU is
                Dst := Next_Operand (CPU);
 
                case Triple_Set_Instruction (Instruction) is
-                  when A_Seq_3 | A_Sne_3 =>
-                     if Size = Word_32_Size
-                       and then Is_String_Reference (X)
-                       and then Is_String_Reference (Y)
-                     then
-                        R := X = Y
-                          or else (CPU.To_String (X) = CPU.To_String (Y));
-                     else
-                        R := X = Y;
+                  when A_Seq_3 =>
+                     if Trace_Code then
+                        Ada.Text_IO.Put (" " & Aqua.IO.Hex_Image (X)
+                                         & " " & Aqua.IO.Hex_Image (Y));
                      end if;
-
-                     if Instruction = A_Sne_3 then
-                        R := not R;
-                     end if;
+                     R := X = Y;
+                  when A_Sne_3 =>
+                     R := X /= Y;
                   when A_Sgt_3 =>
-                     R := Get_Integer (X) > Get_Integer (Y);
+                     R := X > Y;
                   when A_Slt_3 =>
-                     R := Get_Integer (X) < Get_Integer (Y);
+                     R := X < Y;
                   when A_Sge_3 =>
-                     R := Get_Integer (X) >= Get_Integer (Y);
+                     R := X >= Y;
                   when A_Sle_3 =>
-                     R := Get_Integer (X) <= Get_Integer (Y);
+                     R := X <= Y;
                end case;
 
                Y := Boolean'Pos (R);
@@ -631,15 +648,16 @@ package body Aqua.CPU is
          when A_Jmp | A_Jsr =>
             declare
                Destination : constant Word := Next_Value (CPU, Word_32_Size);
-               New_PC      : constant Address :=
-                               Get_Address (PC)
-                               + Get_Address (Destination)
-                               - 4;
+               New_PC      : constant Address := PC + Destination - 4;
             begin
+               if Trace_Code then
+                  Ada.Text_IO.Put (" " & Aqua.IO.Hex_Image (Destination));
+                  Ada.Text_IO.Put (" " & Aqua.IO.Hex_Image (New_PC));
+               end if;
                if Instruction = A_Jsr then
                   CPU.Push (PC);
                end if;
-               PC := To_Address_Word (New_PC);
+               PC := New_PC;
             end;
 
          when A_Goto =>
@@ -687,73 +705,11 @@ package body Aqua.CPU is
                CPU.R_Stack.Insert (CPU.R_Stack.First, Saved_Rs);
             end;
 
-         when A_Get_Property =>
-            declare
-               Argument_Count : constant Natural :=
-                                  Natural (Op mod 16);
-               Name_Word      : constant Word :=
-                                  Next_Value (CPU, Word_32_Size);
-            begin
-               if Trace_Code then
-                  Ada.Text_IO.Put
-                    (" " & CPU.Show (Name_Word));
-               end if;
-               Aqua.CPU.Traps.Handle_Get_Property
-                 (CPU, Argument_Count, Name_Word);
-               Set_NZ (CPU, Word_32_Size, CPU.R (Aqua.Architecture.R_PV));
-            end;
-
-         when A_Set_Property =>
-            declare
-               Name_Word      : constant Word :=
-                                  Next_Value (CPU, Word_32_Size);
-            begin
-               if Trace_Code then
-                  Ada.Text_IO.Put
-                    (" " & CPU.Show (Name_Word));
-               end if;
-               Aqua.CPU.Traps.Handle_Set_Property
-                 (CPU, Name_Word);
-            end;
-
-         when A_Allocate =>
-            declare
-               Base_Word : constant Word :=
-                             CPU.R (R_OP);
-               New_Word  : Word;
-            begin
-               if Is_External_Reference (Base_Word) then
-                  declare
-                     Ext : constant access External_Object_Interface'Class :=
-                             CPU.To_External_Object (Base_Word);
-                     New_Value : constant External_Object_Access :=
-                                   new External_Object_Interface'Class'
-                                     (Ext.all);
-                  begin
-                     New_Value.Set_Reference (0);
-                     New_Word := CPU.To_Word (New_Value);
-                  end;
-               else
-                  New_Word := Base_Word;
-               end if;
-
-               CPU.R (R_OP) := New_Word;
-            end;
-
          when A_Trap =>
 
             Handle_Trap
               (CPU, Natural (Op and 2#0000_1111#));
 
-         when A_Iterator_Start =>
-            Traps.Handle_Iterator_Start (CPU);
-
-         when A_Iterator_Next =>
-            declare
-               R : constant Register_Index := Register_Index (Op mod 16);
-            begin
-               Traps.Handle_Iterator_Next (CPU, R);
-            end;
       end case;
 
       if PC < 16#1000# then
@@ -773,30 +729,9 @@ package body Aqua.CPU is
       Src  : Aqua.Word;
       Dst  : in out Aqua.Word)
    is
+      pragma Unreferenced (CPU);
    begin
-      if Is_String_Reference (Src) or else Is_String_Reference (Dst) then
-         declare
-            Left : constant String :=
-                     (if Is_String_Reference (Src) or else Is_Integer (Src)
-                      then CPU.To_String (Src)
-                      else CPU.Show (Src));
-            Right : constant String :=
-                      (if Is_String_Reference (Dst) or else Is_Integer (Dst)
-                       then CPU.To_String (Dst)
-                       else CPU.Show (Dst));
-         begin
-            Dst := CPU.To_String_Word (Left & Right);
-         end;
-      else
-         declare
-            R : constant Word :=
-                  (Src and Payload_Mask) + (Dst and Payload_Mask);
-         begin
-            Aqua.Set
-              (Dst, Size,
-               (R and Payload_Mask) or (Dst and not Payload_Mask));
-         end;
-      end if;
+      Aqua.Set (Dst, Size, Src + Dst);
    end Handle_Add;
 
    ----------------
@@ -810,12 +745,8 @@ package body Aqua.CPU is
       Dst  : in out Aqua.Word)
    is
       pragma Unreferenced (CPU);
-      R : constant Word :=
-            (Src and Payload_Mask) and (Dst and Payload_Mask);
    begin
-      Aqua.Set
-        (Dst, Size,
-         (R and Payload_Mask) or (Dst and not Payload_Mask));
+      Aqua.Set (Dst, Size, Src and Dst);
    end Handle_And;
 
    -------------------
@@ -829,6 +760,7 @@ package body Aqua.CPU is
       Offset      : Word)
    is
       Branch : Boolean;
+      PC     : Word renames CPU.R (R_PC);
    begin
       case Condition is
          when Always =>
@@ -856,18 +788,15 @@ package body Aqua.CPU is
          if Offset = 0 then
             null;
          elsif Offset < 16#8000# then
-            Aqua.Arithmetic.Inc
-              (CPU.R (R_PC), Integer (Offset));
+            PC := PC + Offset;
          else
-            Aqua.Arithmetic.Dec
-              (CPU.R (R_PC),
-               Integer ((16#1_0000# - Offset)));
+            PC := PC - (16#1_0000# - Offset);
          end if;
 
          if Trace_Code then
             Ada.Text_IO.Put_Line
               ("branch: "
-               & Aqua.IO.Hex_Image (CPU.R (R_PC)));
+               & Aqua.IO.Hex_Image (PC));
          end if;
 
       end if;
@@ -897,30 +826,7 @@ package body Aqua.CPU is
       Dst  : in out Aqua.Word)
    is
    begin
-      if Size = Word_32_Size
-        and then Is_Integer (Src) and then Is_Integer (Dst)
-      then
-         Dst := To_Integer_Word
-           (Get_Integer (Src) - Get_Integer (Dst));
-      elsif Size = Word_32_Size
-        and then Is_String_Reference (Src)
-        and then Is_String_Reference (Dst)
-      then
-         if Src = Dst
-           or else (CPU.To_String (Src) = CPU.To_String (Dst))
-         then
-            Dst := 0;
-         else
-            Dst := 1;
-         end if;
-      else
-         if Get (Src, Size) = Get (Dst, Size) then
-            Dst := 0;
-         else
-            Dst := 1;
-         end if;
-      end if;
-
+      Set_NZ (CPU, Size, Dst - Src);
    end Handle_Cmp;
 
    ----------------
@@ -933,7 +839,7 @@ package body Aqua.CPU is
    is
       X : Word := Get (Dst, Size);
    begin
-      Aqua.Arithmetic.Dec (X);
+      X := X - 1;
       Set (Dst, Size, X);
    end Handle_Dec;
 
@@ -948,12 +854,8 @@ package body Aqua.CPU is
       Dst  : in out Aqua.Word)
    is
       pragma Unreferenced (CPU);
-      R : constant Word :=
-            (Dst and Payload_Mask) / (Src and Payload_Mask);
    begin
-      Aqua.Set
-        (Dst, Size,
-         (R and Payload_Mask) or (Dst and not Payload_Mask));
+      Aqua.Set (Dst, Size, Dst / Src);
    end Handle_Div;
 
    ----------------
@@ -966,7 +868,7 @@ package body Aqua.CPU is
    is
       X : Word := Get (Dst, Size);
    begin
-      Aqua.Arithmetic.Inc (X);
+      X := X + 1;
       Set (Dst, Size, X);
    end Handle_Inc;
 
@@ -999,12 +901,8 @@ package body Aqua.CPU is
       Dst  : in out Aqua.Word)
    is
       pragma Unreferenced (CPU);
-      R : constant Word :=
-            (Src and Payload_Mask) * (Dst and Payload_Mask);
    begin
-      Aqua.Set
-        (Dst, Size,
-         (R and Payload_Mask) or (Dst and not Payload_Mask));
+      Aqua.Set (Dst, Size, Dst * Src);
    end Handle_Mul;
 
    ---------------
@@ -1018,12 +916,8 @@ package body Aqua.CPU is
       Dst  : in out Aqua.Word)
    is
       pragma Unreferenced (CPU);
-      R : constant Word :=
-            (Src and Payload_Mask) or (Dst and Payload_Mask);
    begin
-      Aqua.Set
-        (Dst, Size,
-         (R and Payload_Mask) or (Dst and not Payload_Mask));
+      Aqua.Set (Dst, Size, Dst or Src);
    end Handle_Or;
 
    ----------------
@@ -1037,12 +931,8 @@ package body Aqua.CPU is
       Dst  : in out Aqua.Word)
    is
       pragma Unreferenced (CPU);
-      R : constant Word :=
-            (Dst and Payload_Mask) - (Src and Payload_Mask);
    begin
-      Aqua.Set
-        (Dst, Size,
-         (R and Payload_Mask) or (Dst and not Payload_Mask));
+      Aqua.Set (Dst, Size, Dst - Src);
    end Handle_Sub;
 
    -----------------
@@ -1061,7 +951,7 @@ package body Aqua.CPU is
 
       case Index is
          when Aqua.Traps.Get_Data_Segment_Start =>
-            CPU.R (0) := To_Address_Word (16#100_0000#);
+            CPU.R (0) := CPU.Image.Segment_Base ("heap");
 
 --           when Aqua.Traps.Handle_Exception =>
 --
@@ -1109,12 +999,8 @@ package body Aqua.CPU is
       Dst  : in out Aqua.Word)
    is
       pragma Unreferenced (CPU);
-      R : constant Word :=
-            (Src and Payload_Mask) xor (Dst and Payload_Mask);
    begin
-      Aqua.Set
-        (Dst, Size,
-         (R and Payload_Mask) or (Dst and not Payload_Mask));
+      Aqua.Set (Dst, Size, Dst xor Src);
    end Handle_Xor;
 
    ----------------
@@ -1123,52 +1009,35 @@ package body Aqua.CPU is
 
    overriding procedure Initialize
      (CPU : in out Aqua_CPU_Type)
-   is
-   begin
-      Aqua.Primitives.Load_Primitive_Objects (CPU);
-   end Initialize;
-
-   ----------
-   -- Name --
-   ----------
-
-   function Name
-     (CPU : in out Aqua_CPU_Type;
-      Value : Word)
-      return String
-   is
-   begin
-      if Is_Address (Value) then
-         return Aqua.IO.Hex_Image (Get_Address (Value));
-      elsif Is_Integer (Value) then
-         return "#" & Aqua_Integer'Image (Get_Integer (Value));
-      elsif Is_External_Reference (Value) then
-         return CPU.To_External_Object (Value).Name;
-      elsif Is_String_Reference (Value) then
-         return CPU.To_String (Value);
-      else
-         return Aqua.IO.Hex_Image (Value);
-      end if;
-   end Name;
+   is null;
 
    ----------------
    -- Next_Value --
    ----------------
 
    function Next_Value
-     (CPU : in out Aqua_CPU_Type'Class;
+     (CPU  : in out Aqua_CPU_Type'Class;
       Size : Data_Size)
       return Word
    is
+      PC     : Word renames CPU.R (R_PC);
+      Result : Word := CPU.Image.Get_Word (PC);
    begin
-      return Result : constant Word :=
-        CPU.Image.Get_Value (Get_Address (CPU.R (R_PC)), Size)
-      do
-         CPU.R (R_PC) := CPU.R (R_PC) + Data_Octets (Size);
-         if Trace_Code then
-            Ada.Text_IO.Put (" " & Aqua.IO.Hex_Image (Result, Size));
-         end if;
-      end return;
+      case Size is
+         when Word_8_Size =>
+            Result := Result mod 256;
+            PC := PC + 1;
+         when Word_16_Size =>
+            Result := Result mod 65536;
+            PC := PC + 2;
+         when Word_32_Size =>
+            PC := PC + 4;
+      end case;
+
+      if Trace_Code then
+         Ada.Text_IO.Put (" " & Aqua.IO.Hex_Image (Result, Size));
+      end if;
+      return Result;
    end Next_Value;
 
    ---------
@@ -1181,19 +1050,18 @@ package body Aqua.CPU is
    is
       X : constant Word :=
             CPU.Image.Get_Word
-              (Get_Address (CPU.R (R_SP)));
+              (CPU.R (R_SP));
    begin
       if Trace_Stack then
          Ada.Text_IO.Put_Line
            ("pop("
             & Aqua.IO.Hex_Image
-              (Get_Address (CPU.R (R_SP)))
+              (CPU.R (R_SP))
             & ")->"
             & Aqua.IO.Hex_Image (X));
       end if;
 
-      Aqua.Arithmetic.Inc
-        (CPU.R (R_SP), 4);
+      CPU.R (R_SP) := CPU.R (R_SP) + 4;
 
       return X;
 
@@ -1208,13 +1076,13 @@ package body Aqua.CPU is
       Value : Word)
    is
    begin
-      Aqua.Arithmetic.Dec (CPU.R (R_SP), 4);
-      CPU.Image.Set_Word (Get_Address (CPU.R (R_SP)), Value);
+      CPU.R (R_SP) := CPU.R (R_SP) - 4;
+      CPU.Image.Set_Word (CPU.R (R_SP), Value);
       if Trace_Stack then
          Ada.Text_IO.Put_Line
            ("push("
             & Aqua.IO.Hex_Image
-              (Get_Address (CPU.R (R_SP)))
+              (CPU.R (R_SP))
             & ","
             & Aqua.IO.Hex_Image (Value)
             & ")");
@@ -1229,34 +1097,22 @@ package body Aqua.CPU is
      (CPU : Aqua_CPU_Type)
    is
       use Ada.Calendar;
-      use Ada.Strings, Ada.Strings.Fixed;
       use Ada.Text_IO;
    begin
-      Put_Line
-        ("Memory:"
-         & " reserved ="
-         & Address'Image (CPU.Image.Code_Low)
-         & " code ="
-         & Address'Image (CPU.Image.Code_High - CPU.Image.Code_Low)
-         & " heap ="
-         & Address'Image
-           (CPU.Image.Heap_High - CPU.Image.Code_High)
-         & " stack ="
-         & Address'Image (Address'Last - Get_Address (CPU.R (R_SP)) + 1)
-         & " allocated ="
-         & Natural'Image (CPU.Image.Used_Memory));
+--        Put_Line
+--          ("Memory:"
+--           & " reserved ="
+--           & Address'Image (CPU.Image.Code_Low)
+--           & " code ="
+--           & Address'Image (CPU.Image.Code_High - CPU.Image.Code_Low)
+--           & " heap ="
+--           & Address'Image
+--             (CPU.Image.Heap_High - CPU.Image.Code_High)
+--           & " stack ="
+--           & Address'Image (Default_Stack_Top - CPU.R (R_SP) + 1)
+--           & " allocated ="
+--           & Natural'Image (CPU.Image.Used_Memory));
 
-      Put_Line ("Objects:" & Natural'Image (CPU.Ext.Last_Index + 1)
-                & "/"
-                & Trim
-                  (External_Reference'Image (External_Reference'Last),
-                   Left));
-      Put_Line ("Strings:"
-                & Natural'Image (CPU.Str.Last_Index + 1)
-                & "/"
-                & Trim
-                  (String_Reference'Image (String_Reference'Last),
-                   Left));
       Put_Line ("CPU time:"
                 & Natural'Image (Natural (CPU.Exec_Time * 1000.0))
                 & "ms");
@@ -1299,18 +1155,15 @@ package body Aqua.CPU is
    is
       X : constant Word := Get (Value, Size);
    begin
-      CPU.Z := X = 0
-        or else (Size = Word_32_Size
-                 and then Is_Address (Value)
-                 and then Get_Address (Value) = 0);
+      CPU.Z := X = 0;
 
       case Size is
          when Word_8_Size =>
-            CPU.N := X >= 16#80#;
+            CPU.N := X mod 256 >= 16#80#;
          when Word_16_Size =>
-            CPU.N := X >= 16#8000#;
+            CPU.N := X mod 65536 >= 16#8000#;
          when Word_32_Size =>
-            CPU.N := (X and Payload_Mask) >= 16#0080_0000#;
+            CPU.N := X >= 16#8000_0000#;
       end case;
    end Set_NZ;
 
@@ -1322,59 +1175,7 @@ package body Aqua.CPU is
      (CPU : in out Aqua_CPU_Type;
       Value : Word)
       return String
-   is
-      package Word_Maps is
-        new Ada.Containers.Ordered_Maps
-          (Word, Boolean);
-
-      Shown_Map : Word_Maps.Map;
-
-      function Recursive_Show (X : Word) return String;
-
-      function Internal_Show (X : Word) return String;
-
-      -------------------
-      -- Internal_Show --
-      -------------------
-
-      function Internal_Show (X : Word) return String is
-      begin
-         if Shown_Map.Contains (X) then
-            return "[cycle]";
-         else
-            return Recursive_Show (X);
-         end if;
-      end Internal_Show;
-
-      --------------------
-      -- Recursive_Show --
-      --------------------
-
-      function Recursive_Show (X : Word) return String is
-      begin
-         if Is_Address (X) then
-            return "@" & Aqua.IO.Hex_Image (Get_Address (X))
-              & ": " & CPU.Show (CPU.Image.Get_Word (Get_Address (X)));
-         elsif Is_Integer (X) then
-            return Ada.Strings.Fixed.Trim
-              (Aqua_Integer'Image (Get_Integer (X)),
-               Ada.Strings.Left);
-         elsif Is_External_Reference (X) then
-            Shown_Map.Insert (X, True);
-            return CPU.To_External_Object (X).Show (Internal_Show'Access);
-         elsif Is_String_Reference (X) then
-            return CPU.To_String (X);
-         else
-            return Aqua.IO.Hex_Image (X);
-         end if;
-      end Recursive_Show;
-
-   begin
-      return Recursive_Show (Value);
-   exception
-      when others =>
-         return "[" & Aqua.IO.Hex_Image (Value) & "]";
-   end Show;
+   is (CPU.Image.Show (Value));
 
    --------------------
    -- Show_Registers --
@@ -1401,13 +1202,14 @@ package body Aqua.CPU is
      (CPU : in out Aqua_CPU_Type)
    is
    begin
-      if Get_Address (CPU.R (R_SP)) < Address'Last / 2 then
-         Ada.Text_IO.Put_Line ("stack fault");
+      if CPU.R (R_SP) not in Default_Stack_Top / 2 .. Default_Stack_Top then
+         Ada.Text_IO.Put_Line ("stack fault (" & CPU.Show (CPU.R (R_SP))
+                               & ")");
          return;
       end if;
 
       Ada.Text_IO.Put_Line ("---- stack dump");
-      for A in Get_Address (CPU.R (R_SP)) .. Address'Last - 1 loop
+      for A in CPU.R (R_SP) .. Default_Stack_Top - 1 loop
          if A mod 4 = 0 then
             Ada.Text_IO.Put_Line
               (Aqua.IO.Hex_Image (A)
@@ -1417,136 +1219,5 @@ package body Aqua.CPU is
       end loop;
       Ada.Text_IO.Put_Line ("---------------");
    end Show_Stack;
-
-   ------------------------
-   -- To_External_Object --
-   ------------------------
-
-   overriding function To_External_Object
-     (CPU   : in out Aqua_CPU_Type;
-      Value : Word)
-      return access External_Object_Interface'Class
-   is
-      Reference : constant Natural :=
-                    Natural (Value and Payload_Mask);
-   begin
-      if Reference = 0 then
-         return null;
-      else
-         return CPU.Ext (Positive (Value and Payload_Mask));
-      end if;
-   end To_External_Object;
-
-   ----------------
-   -- To_Integer --
-   ----------------
-
-   overriding function To_Integer
-     (CPU   : in out Aqua_CPU_Type;
-      Value : Word)
-      return Aqua_Integer
-   is
-   begin
-      if Is_Integer (Value) then
-         return Get_Integer (Value);
-      else
-         declare
-            S : constant String := CPU.To_String (Value);
-         begin
-            if S = "" then
-               return 0;
-            else
-               return Aqua_Integer'Value (S);
-            end if;
-         end;
-      end if;
-   end To_Integer;
-
-   ---------------
-   -- To_String --
-   ---------------
-
-   overriding function To_String
-     (CPU   : in out Aqua_CPU_Type;
-      Value : Word)
-      return String
-   is
-   begin
-      if Is_Integer (Value) then
-         return Ada.Strings.Fixed.Trim
-           (Aqua_Integer'Image (Get_Integer (Value)),
-            Ada.Strings.Left);
-      elsif CPU.Image.Have_String (Value) then
-         return CPU.Image.To_String (Value);
-      else
-         declare
-            Index : constant Integer :=
-                      Natural (Get_String_Reference (Value))
-                      - CPU.Image.String_Count;
-         begin
-            if Index in 0 .. CPU.Str.Last_Index then
-               return CPU.Str (Index);
-            else
-               return "ERROR: bad string reference:"
-                 & Integer'Image (Index);
-            end if;
-         end;
-      end if;
-   end To_String;
-
-   --------------------
-   -- To_String_Word --
-   --------------------
-
-   overriding function To_String_Word
-     (CPU  : in out Aqua_CPU_Type;
-      Text : String)
-      return Word
-   is
-   begin
-      if not CPU.Str_Map.Contains (Text) then
-         declare
-            Ref : constant String_Reference :=
-                    String_Reference
-                      (CPU.Image.String_Count
-                       + CPU.Str.Last_Index
-                       + 1);
-         begin
-            CPU.Str_Map.Insert
-              (Text, To_String_Word (Ref));
-            CPU.Str.Append (Text);
-         end;
-      end if;
-      return CPU.Str_Map (Text);
-   end To_String_Word;
-
-   -------------
-   -- To_Word --
-   -------------
-
-   overriding function To_Word
-     (CPU  : in out Aqua_CPU_Type;
-      Item : not null access External_Object_Interface'Class)
-      return Word
-   is
-      Ref : External_Reference := Item.Get_Reference;
-   begin
-
-      if Ref = 0 then
-
-         if CPU.Ext.Last_Index >= Positive (External_Reference'Last) then
-            raise Storage_Error
-              with "no free objects";
-         end if;
-
-         CPU.Ext.Append (External_Object_Access (Item));
-         Ref := External_Reference (CPU.Ext.Last_Index);
-
-         Item.Set_Reference (Ref);
-
-      end if;
-
-      return Set_Tag (Word (Ref), External_Tag);
-   end To_Word;
 
 end Aqua.CPU;

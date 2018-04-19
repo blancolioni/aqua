@@ -26,12 +26,12 @@ package body Aqua.Assembler is
       W    : Word;
       Size : Aqua.Data_Size)
    is
+      Rec : Segment_Record renames A.Segment_List (A.Current_Segment);
    begin
-      A.High :=
-        Address'Max (A.High, A.PC + Address (Data_Octets (Size)));
-      A.Low  := Address'Min (A.Low, A.PC);
-      A.Set_Value (A.PC, Size, W);
-      A.PC := A.PC + Address (Data_Octets (Size));
+      pragma Assert (Rec.Initialised);
+      A.Set_Flags (Rec.Bound, R => True, W => True);
+      A.Set_Value (Rec.Bound, Size, W);
+      Rec.Bound := Rec.Bound + Address (Data_Octets (Size));
    end Append;
 
    ------------------
@@ -71,20 +71,20 @@ package body Aqua.Assembler is
    is
       use Ada.Strings.Unbounded;
       Info : Binding_Info;
-      Group_String : constant String :=
-                       '"' & Group & '"';
-      Parent_String : constant String :=
-                        '"' & Parent & '"';
-      Child_String  : constant String :=
-                        '"' & Child & '"';
+--        Group_String : constant String :=
+--                         '"' & Group & '"';
+--        Parent_String : constant String :=
+--                          '"' & Parent & '"';
+--        Child_String  : constant String :=
+--                          '"' & Child & '"';
    begin
-      Ensure_Label (A, Group_String, True);
-      Ensure_Label (A, Parent_String, True);
-      if Child /= "" then
-         Ensure_Label (A, Child_String, True);
-      end if;
+--        Ensure_Label (A, Group_String, True);
+--        Ensure_Label (A, Parent_String, True);
+--        if Child /= "" then
+--           Ensure_Label (A, Child_String, True);
+--        end if;
       Info := (To_Unbounded_String (Group),
-               A.PC,
+               A.Segment_List.First_Element.Bound,
                Before,
                To_Unbounded_String (Parent),
                To_Unbounded_String (Child));
@@ -107,8 +107,30 @@ package body Aqua.Assembler is
       else
          Offset := 16#1_0000# - (PC + 2 - Destination);
       end if;
-      return Word (Offset mod 65536);
+      return Offset mod 65536;
    end Branch_Offset;
+
+   ------------------
+   -- Code_Segment --
+   ------------------
+
+   procedure Code_Segment
+     (A    : in out Root_Assembly_Type)
+   is
+   begin
+      A.Set_Segment ("code");
+   end Code_Segment;
+
+   ------------------
+   -- Data_Segment --
+   ------------------
+
+   procedure Data_Segment
+     (A    : in out Root_Assembly_Type)
+   is
+   begin
+      A.Set_Segment ("data");
+   end Data_Segment;
 
    ---------------------------
    -- Define_Exported_Label --
@@ -119,7 +141,7 @@ package body Aqua.Assembler is
       Name : String)
    is
    begin
-      A.Ensure_Label (Name, False);
+      A.Ensure_Label (Name);
       declare
          Info : Label_Info := A.Labels (Name);
       begin
@@ -138,7 +160,7 @@ package body Aqua.Assembler is
       Name : String)
    is
    begin
-      A.Ensure_Label (Name, False);
+      A.Ensure_Label (Name);
       declare
          Info : Label_Info := A.Labels (Name);
       begin
@@ -157,7 +179,7 @@ package body Aqua.Assembler is
       Name : String)
    is
    begin
-      A.Define_Value (Name, To_Address_Word (A.PC));
+      A.Define_Value (Name, A.Current);
    end Define_Label;
 
    -----------------
@@ -217,7 +239,7 @@ package body Aqua.Assembler is
       Value : Word)
    is
    begin
-      A.Ensure_Label (Name, False);
+      A.Ensure_Label (Name);
       declare
          Info : Label_Info := A.Labels (Name);
       begin
@@ -233,7 +255,7 @@ package body Aqua.Assembler is
          for Ref of Info.References loop
             declare
                Addr     : constant Address := Ref.Addr;
-               Dest     : constant Address := Get_Address (Value);
+               Dest     : constant Address := Value;
                Relative : constant Boolean := Ref.Relative;
                Branch   : constant Boolean := Ref.Branch;
             begin
@@ -245,10 +267,7 @@ package body Aqua.Assembler is
                      A.Set_Value (Addr, Word_16_Size, Offset);
                   end;
                elsif Relative then
-                  pragma Assert (Is_Address (Info.Value));
-                  A.Set_Word (Addr,
-                              To_Address_Word
-                                (Get_Address (Info.Value) - Addr));
+                  A.Set_Word (Addr, Info.Value - Addr);
                else
                   A.Set_Word (Addr, Info.Value);
                end if;
@@ -264,8 +283,7 @@ package body Aqua.Assembler is
 
    procedure Ensure_Label
      (A         : in out Root_Assembly_Type'Class;
-      Name      : String;
-      Is_String : Boolean)
+      Name      : String)
    is
    begin
       if not A.Labels.Contains (Name) then
@@ -276,18 +294,10 @@ package body Aqua.Assembler is
                       External        => False,
                       Deferred        => False,
                       Register_Alias  => False,
-                      String_Constant => Is_String,
                       Named_Number    => False,
-                      Value           =>
-                        (if Is_String
-                         then A.Next_String
-                         else 0));
+                      Value           => 0);
          begin
             A.Labels.Insert (Name, Info);
-            if Is_String then
-               A.String_Lits.Append (Name);
-               A.Next_String := A.Next_String + 1;
-            end if;
          end;
       end if;
    end Ensure_Label;
@@ -405,15 +415,16 @@ package body Aqua.Assembler is
       return Word
    is
    begin
-      A.Ensure_Label (Name, False);
+      A.Ensure_Label (Name);
 
       declare
          Info : Label_Info := A.Labels (Name);
       begin
-         Info.References.Append ((A.PC, Relative => False, Branch => True));
+         Info.References.Append
+           ((A.Current, Relative => False, Branch => True));
          A.Labels (Name) := Info;
          if Info.Defined then
-            return Branch_Offset (A.PC, Get_Address (Info.Value));
+            return Branch_Offset (A.Current, Info.Value);
          else
             return 0;
          end if;
@@ -431,7 +442,7 @@ package body Aqua.Assembler is
       return Word
    is
    begin
-      A.Ensure_Label (Name, False);
+      A.Ensure_Label (Name);
 
       declare
          Info : Label_Info := A.Labels (Name);
@@ -440,17 +451,16 @@ package body Aqua.Assembler is
             Info.Deferred := True;
          end if;
 
-         Info.References.Append ((A.PC, Relative, False));
+         Info.References.Append ((A.Current, Relative, False));
          A.Labels (Name) := Info;
 
          if Info.Defined then
             if Relative then
-               pragma Assert (Is_Address (Info.Value));
                declare
-                  Target : constant Address := Get_Address (Info.Value);
-                  Addr   : constant Address := A.PC;
+                  Target : constant Address := Info.Value;
+                  Addr   : constant Address := A.Current;
                   Offset : constant Address := Target - Addr;
-                  Index  : constant Word := To_Address_Word (Offset);
+                  Index  : constant Word := Offset;
                begin
                   return Index;
                end;
@@ -462,36 +472,6 @@ package body Aqua.Assembler is
          end if;
       end;
    end Reference_Label;
-
-   -----------------------------
-   -- Reference_Property_Name --
-   -----------------------------
-
-   function Reference_Property_Name
-     (A    : in out Root_Assembly_Type'Class;
-      Name : String)
-      return Word
-   is
-   begin
-      A.Ensure_Label (Name,  True);
-      A.Labels (Name).References.Append ((A.PC, False, False));
-      return A.Next_String - 1;
-   end Reference_Property_Name;
-
-   ----------------------
-   -- Reference_String --
-   ----------------------
-
-   function Reference_String
-     (A : in out Root_Assembly_Type'Class;
-      X : String)
-      return Word
-   is
-   begin
-      A.Ensure_Label (X,  True);
-      A.Labels (X).References.Append ((A.PC, False, False));
-      return A.Labels (X).Value;
-   end Reference_String;
 
    --------------------------------------
    -- Reference_Temporary_Branch_Label --
@@ -550,9 +530,38 @@ package body Aqua.Assembler is
       Name : String)
    is
    begin
-      A.Ensure_Label (Name, Is_String => False);
+      A.Ensure_Label (Name);
       A.Labels (Name).Deferred := True;
    end Set_Deferred;
+
+   -----------------
+   -- Set_Segment --
+   -----------------
+
+   procedure Set_Segment
+     (A    : in out Root_Assembly_Type;
+      Name : String)
+   is
+      use Ada.Strings.Unbounded;
+      Found : Boolean := False;
+   begin
+      for Position in A.Segment_List.Iterate loop
+         if Segment_Lists.Element (Position).Name = Name then
+            if not Segment_Lists.Element (Position).Initialised then
+               raise Constraint_Error with
+                 "cannot set current segment to "
+                 & Name & ": segment is not initialised";
+            end if;
+            A.Current_Segment := Position;
+            Found := True;
+            exit;
+         end if;
+      end loop;
+
+      if not Found then
+         raise Constraint_Error with "unknown segment: " & Name;
+      end if;
+   end Set_Segment;
 
    ---------------------
    -- Set_Source_File --
@@ -577,7 +586,7 @@ package body Aqua.Assembler is
       Column : Natural)
    is
       New_Position : constant Source_Position :=
-                       (A.PC, Line, Column);
+                       (A.Current, Line, Column);
    begin
       A.Source_Locs.Append (New_Position);
    end Set_Source_Location;
@@ -611,7 +620,6 @@ package body Aqua.Assembler is
                       Defined         => False,
                       External        => False,
                       Register_Alias  => True,
-                      String_Constant => False,
                       Named_Number    => False,
                       Deferred        => False,
                       Value           => Word (R));
@@ -634,6 +642,54 @@ package body Aqua.Assembler is
             end if;
          end;
       end loop;
+
+      declare
+         procedure Add_Segment
+           (Name        : String;
+            Base        : Address;
+            Size        : Word := 0;
+            Readable    : Boolean := True;
+            Writable    : Boolean := False;
+            Executable  : Boolean := False;
+            Initialised : Boolean := True);
+
+         -----------------
+         -- Add_Segment --
+         -----------------
+
+         procedure Add_Segment
+           (Name        : String;
+            Base        : Address;
+            Size        : Word := 0;
+            Readable    : Boolean := True;
+            Writable    : Boolean := False;
+            Executable  : Boolean := False;
+            Initialised : Boolean := True)
+         is
+            Rec : constant Segment_Record :=
+                    Segment_Record'
+                      (Name        => +Name,
+                       R           => Readable,
+                       W           => Writable,
+                       X           => Executable,
+                       Initialised => Initialised,
+                       Base        => Base,
+                       Bound       => Base + Size);
+         begin
+            A.Segment_List.Append (Rec);
+         end Add_Segment;
+
+      begin
+         Add_Segment ("code", 16#0000_0000#, Executable => True);
+         Add_Segment ("text", 16#1000_0000#);
+         Add_Segment ("data", 16#2000_0000#, Writable => True);
+         Add_Segment ("heap", 16#4000_0000#,
+                      Size => 16#4000_0000#,
+                      Writable => True, Initialised => False);
+      end;
+
+      A.Current_Segment := A.Segment_List.First;
+
    end Start;
 
    ---------------------------
@@ -653,6 +709,17 @@ package body Aqua.Assembler is
       return Pre & Post;
    end Temporary_Label_Image;
 
+   ------------------
+   -- Text_Segment --
+   ------------------
+
+   procedure Text_Segment
+     (A    : in out Root_Assembly_Type)
+   is
+   begin
+      A.Set_Segment ("text");
+   end Text_Segment;
+
    -----------------
    -- Write_Image --
    -----------------
@@ -664,7 +731,6 @@ package body Aqua.Assembler is
       use Aqua.IO;
       use Label_Maps;
       File : File_Type;
-      String_Count   : Word := 0;
       External_Count : Word := 0;
    begin
 
@@ -672,12 +738,9 @@ package body Aqua.Assembler is
          declare
             Info : constant Label_Info := Element (Position);
          begin
-            if Info.String_Constant then
-               String_Count := String_Count + 1;
-            elsif Info.External
+            if Info.External
               or else Info.Deferred
-              or else (not Info.Defined and then not Info.Register_Alias
-                       and then not Info.String_Constant)
+              or else (not Info.Defined and then not Info.Register_Alias)
             then
                External_Count := External_Count + 1;
             end if;
@@ -687,10 +750,26 @@ package body Aqua.Assembler is
       Create (File, Path);
       Write_Word (File, Word (A.Bindings.Length));
       Write_Word (File, Word (A.Handlers.Length));
-      Write_Address (File, A.Low);
-      Write_Address (File, A.High);
+      Write_Word (File, Word (A.Segment_List.Length));
       Write_Word (File, External_Count);
-      Write_Word (File, String_Count);
+      Write_Word (File, Word (A.Source_Locs.Length));
+
+      for Segment of A.Segment_List loop
+         Write_String_Literal
+           (File, Ada.Strings.Unbounded.To_String (Segment.Name));
+
+         declare
+            Flags : constant Octet :=
+                      (if Segment.R then 1 else 0)
+                      + (if Segment.W then 2 else 0)
+                      + (if Segment.X then 4 else 0)
+                      + (if Segment.Initialised then 8 else 0);
+         begin
+            Write_Octet (File, Flags);
+            Write_Word (File, Segment.Base);
+            Write_Word (File, Segment.Bound);
+         end;
+      end loop;
 
       for Binding of A.Bindings loop
          declare
@@ -733,15 +812,18 @@ package body Aqua.Assembler is
          Write_String_Literal (File, S (2 .. S'Last - 1));
       end;
 
-      Write_Word (File, Word (A.Source_Locs.Length));
       for Loc of A.Source_Locs loop
          Write_Word (File, Word (Loc.Line));
          Write_Word (File, Word (Loc.Column));
          Write_Address (File, Loc.Start);
       end loop;
 
-      for Addr in A.Low .. A.High loop
-         Write_Octet (File, A.Get_Octet (Addr));
+      for Segment of A.Segment_List loop
+         if Segment.Initialised and then Segment.Bound > Segment.Base then
+            for Addr in Segment.Base .. Segment.Bound - 1 loop
+               Write_Octet (File, A.Get_Octet (Addr));
+            end loop;
+         end if;
       end loop;
 
       for Position in A.Labels.Iterate loop
@@ -752,8 +834,7 @@ package body Aqua.Assembler is
          begin
             if Info.External
               or else Info.Deferred
-              or else (not Info.Defined and then not Info.Register_Alias
-                       and then not Info.String_Constant)
+              or else (not Info.Defined and then not Info.Register_Alias)
             then
                Write_Word (File, Word (Label'Length));
                Write_Word (File, Word (Info.References.Length));
@@ -777,11 +858,6 @@ package body Aqua.Assembler is
                   end if;
                   if Info.Deferred then
                      Ada.Text_IO.Put ("d");
-                  else
-                     Ada.Text_IO.Put ("-");
-                  end if;
-                  if Info.String_Constant then
-                     Ada.Text_IO.Put ("s");
                   else
                      Ada.Text_IO.Put ("-");
                   end if;
@@ -815,52 +891,6 @@ package body Aqua.Assembler is
          end;
       end loop;
 
-      for S of A.String_Lits loop
-         declare
-            Info        : constant Label_Info :=
-                            A.Labels (S);
-            Raw_Text    : constant String := S;
-            String_Text : String (1 .. Raw_Text'Length);
-            Count       : Natural := 0;
-            Index       : Positive := Raw_Text'First + 1;
-         begin
-
-            if Raw_Text'Length >= 2
-              and then Raw_Text (Raw_Text'First) = '"'
-              and then Raw_Text (Raw_Text'Last) = '"'
-            then
-               --  Remove surrounding quotes, and convert two double quotes
-               --  into one.
-               while Index < Raw_Text'Last loop
-                  if Index < Raw_Text'Last - 1
-                    and then Raw_Text (Index) = '"'
-                    and then Raw_Text (Index + 1) = '"'
-                  then
-                     Index := Index + 1;
-                  end if;
-                  Count := Count + 1;
-                  String_Text (Count) := Raw_Text (Index);
-                  Index := Index + 1;
-               end loop;
-            else
-               String_Text := Raw_Text;
-               Count := Raw_Text'Length;
-            end if;
-
-            Write_Word (File, Word (Count));
-            Write_Word (File, Word (Info.References.Length));
-            Write_Octet (File, 0);
-            for I in 1 .. Count loop
-               Write_Octet (File, Character'Pos (String_Text (I)));
-            end loop;
-
-            for Ref of Info.References loop
-               Write_Address (File, Ref.Addr);
-               Write_Octet (File, Boolean'Pos (Ref.Relative));
-            end loop;
-         end;
-      end loop;
-
       for Handler of A.Handlers loop
          Write_String_Literal (File, -Handler.Start_Label);
          Write_String_Literal (File, -Handler.End_Label);
@@ -881,9 +911,7 @@ package body Aqua.Assembler is
    begin
       Put_Line ("Labels:");
       for Position in A.Labels.Iterate loop
-         if Element (Position).Defined
-           and then not Element (Position).String_Constant
-         then
+         if Element (Position).Defined then
             Put ("    " & Key (Position));
             Set_Col (30);
             Put_Line (Aqua.IO.Hex_Image (Element (Position).Value));
@@ -892,18 +920,10 @@ package body Aqua.Assembler is
 
       New_Line;
 
-      Put_Line ("Strings:");
-      for Position in A.Labels.Iterate loop
-         if Element (Position).String_Constant then
-            Put_Line ("    " & Key (Position));
-         end if;
-      end loop;
-
       Put ("External:");
       for Position in A.Labels.Iterate loop
          if not Element (Position).Defined
            and then not Element (Position).Register_Alias
-           and then not Element (Position).String_Constant
          then
             Put (" " & Key (Position));
          end if;
