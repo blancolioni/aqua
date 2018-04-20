@@ -63,6 +63,8 @@ private
    package List_Of_Saved_Registers is
      new Ada.Containers.Doubly_Linked_Lists (Saved_Registers);
 
+   type Opcode_Acc_Array is array (Octet) of Natural;
+
    type Aqua_CPU_Type (Image : access Aqua.Images.Root_Image_Type'Class) is
    limited new Ada.Finalization.Limited_Controlled
      and Aqua.Execution.Execution_Interface with
@@ -77,6 +79,7 @@ private
          Start       : Ada.Calendar.Time;
          Exec_Time   : Duration := 0.0;
          Current_Env : Ada.Strings.Unbounded.Unbounded_String;
+         Opcode_Acc  : Opcode_Acc_Array;
       end record;
 
    overriding function Pop
