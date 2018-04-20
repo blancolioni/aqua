@@ -255,6 +255,8 @@ package body Aqua.CPU is
 
       Trace_Code := Aqua.Options.Trace_Code;
 
+      CPU.Opcode_Acc := (others => 0);
+
       CPU.Set_Current_Environment (Environment_Name);
 
       if Trace_Code or else Trace_Executions then
@@ -285,6 +287,7 @@ package body Aqua.CPU is
                    CPU.Image.Get_Octet (PC);
             Original_PC : constant Word := PC;
          begin
+            CPU.Opcode_Acc (Op) := CPU.Opcode_Acc (Op) + 1;
             if Trace_Code then
                declare
                   Loc : constant String :=
@@ -373,6 +376,50 @@ package body Aqua.CPU is
 
       CPU.Exec_Time := CPU.Exec_Time + Ada.Calendar.Clock - CPU.Start;
 
+      declare
+         type Opcode_Entry is
+            record
+               Opcode    : Octet;
+               Frequency : Natural;
+            end record;
+
+         function "<" (Left, Right : Opcode_Entry) return Boolean
+         is (Left.Frequency < Right.Frequency);
+
+         package Opcode_Frequency_Tables is
+           new Ada.Containers.Doubly_Linked_Lists (Opcode_Entry);
+
+         package Sorted_Opcodes is
+           new Opcode_Frequency_Tables.Generic_Sorting ("<");
+
+         Freq : Opcode_Frequency_Tables.List;
+         Total : Natural := 0;
+      begin
+         for Opcode in CPU.Opcode_Acc'Range loop
+            if CPU.Opcode_Acc (Opcode) > 0 then
+               Freq.Append ((Opcode, CPU.Opcode_Acc (Opcode)));
+               Total := Total + CPU.Opcode_Acc (Opcode);
+            end if;
+         end loop;
+
+         Sorted_Opcodes.Sort (Freq);
+
+         for Item of Freq loop
+            Ada.Text_IO.Put
+              (Aqua.Debug.Opcode_Image (Item.Opcode));
+            Ada.Text_IO.Set_Col (20);
+            Ada.Text_IO.Put
+              (Natural'Image (Item.Frequency));
+            Ada.Text_IO.Set_Col (30);
+            Ada.Text_IO.Put
+              (Natural'Image (Item.Frequency * 100 / Total) & "%");
+            Ada.Text_IO.New_Line;
+         end loop;
+         Ada.Text_IO.Put ("TOTAL");
+         Ada.Text_IO.Set_Col (20);
+         Ada.Text_IO.Put (Natural'Image (Total));
+         Ada.Text_IO.New_Line;
+      end;
    end Execute;
 
    --------------
