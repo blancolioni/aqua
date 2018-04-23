@@ -189,12 +189,19 @@ package body Aqua.Architecture is
       return Octet
    is
    begin
-      if Operand.Mode = Literal then
+      if Operand.Mode = Small_Immediate then
          return Operand.Lit;
-      else
-         return (Addressing_Mode'Pos (Operand.Mode)) * 32
-           + Boolean'Pos (Operand.Deferred) * 16
+      elsif not Operand.Deferred then
+         return Addressing_Mode'Pos (Operand.Mode) * 32
            + Octet (Operand.Register);
+      else
+         pragma Assert (Operand.Mode in Deferrable_Mode);
+         case Deferrable_Mode (Operand.Mode) is
+            when Register =>
+               return 6 * 32 + Octet (Operand.Register);
+            when Indexed_8 =>
+               return 7 * 32 + Octet (Operand.Register);
+         end case;
       end if;
    end Encode;
 
@@ -217,7 +224,7 @@ package body Aqua.Architecture is
                      else Data_Octets (Size));
    begin
       case Operand.Mode is
-         when Literal =>
+         when Small_Immediate =>
             raise Constraint_Error with
               "cannot get address of literal mode";
          when Register =>
@@ -231,32 +238,23 @@ package body Aqua.Architecture is
                raise Program_Error
                  with "cannot get address of register mode";
             end if;
-         when Autoincrement =>
+         when Postincrement =>
             Result := R (Operand.Register);
             R (Operand.Register) := R (Operand.Register) + Auto_Size;
-         when Autodecrement =>
+         when Predecrement =>
             R (Operand.Register) := R (Operand.Register) - Auto_Size;
             Result := R (Operand.Register);
-         when Indexed | Indexed_8 | Indexed_16 =>
+         when Indexed_8 | Indexed_32 =>
             Result := R (Operand.Register);
             declare
                Index_Size : constant Data_Size :=
-                              (if Operand.Mode = Indexed
+                              (if Operand.Mode = Indexed_32
                                then Word_32_Size
-                               elsif Operand.Mode = Indexed_16
-                               then Word_16_Size
                                else Word_8_Size);
                A : constant Word :=
                               Memory.Get_Value (R (R_PC), Index_Size);
             begin
-
-               if Operand.Mode = Indexed_16 then
-                  if A < 32768 then
-                     Result := Result + Address (A);
-                  else
-                     Result := Result - Address (65536 - A);
-                  end if;
-               elsif Operand.Mode = Indexed_8 then
+               if Operand.Mode = Indexed_8 then
                   if A < 128 then
                      Result := Result + Address (A);
                   else
@@ -302,13 +300,20 @@ package body Aqua.Architecture is
       if (Op and 2#11100000#) = 0 then
          return (Register => 0,
                  Deferred => False,
-                 Mode     => Literal,
+                 Mode     => Small_Immediate,
                  Lit      => Op);
       else
-         return (Register => Register_Index (Op mod 16),
-                 Deferred => (Op and 2#00010000#) /= 0,
-                 Mode     => Addressing_Mode'Val (Op / 32),
-                 Lit      => 0);
+         declare
+            Mode : constant Octet := Op / 32;
+         begin
+            return (Register => Register_Index (Op mod 32),
+                    Deferred => Mode in 6 .. 7,
+                    Mode     =>
+                      (if Mode = 7 then Indexed_8
+                       elsif Mode = 6 then Register
+                       else Addressing_Mode'Val (Mode)),
+                    Lit      => 0);
+         end;
       end if;
    end Get_Operand;
 
@@ -337,7 +342,7 @@ package body Aqua.Architecture is
       Value   :    out Word)
    is
    begin
-      if Operand.Mode = Literal then
+      if Operand.Mode = Small_Immediate then
          Value := Word (Operand.Lit);
       elsif Operand.Mode = Register
         and then not Operand.Deferred
@@ -353,6 +358,26 @@ package body Aqua.Architecture is
       end if;
    end Read;
 
+   -------------------
+   -- Register_Name --
+   -------------------
+
+   function Register_Name (R : Register_Index) return String is
+      Name : String := Register_Index'Image (R);
+   begin
+      Name (Name'First) := 'r';
+      case R is
+         when 0 .. 28 =>
+            return Name;
+         when R_PC =>
+            return "pc";
+         when R_SP =>
+            return "sp";
+         when R_FP =>
+            return "fp";
+      end case;
+   end Register_Name;
+
    -----------
    -- Write --
    -----------
@@ -366,7 +391,7 @@ package body Aqua.Architecture is
       Value   : Word)
    is
    begin
-      if Operand.Mode = Literal then
+      if Operand.Mode = Small_Immediate then
          raise Constraint_Error with "cannot update a literal operand";
       elsif Operand.Mode = Register
         and then not Operand.Deferred

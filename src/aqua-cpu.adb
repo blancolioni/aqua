@@ -429,35 +429,37 @@ package body Aqua.CPU is
            (Natural'Image (CPU.Operand_Acc (0) + CPU.Opcode_Acc (1)));
 
          declare
-            procedure Put (Op_Name : String;
-                           Op_Index : Natural);
+            procedure Put (Op_Name  : String;
+                           Op_Index : Natural;
+                           Defer    : Boolean := False);
 
             ---------
             -- Put --
             ---------
 
             procedure Put (Op_Name  : String;
-                           Op_Index : Natural)
+                           Op_Index : Natural;
+                           Defer    : Boolean := False)
             is
             begin
                Ada.Text_IO.Put (Op_Name);
                Ada.Text_IO.Set_Col (20);
                Ada.Text_IO.Put
-                 (Natural'Image (CPU.Operand_Acc (Op_Index * 2)));
-               Ada.Text_IO.Set_Col (30);
-               Ada.Text_IO.Put
-                 (Natural'Image (CPU.Operand_Acc (Op_Index * 2 + 1)));
+                 (Natural'Image (CPU.Operand_Acc (Op_Index)));
+               if Defer then
+                  Ada.Text_IO.Set_Col (30);
+                  Ada.Text_IO.Put
+                    (Natural'Image (CPU.Operand_Acc (Op_Index + 5)));
+               end if;
                Ada.Text_IO.New_Line;
             end Put;
 
          begin
-            Put ("register", 1);
-            Put ("(R)+", 2);
-            Put ("-(R)", 3);
-            Put ("X/32(R)", 4);
-            Put ("X/8(R)", 5);
-            Put ("X/16(R)", 6);
-            Put ("invalid", 7);
+            Put ("register", 1, True);
+            Put ("X/8(R)", 2, True);
+            Put ("(R)+", 3);
+            Put ("-(R)", 4);
+            Put ("X/32(R)", 5);
          end;
 
       end;
@@ -557,7 +559,7 @@ package body Aqua.CPU is
                   if Dst.Mode = Register and then not Dst.Deferred then
                      A := 0;
                      X := Aqua.Get (CPU.R (Dst.Register), Size);
-                  elsif Dst.Mode = Literal then
+                  elsif Dst.Mode = Small_Immediate then
                      A := 0;
                      X := Word (Dst.Lit);
                   else
@@ -581,7 +583,7 @@ package body Aqua.CPU is
                   null;
                elsif Dst.Mode = Register and then not Dst.Deferred then
                   Aqua.Set (CPU.R (Dst.Register), Size, X);
-               elsif Dst.Mode = Literal then
+               elsif Dst.Mode = Small_Immediate then
                   raise Aqua.Architecture.Bad_Instruction;
                else
                   CPU.Image.Set_Value (A, Size, X);
@@ -609,7 +611,7 @@ package body Aqua.CPU is
                   if Dst.Mode = Register and then not Dst.Deferred then
                      A := 0;
                      Y := Aqua.Get (CPU.R (Dst.Register), Size);
-                  elsif Dst.Mode = Literal then
+                  elsif Dst.Mode = Small_Immediate then
                      A := 0;
                      Y := Word (Dst.Lit);
                   else
@@ -631,7 +633,7 @@ package body Aqua.CPU is
                   null;
                elsif Dst.Mode = Register and then not Dst.Deferred then
                   Aqua.Set (CPU.R (Dst.Register), Size, Y);
-               elsif Dst.Mode = Literal then
+               elsif Dst.Mode = Small_Immediate then
                   raise Aqua.Architecture.Bad_Instruction;
                else
                   CPU.Image.Set_Value (A, Size, Y);
@@ -1114,12 +1116,16 @@ package body Aqua.CPU is
      (CPU : in out Aqua_CPU_Type)
    is null;
 
+   ------------------
+   -- Next_Operand --
+   ------------------
+
    function Next_Operand
      (CPU : in out Aqua_CPU_Type'Class)
       return Aqua.Architecture.Operand_Type
    is
       X : constant Octet := Next_Octet (CPU);
-      Op : constant Natural := Natural (X / 16);
+      Op : constant Natural := Natural (X / 32);
    begin
       CPU.Operand_Acc (Op) := CPU.Operand_Acc (Op) + 1;
       return Get_Operand (X);
