@@ -176,8 +176,7 @@ package body Aqua.CPU is
 
    function Next_Operand
      (CPU : in out Aqua_CPU_Type'Class)
-      return Aqua.Architecture.Operand_Type
-   is (Get_Operand (Next_Octet (CPU)));
+      return Aqua.Architecture.Operand_Type;
 
    procedure Dump_Core
      (CPU : in out Aqua_CPU_Type'Class);
@@ -256,6 +255,7 @@ package body Aqua.CPU is
       Trace_Code := Aqua.Options.Trace_Code;
 
       CPU.Opcode_Acc := (others => 0);
+      CPU.Operand_Acc := (others => 0);
 
       CPU.Set_Current_Environment (Environment_Name);
 
@@ -419,6 +419,47 @@ package body Aqua.CPU is
          Ada.Text_IO.Set_Col (20);
          Ada.Text_IO.Put (Natural'Image (Total));
          Ada.Text_IO.New_Line;
+         Ada.Text_IO.New_Line;
+         Ada.Text_IO.Put_Line
+           ("OPERAND             Op        (Op)");
+
+         Ada.Text_IO.Put ("Small integers");
+         Ada.Text_IO.Set_Col (20);
+         Ada.Text_IO.Put_Line
+           (Natural'Image (CPU.Operand_Acc (0) + CPU.Opcode_Acc (1)));
+
+         declare
+            procedure Put (Op_Name : String;
+                           Op_Index : Natural);
+
+            ---------
+            -- Put --
+            ---------
+
+            procedure Put (Op_Name  : String;
+                           Op_Index : Natural)
+            is
+            begin
+               Ada.Text_IO.Put (Op_Name);
+               Ada.Text_IO.Set_Col (20);
+               Ada.Text_IO.Put
+                 (Natural'Image (CPU.Operand_Acc (Op_Index * 2)));
+               Ada.Text_IO.Set_Col (30);
+               Ada.Text_IO.Put
+                 (Natural'Image (CPU.Operand_Acc (Op_Index * 2 + 1)));
+               Ada.Text_IO.New_Line;
+            end Put;
+
+         begin
+            Put ("register", 1);
+            Put ("(R)+", 2);
+            Put ("-(R)", 3);
+            Put ("X/32(R)", 4);
+            Put ("X/8(R)", 5);
+            Put ("X/16(R)", 6);
+            Put ("invalid", 7);
+         end;
+
       end;
    end Execute;
 
@@ -1073,6 +1114,17 @@ package body Aqua.CPU is
      (CPU : in out Aqua_CPU_Type)
    is null;
 
+   function Next_Operand
+     (CPU : in out Aqua_CPU_Type'Class)
+      return Aqua.Architecture.Operand_Type
+   is
+      X : constant Octet := Next_Octet (CPU);
+      Op : constant Natural := Natural (X / 16);
+   begin
+      CPU.Operand_Acc (Op) := CPU.Operand_Acc (Op) + 1;
+      return Get_Operand (X);
+   end Next_Operand;
+
    ----------------
    -- Next_Value --
    ----------------
@@ -1161,6 +1213,21 @@ package body Aqua.CPU is
       use Ada.Calendar;
       use Ada.Text_IO;
    begin
+      Put_Line
+        ("code: "
+         & Aqua.IO.Hex_Image (CPU.Image.Code_Base)
+         & " .. "
+         & Aqua.IO.Hex_Image (CPU.Image.Code_Bound)
+         & " size"
+         & Word'Image (CPU.Image.Code_Size));
+      Put_Line
+        ("text: "
+         & Aqua.IO.Hex_Image (CPU.Image.Segment_Base ("text"))
+         & " .. "
+         & Aqua.IO.Hex_Image (CPU.Image.Segment_Bound ("text"))
+         & " size"
+         & Word'Image (CPU.Image.Segment_Size ("text")));
+
 --        Put_Line
 --          ("Memory:"
 --           & " reserved ="
