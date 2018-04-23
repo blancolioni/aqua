@@ -337,8 +337,6 @@ package body Aqua.Architecture is
      (Operand : Operand_Type;
       Size    : Data_Size;
       Trace   : Boolean;
-      Local   : in out Register_Index;
-      Global  : Register_Index;
       R       : in out Registers;
       Memory  : in out Aqua.Memory.Memory_Type'Class;
       Value   :    out Word)
@@ -347,19 +345,6 @@ package body Aqua.Architecture is
       if Operand.Mode = Small_Immediate then
          Value := Word (Operand.Lit);
       else
-         if Operand.Register > Local
-           and then Operand.Register < Global
-         then
-            if Trace then
-               Ada.Text_IO.Put
-                 ("[local"
-                  & Integer'Image (-(Integer (Operand.Register)))
-                  & "]");
-            end if;
-            R (Operand.Register) := 0;
-            Local := Operand.Register;
-         end if;
-
          if Operand.Mode = Register
            and then not Operand.Deferred
          then
@@ -403,8 +388,6 @@ package body Aqua.Architecture is
      (Operand : Operand_Type;
       Size    : Data_Size;
       Trace   : Boolean;
-      Local   : in out Register_Index;
-      Global  : Register_Index;
       R       : in out Registers;
       Memory  : in out Aqua.Memory.Memory_Type'Class;
       Value   : Word)
@@ -415,33 +398,8 @@ package body Aqua.Architecture is
       elsif Operand.Mode = Register
         and then not Operand.Deferred
       then
-         if Operand.Register > Local
-           and then Operand.Register < Global
-         then
-            if Trace then
-               Ada.Text_IO.Put
-                 ("[local"
-                  & Integer'Image (-(Integer (Operand.Register)))
-                  & "]");
-            end if;
-            Local := Operand.Register;
-         end if;
-
          Set (R (Operand.Register), Size, Value);
       else
-         if Operand.Register > Local
-           and then Operand.Register < Global
-         then
-            if Trace then
-               Ada.Text_IO.Put
-                 ("[local"
-                  & Integer'Image (-(Integer (Operand.Register)))
-                  & "]");
-            end if;
-
-            Local := Operand.Register;
-            R (Operand.Register) := 0;
-         end if;
          declare
             A : constant Address :=
                   Get_Address (Operand, Size, Trace, R, Memory);
