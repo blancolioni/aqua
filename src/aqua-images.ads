@@ -66,6 +66,11 @@ package Aqua.Images is
       Name  : String)
       return Address;
 
+   function Segment_Size
+     (Image : Root_Image_Type'Class;
+      Name  : String)
+      return Word;
+
    function Code_Base
      (Image : Root_Image_Type'Class)
       return Address;
@@ -73,6 +78,10 @@ package Aqua.Images is
    function Code_Bound
      (Image : Root_Image_Type'Class)
       return Address;
+
+   function Code_Size
+     (Image : Root_Image_Type'Class)
+      return Word;
 
    type Image_Type is access all Root_Image_Type'Class;
 
@@ -187,5 +196,10 @@ private
      (Image : Root_Image_Type'Class)
       return Address
    is (Image.Segment_Map.Element ("code").Bound);
+
+   function Code_Size
+     (Image : Root_Image_Type'Class)
+      return Word
+   is (Image.Segment_Size ("code"));
 
 end Aqua.Images;
