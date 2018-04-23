@@ -1,5 +1,5 @@
 private with Ada.Calendar;
-private with Ada.Containers.Doubly_Linked_Lists;
+private with Ada.Containers.Vectors;
 private with Ada.Strings.Unbounded;
 
 with Ada.Finalization;
@@ -50,18 +50,8 @@ package Aqua.CPU is
 
 private
 
-   type Saved_Register_Count is mod 8;
-
-   type Saved_Register_Array is array (Saved_Register_Count) of Word;
-
-   type Saved_Registers is
-      record
-         Count : Saved_Register_Count;
-         Rs    : Saved_Register_Array;
-      end record;
-
-   package List_Of_Saved_Registers is
-     new Ada.Containers.Doubly_Linked_Lists (Saved_Registers);
+   package Saved_Register_Stack is
+     new Ada.Containers.Vectors (Positive, Word);
 
    type Opcode_Acc_Array is array (Octet) of Natural;
    type Operand_Acc_Array is array (0 .. 15) of Natural;
@@ -74,7 +64,7 @@ private
                          (Architecture.R_PC => 16#FFFF_FFFC#,
                           Architecture.R_SP => 16#8000_0000#,
                           others            => 16#BAAD_F00D#);
-         R_Stack     : List_Of_Saved_Registers.List;
+         R_Stack     : Saved_Register_Stack.Vector;
          R_Local     : Aqua.Architecture.Register_Index := 0;
          R_Global    : Aqua.Architecture.Register_Index := 29;
          N, Z, C, V  : Boolean := False;
@@ -93,6 +83,10 @@ private
    overriding procedure Push
      (CPU : in out Aqua_CPU_Type;
       Value : Word);
+
+   procedure Update_Register
+     (CPU     : in out Aqua_CPU_Type'Class;
+      Operand : Aqua.Architecture.Operand_Type);
 
    procedure Show_Registers
      (CPU : in out Aqua_CPU_Type);
