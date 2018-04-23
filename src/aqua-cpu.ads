@@ -64,6 +64,7 @@ private
      new Ada.Containers.Doubly_Linked_Lists (Saved_Registers);
 
    type Opcode_Acc_Array is array (Octet) of Natural;
+   type Operand_Acc_Array is array (0 .. 15) of Natural;
 
    type Aqua_CPU_Type (Image : access Aqua.Images.Root_Image_Type'Class) is
    limited new Ada.Finalization.Limited_Controlled
@@ -80,6 +81,7 @@ private
          Exec_Time   : Duration := 0.0;
          Current_Env : Ada.Strings.Unbounded.Unbounded_String;
          Opcode_Acc  : Opcode_Acc_Array;
+         Operand_Acc : Operand_Acc_Array;
       end record;
 
    overriding function Pop
