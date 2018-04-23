@@ -683,6 +683,20 @@ package body Aqua.Images is
       return Image.Segment_Map.Element (Name).Bound;
    end Segment_Bound;
 
+   ------------------
+   -- Segment_Size --
+   ------------------
+
+   function Segment_Size
+     (Image : Root_Image_Type'Class;
+      Name  : String)
+      return Word
+   is
+      S : constant Segment_Record := Image.Segment_Map.Element (Name);
+   begin
+      return S.Bound - S.Base;
+   end Segment_Size;
+
    ----------
    -- Show --
    ----------
