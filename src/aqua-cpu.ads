@@ -75,6 +75,8 @@ private
                           Architecture.R_SP => 16#8000_0000#,
                           others            => 16#BAAD_F00D#);
          R_Stack     : List_Of_Saved_Registers.List;
+         R_Local     : Aqua.Architecture.Register_Index := 0;
+         R_Global    : Aqua.Architecture.Register_Index := 29;
          N, Z, C, V  : Boolean := False;
          B           : Boolean := False;
          Start       : Ada.Calendar.Time;
