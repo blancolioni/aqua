@@ -625,14 +625,8 @@ package body Aqua.Assembler is
                       Value           => Word (R));
          begin
             A.Labels.Insert (Rx, Info);
-            if R = 25 then
+            if R = 28 then
                A.Labels.Insert ("AGG", Info);
-            elsif R = 26 then
-               A.Labels.Insert ("CTR", Info);
-            elsif R = 27 then
-               A.Labels.Insert ("PV", Info);
-            elsif R = 28 then
-               A.Labels.Insert ("OP", Info);
             elsif R = 29 then
                A.Labels.Insert ("FP", Info);
             elsif R = 30 then
