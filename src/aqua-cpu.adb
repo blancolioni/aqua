@@ -554,7 +554,9 @@ package body Aqua.CPU is
 
                if Instruction = A_Tst then
                   Aqua.Architecture.Read
-                    (Dst, Size, Trace_Code, CPU.R, CPU.Image.all, X);
+                    (Dst, Size, Trace_Code,
+                     CPU.R_Local, CPU.R_Global,
+                     CPU.R, CPU.Image.all, X);
                else
                   if Dst.Mode = Register and then not Dst.Deferred then
                      A := 0;
@@ -600,13 +602,25 @@ package body Aqua.CPU is
                Src := Next_Operand (CPU);
 
                Aqua.Architecture.Read
-                 (Src, Size, Trace_Code, CPU.R, CPU.Image.all, X);
+                 (Src, Size, Trace_Code,
+                  CPU.R_Local, CPU.R_Global,
+                  CPU.R, CPU.Image.all, X);
 
                Dst := Next_Operand (CPU);
 
+               if Dst.Mode /= Small_Immediate
+                 and then Dst.Register > CPU.R_Local
+                 and then Dst.Register < CPU.R_Global
+               then
+                  CPU.R (Dst.Register) := 0;
+                  CPU.R_Local := Dst.Register;
+               end if;
+
                if Instruction = A_Cmp then
                   Aqua.Architecture.Read
-                    (Dst, Size, Trace_Code, CPU.R, CPU.Image.all, Y);
+                    (Dst, Size, Trace_Code,
+                     CPU.R_Local, CPU.R_Global,
+                     CPU.R, CPU.Image.all, Y);
                else
                   if Dst.Mode = Register and then not Dst.Deferred then
                      A := 0;
@@ -649,12 +663,16 @@ package body Aqua.CPU is
                Src_1 := Next_Operand (CPU);
 
                Aqua.Architecture.Read
-                 (Src_1, Size, Trace_Code, CPU.R, CPU.Image.all, X);
+                 (Src_1, Size, Trace_Code,
+                  CPU.R_Local, CPU.R_Global,
+                  CPU.R, CPU.Image.all, X);
 
                Src_2 := Next_Operand (CPU);
 
                Aqua.Architecture.Read
-                 (Src_2, Size, Trace_Code, CPU.R, CPU.Image.all, Y);
+                 (Src_2, Size, Trace_Code,
+                  CPU.R_Local, CPU.R_Global,
+                  CPU.R, CPU.Image.all, Y);
 
                Dst := Next_Operand (CPU);
 
@@ -664,7 +682,9 @@ package body Aqua.CPU is
                Set_NZ (CPU, Size, Y);
 
                Aqua.Architecture.Write
-                 (Dst, Size, Trace_Code, CPU.R, CPU.Image.all, Y);
+                 (Dst, Size, Trace_Code,
+                  CPU.R_Local, CPU.R_Global,
+                  CPU.R, CPU.Image.all, Y);
 
                if Trace_Code then
                   Ada.Text_IO.Put (" " & Aqua.IO.Hex_Image (Y));
@@ -682,12 +702,16 @@ package body Aqua.CPU is
                Src_1 := Next_Operand (CPU);
 
                Aqua.Architecture.Read
-                 (Src_1, Size, Trace_Code, CPU.R, CPU.Image.all, X);
+                 (Src_1, Size, Trace_Code,
+                  CPU.R_Local, CPU.R_Global,
+                  CPU.R, CPU.Image.all, X);
 
                Src_2 := Next_Operand (CPU);
 
                Aqua.Architecture.Read
-                 (Src_2, Size, Trace_Code, CPU.R, CPU.Image.all, Y);
+                 (Src_2, Size, Trace_Code,
+                  CPU.R_Local, CPU.R_Global,
+                  CPU.R, CPU.Image.all, Y);
 
                Dst := Next_Operand (CPU);
 
@@ -715,7 +739,9 @@ package body Aqua.CPU is
                Set_NZ (CPU, Size, Y);
 
                Aqua.Architecture.Write
-                 (Dst, Size, Trace_Code, CPU.R, CPU.Image.all, Y);
+                 (Dst, Size, Trace_Code,
+                  CPU.R_Local, CPU.R_Global,
+                  CPU.R, CPU.Image.all, Y);
 
                if Trace_Code then
                   Ada.Text_IO.Put (" " & Aqua.IO.Hex_Image (Y));
@@ -763,6 +789,8 @@ package body Aqua.CPU is
                  (Operand => Dst,
                   Size    => Word_16_Size,
                   Trace   => Trace_Code,
+                  Local   => CPU.R_Local,
+                  Global  => CPU.R_Global,
                   R       => CPU.R,
                   Memory  => CPU.Image.all,
                   Value   => X);
@@ -782,6 +810,8 @@ package body Aqua.CPU is
                  (Operand => Dst,
                   Size    => Word_32_Size,
                   Trace   => Trace_Code,
+                  Local   => CPU.R_Local,
+                  Global  => CPU.R_Global,
                   R       => CPU.R,
                   Memory  => CPU.Image.all,
                   Value   => X);

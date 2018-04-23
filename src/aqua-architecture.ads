@@ -115,6 +115,8 @@ package Aqua.Architecture is
      (Operand : Operand_Type;
       Size    : Data_Size;
       Trace   : Boolean;
+      Local   : in out Register_Index;
+      Global  : Register_Index;
       R       : in out Registers;
       Memory  : in out Aqua.Memory.Memory_Type'Class;
       Value   :    out Word);
@@ -123,6 +125,8 @@ package Aqua.Architecture is
      (Operand : Operand_Type;
       Size    : Data_Size;
       Trace   : Boolean;
+      Local   : in out Register_Index;
+      Global  : Register_Index;
       R       : in out Registers;
       Memory  : in out Aqua.Memory.Memory_Type'Class;
       Value   : Word);
