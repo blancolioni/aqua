@@ -4,7 +4,8 @@ package Aqua.Architecture is
 
    Bad_Instruction : exception;
 
-   type Register_Index is range 0 .. 31;
+   Register_Count : constant := 32;
+   type Register_Index is range 0 .. Register_Count - 1;
 
    R_PC  : constant Register_Index := 31;
    R_SP  : constant Register_Index := 30;

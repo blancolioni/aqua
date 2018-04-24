@@ -536,13 +536,12 @@ package body Aqua.CPU is
 
          when A_Call =>
             declare
-               N   : constant Octet := Next_Octet (CPU);
-               Last : constant Register_Index :=
-                        (if N > Octet (CPU.R_Local)
-                         then CPU.R_Local else Register_Index (N));
-               Dst : constant Operand_Type := Next_Operand (CPU);
-               X   : Word;
+               N    : constant Octet := Next_Octet (CPU);
+               Last : Register_Index := Register_Index (N mod 32);
+               Dst  : constant Operand_Type := Next_Operand (CPU);
+               X    : Word;
             begin
+
                Aqua.Architecture.Read
                  (Operand => Dst,
                   Size    => Word_32_Size,
@@ -551,13 +550,23 @@ package body Aqua.CPU is
                   Memory  => CPU.Image.all,
                   Value   => X);
 
-               CPU.Push (PC);
+               CPU.R_Jump := PC;
                PC := X;
 
-               for I in reverse 0 .. Last - 1 loop
+               if Last >= CPU.R_Global then
+                  Last := CPU.R_Local;
+               elsif Last >= CPU.R_Local then
+                  for I in Register_Index range CPU.R_Local .. Last loop
+                     CPU.R (I) := 0;
+                  end loop;
+                  CPU.R_Local := Last + 1;
+               end if;
+
+               CPU.R (Last) := Word (Last);
+               for I in reverse 0 .. Last loop
                   CPU.R_Stack.Append (CPU.R (I));
                end loop;
-               CPU.R_Stack.Append (Word (Last));
+
                CPU.R (0 .. CPU.R_Local - Last) :=
                  CPU.R (Last .. CPU.R_Local - 1);
                CPU.R_Local := CPU.R_Local - Last;
@@ -566,13 +575,26 @@ package body Aqua.CPU is
          when A_Return =>
             declare
                N    : constant Octet := Next_Octet (CPU);
-               Last : constant Register_Index :=
-                        Register_Index (CPU.R_Stack.Last_Element);
+               Last : Register_Index :=
+                        Register_Index (N mod Register_Count);
+               P    : constant Register_Index :=
+                        Register_Index
+                          (CPU.R_Stack.Last_Element mod Register_Count);
             begin
-               CPU.R (Last .. Register_Index (N) - 1) :=
-                 CPU.R (0 .. Register_Index (N) - 1);
+
                CPU.R_Stack.Delete_Last;
-               for I in 0 .. Last - 1 loop
+
+               if Last > CPU.R_Local then
+                  Last := CPU.R_Local + 1;
+               end if;
+
+               if P + Last >= CPU.R_Global then
+                  Last := CPU.R_Global - P;
+               end if;
+
+               CPU.R (P .. P + Last) := CPU.R (0 .. Last);
+
+               for I in 0 .. P - 1 loop
                   CPU.R (I) := CPU.R_Stack.Last_Element;
                   CPU.R_Stack.Delete_Last;
                end loop;
