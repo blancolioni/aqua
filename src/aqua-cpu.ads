@@ -67,6 +67,7 @@ private
          R_Stack     : Saved_Register_Stack.Vector;
          R_Local     : Aqua.Architecture.Register_Index := 0;
          R_Global    : Aqua.Architecture.Register_Index := 29;
+         R_Jump      : Word;
          N, Z, C, V  : Boolean := False;
          B           : Boolean := False;
          Start       : Ada.Calendar.Time;
