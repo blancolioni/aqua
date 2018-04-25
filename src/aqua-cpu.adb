@@ -51,7 +51,8 @@ package body Aqua.CPU is
                 Dst  : in out Aqua.Word);
 
    type Single_Operand_Handler is access
-     procedure (Size : Aqua.Data_Size;
+     procedure (CPU  : in out Aqua_CPU_Type'Class;
+                Size : Aqua.Data_Size;
                 Dst  : in out Aqua.Word);
 
    function Convert_Triple_To_Double
@@ -113,15 +114,28 @@ package body Aqua.CPU is
       Dst  : in out Aqua.Word);
 
    procedure Handle_Clr
-     (Size : Aqua.Data_Size;
+     (CPU  : in out Aqua_CPU_Type'Class;
+      Size : Aqua.Data_Size;
       Dst  : in out Aqua.Word);
 
    procedure Handle_Dec
-     (Size : Aqua.Data_Size;
+     (CPU  : in out Aqua_CPU_Type'Class;
+      Size : Aqua.Data_Size;
       Dst  : in out Aqua.Word);
 
    procedure Handle_Inc
-     (Size : Aqua.Data_Size;
+     (CPU  : in out Aqua_CPU_Type'Class;
+      Size : Aqua.Data_Size;
+      Dst  : in out Aqua.Word);
+
+   procedure Handle_Ldj
+     (CPU  : in out Aqua_CPU_Type'Class;
+      Size : Aqua.Data_Size;
+      Dst  : in out Aqua.Word);
+
+   procedure Handle_Stj
+     (CPU  : in out Aqua_CPU_Type'Class;
+      Size : Aqua.Data_Size;
       Dst  : in out Aqua.Word);
 
    Double_Operand : constant array (Double_Operand_Instruction)
@@ -143,6 +157,8 @@ package body Aqua.CPU is
         A_Inc => Handle_Inc'Access,
         A_Dec => Handle_Dec'Access,
         A_Tst => null,
+        A_Ldj => Handle_Ldj'Access,
+        A_Stj => Handle_Stj'Access,
         others => null);
 
    procedure Handle
@@ -542,13 +558,13 @@ package body Aqua.CPU is
                X    : Word;
             begin
 
-               Aqua.Architecture.Read
-                 (Operand => Dst,
-                  Size    => Word_32_Size,
-                  Trace   => Trace_Code,
-                  R       => CPU.R,
-                  Memory  => CPU.Image.all,
-                  Value   => X);
+               X :=
+                 Aqua.Architecture.Get_Address
+                   (Operand => Dst,
+                    Size    => Word_32_Size,
+                    Trace   => Trace_Code,
+                    R       => CPU.R,
+                    Memory  => CPU.Image.all);
 
                CPU.R_Jump := PC;
                PC := X;
@@ -567,9 +583,11 @@ package body Aqua.CPU is
                   CPU.R_Stack.Append (CPU.R (I));
                end loop;
 
-               CPU.R (0 .. CPU.R_Local - Last) :=
+               CPU.R (0 .. CPU.R_Local - Last - 1) :=
                  CPU.R (Last .. CPU.R_Local - 1);
+
                CPU.R_Local := CPU.R_Local - Last;
+
             end;
 
          when A_Return =>
@@ -601,7 +619,7 @@ package body Aqua.CPU is
                CPU.R_Local := Last;
             end;
 
-            PC := CPU.Pop;
+            PC := CPU.R_Jump;
 
          when Single_Operand_Instruction =>
             declare
@@ -631,7 +649,7 @@ package body Aqua.CPU is
                end if;
 
                if Instruction /= A_Tst then
-                  Single_Operand (Instruction) (Size, X);
+                  Single_Operand (Instruction) (CPU, Size, X);
                end if;
 
                Set_NZ (CPU, Size, X);
@@ -949,9 +967,11 @@ package body Aqua.CPU is
    ----------------
 
    procedure Handle_Clr
-     (Size     : Aqua.Data_Size;
-      Dst      : in out Aqua.Word)
+     (CPU  : in out Aqua_CPU_Type'Class;
+      Size : Aqua.Data_Size;
+      Dst  : in out Aqua.Word)
    is
+      pragma Unreferenced (CPU);
    begin
       Aqua.Set (Dst, Size, 0);
    end Handle_Clr;
@@ -975,9 +995,11 @@ package body Aqua.CPU is
    ----------------
 
    procedure Handle_Dec
-     (Size     : Aqua.Data_Size;
-      Dst      : in out Aqua.Word)
+     (CPU  : in out Aqua_CPU_Type'Class;
+      Size : Aqua.Data_Size;
+      Dst  : in out Aqua.Word)
    is
+      pragma Unreferenced (CPU);
       X : Word := Get (Dst, Size);
    begin
       X := X - 1;
@@ -1004,14 +1026,30 @@ package body Aqua.CPU is
    ----------------
 
    procedure Handle_Inc
-     (Size     : Aqua.Data_Size;
-      Dst      : in out Aqua.Word)
+     (CPU  : in out Aqua_CPU_Type'Class;
+      Size : Aqua.Data_Size;
+      Dst  : in out Aqua.Word)
    is
+      pragma Unreferenced (CPU);
       X : Word := Get (Dst, Size);
    begin
       X := X + 1;
       Set (Dst, Size, X);
    end Handle_Inc;
+
+   ----------------
+   -- Handle_Ldj --
+   ----------------
+
+   procedure Handle_Ldj
+     (CPU      : in out Aqua_CPU_Type'Class;
+      Size     : Aqua.Data_Size;
+      Dst      : in out Aqua.Word)
+   is
+      pragma Unreferenced (Size);
+   begin
+      CPU.R_Jump := Dst;
+   end Handle_Ldj;
 
    ----------------
    -- Handle_Mov --
@@ -1060,6 +1098,20 @@ package body Aqua.CPU is
    begin
       Aqua.Set (Dst, Size, Dst or Src);
    end Handle_Or;
+
+   ----------------
+   -- Handle_Stj --
+   ----------------
+
+   procedure Handle_Stj
+     (CPU  : in out Aqua_CPU_Type'Class;
+      Size : Aqua.Data_Size;
+      Dst  : in out Aqua.Word)
+   is
+      pragma Unreferenced (Size);
+   begin
+      Dst := CPU.R_Jump;
+   end Handle_Stj;
 
    ----------------
    -- Handle_Sub --
