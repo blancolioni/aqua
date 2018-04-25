@@ -210,10 +210,10 @@ package body Aqua.Architecture is
    -----------------
 
    function Get_Address
-     (Operand : Operand_Type;
+     (Arch    : in out Architecture_Interface'Class;
+      Operand : Operand_Type;
       Size    : Data_Size;
       Trace   : Boolean;
-      R       : in out Registers;
       Memory  : in out Aqua.Memory.Memory_Type'Class)
       return Address
    is
@@ -231,28 +231,35 @@ package body Aqua.Architecture is
             if Operand.Deferred then
                if Trace then
                   Ada.Text_IO.Put
-                    (" " & Aqua.IO.Hex_Image (R (Operand.Register)));
+                    (" " & Aqua.IO.Hex_Image (Arch.Get_R (Operand.Register)));
                end if;
-               return R (Operand.Register);
+               return Arch.Get_R (Operand.Register);
             else
                raise Program_Error
                  with "cannot get address of register mode";
             end if;
          when Postincrement =>
-            Result := R (Operand.Register);
-            R (Operand.Register) := R (Operand.Register) + Auto_Size;
+            declare
+               X : constant Word := Arch.Get_R (Operand.Register);
+            begin
+               Result := X;
+               Arch.Set_R (Operand.Register, X + Auto_Size);
+            end;
          when Predecrement =>
-            R (Operand.Register) := R (Operand.Register) - Auto_Size;
-            Result := R (Operand.Register);
+            declare
+               X : constant Word := Arch.Get_R (Operand.Register) - Auto_Size;
+            begin
+               Result := X;
+               Arch.Set_R (Operand.Register, X);
+            end;
          when Indexed_8 | Indexed_32 =>
-            Result := R (Operand.Register);
+            Result := Arch.Get_R (Operand.Register);
             declare
                Index_Size : constant Data_Size :=
                               (if Operand.Mode = Indexed_32
                                then Word_32_Size
                                else Word_8_Size);
-               A : constant Word :=
-                              Memory.Get_Value (R (R_PC), Index_Size);
+               A : constant Word := Arch.Next_Value (Index_Size);
             begin
                if Operand.Mode = Indexed_8 then
                   if A < 128 then
@@ -263,8 +270,6 @@ package body Aqua.Architecture is
                else
                   Result := Result + A;
                end if;
-
-               R (R_PC) := R (R_PC) + Data_Octets (Index_Size);
             end;
       end case;
 
@@ -334,10 +339,10 @@ package body Aqua.Architecture is
    ----------
 
    procedure Read
-     (Operand : Operand_Type;
+     (Arch    : in out Architecture_Interface'Class;
+      Operand : Operand_Type;
       Size    : Data_Size;
       Trace   : Boolean;
-      R       : in out Registers;
       Memory  : in out Aqua.Memory.Memory_Type'Class;
       Value   :    out Word)
    is
@@ -348,11 +353,11 @@ package body Aqua.Architecture is
          if Operand.Mode = Register
            and then not Operand.Deferred
          then
-            Value := Get (R (Operand.Register), Size);
+            Value := Arch.Get_R (Operand.Register);
          else
             declare
                A : constant Address :=
-                     Get_Address (Operand, Size, Trace, R, Memory);
+                     Arch.Get_Address (Operand, Size, Trace, Memory);
             begin
                Value := Memory.Get_Value (A, Size);
             end;
@@ -381,14 +386,30 @@ package body Aqua.Architecture is
    end Register_Name;
 
    -----------
+   -- Set_R --
+   -----------
+
+   procedure Set_R
+     (Arch : in out Architecture_Interface'Class;
+      R    : Register_Index;
+      Size : Data_Size;
+      From : Word)
+   is
+      X : Word := Arch.Get_R (R);
+   begin
+      Set (X, Size, From);
+      Arch.Set_R (R, X);
+   end Set_R;
+
+   -----------
    -- Write --
    -----------
 
    procedure Write
-     (Operand : Operand_Type;
+     (Arch    : in out Architecture_Interface'Class;
+      Operand : Operand_Type;
       Size    : Data_Size;
       Trace   : Boolean;
-      R       : in out Registers;
       Memory  : in out Aqua.Memory.Memory_Type'Class;
       Value   : Word)
    is
@@ -398,11 +419,11 @@ package body Aqua.Architecture is
       elsif Operand.Mode = Register
         and then not Operand.Deferred
       then
-         Set (R (Operand.Register), Size, Value);
+         Arch.Set_R (Operand.Register, Size, Value);
       else
          declare
             A : constant Address :=
-                  Get_Address (Operand, Size, Trace, R, Memory);
+                  Arch.Get_Address (Operand, Size, Trace, Memory);
          begin
             Memory.Set_Value (A, Size, Value);
          end;

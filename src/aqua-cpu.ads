@@ -1,10 +1,9 @@
 private with Ada.Calendar;
-private with Ada.Containers.Vectors;
 private with Ada.Strings.Unbounded;
 
 with Ada.Finalization;
 
-private with Aqua.Architecture;
+with Aqua.Architecture;
 
 with Aqua.Execution;
 with Aqua.Images;
@@ -16,7 +15,8 @@ package Aqua.CPU is
 
    type Aqua_CPU_Type (Image : access Aqua.Images.Root_Image_Type'Class) is
    limited new Ada.Finalization.Limited_Controlled
-     and Aqua.Execution.Execution_Interface with private;
+     and Aqua.Execution.Execution_Interface
+     and Aqua.Architecture.Architecture_Interface with private;
 
    overriding procedure Initialize
      (CPU : in out Aqua_CPU_Type);
@@ -50,24 +50,29 @@ package Aqua.CPU is
 
 private
 
-   package Saved_Register_Stack is
-     new Ada.Containers.Vectors (Positive, Word);
+   Default_Register_Value : constant := 16#BAAD_F00D#;
+
+   Register_Window_Size : constant := 4096;
+   type Register_Window_Index is range 0 .. Register_Window_Size - 1;
+   type Register_Window is array (Register_Window_Index) of Word;
 
    type Opcode_Acc_Array is array (Octet) of Natural;
    type Operand_Acc_Array is array (0 .. 15) of Natural;
 
    type Aqua_CPU_Type (Image : access Aqua.Images.Root_Image_Type'Class) is
    limited new Ada.Finalization.Limited_Controlled
-     and Aqua.Execution.Execution_Interface with
+     and Aqua.Execution.Execution_Interface
+     and Aqua.Architecture.Architecture_Interface with
       record
-         R           : Aqua.Architecture.Registers :=
+         Globals     : Aqua.Architecture.Registers :=
                          (Architecture.R_PC => 16#FFFF_FFFC#,
                           Architecture.R_SP => 16#8000_0000#,
-                          others            => 16#BAAD_F00D#);
-         R_Stack     : Saved_Register_Stack.Vector;
+                          others            => Default_Register_Value);
+         Window      : Register_Window := (others => 16#BAAD_F00D#);
+         Zero        : Register_Window_Index := Register_Window_Index'First;
          R_Local     : Aqua.Architecture.Register_Index := 0;
          R_Global    : Aqua.Architecture.Register_Index := 29;
-         R_Jump      : Word;
+         R_Jump      : Word := Default_Register_Value;
          N, Z, C, V  : Boolean := False;
          B           : Boolean := False;
          Start       : Ada.Calendar.Time;
@@ -77,17 +82,50 @@ private
          Operand_Acc : Operand_Acc_Array;
       end record;
 
+   function Window_Index
+     (CPU : Aqua_CPU_Type'Class;
+      R   : Aqua.Architecture.Register_Index)
+      return Register_Window_Index
+   is (CPU.Zero + Register_Window_Index (R));
+
+   function Window_Local
+     (CPU : Aqua_CPU_Type'Class)
+      return Register_Window_Index
+   is (CPU.Window_Index (CPU.R_Local));
+
+   overriding function Next_Value
+     (CPU : in out Aqua_CPU_Type;
+      Size : Data_Size)
+      return Word;
+
+   overriding procedure Set_R
+     (CPU : in out Aqua_CPU_Type;
+      R   : Aqua.Architecture.Register_Index;
+      X   : Word);
+
+   overriding function Get_R
+     (CPU : in out Aqua_CPU_Type;
+      R   : Aqua.Architecture.Register_Index)
+      return Word;
+
    overriding function Pop
      (CPU : in out Aqua_CPU_Type)
-      return Word;
+      return Word
+   is (0);
 
    overriding procedure Push
      (CPU : in out Aqua_CPU_Type;
-      Value : Word);
+      Value : Word)
+   is null;
 
-   procedure Update_Register
-     (CPU     : in out Aqua_CPU_Type'Class;
-      Operand : Aqua.Architecture.Operand_Type);
+   function Next_Octet
+     (CPU : in out Aqua_CPU_Type'Class)
+      return Octet
+   is (Octet (Next_Value (CPU, Word_8_Size)));
+
+   function Next_Operand
+     (CPU : in out Aqua_CPU_Type'Class)
+      return Aqua.Architecture.Operand_Type;
 
    procedure Show_Registers
      (CPU : in out Aqua_CPU_Type);

@@ -104,27 +104,53 @@ package Aqua.Architecture is
      (Operand : Operand_Type)
       return Octet;
 
+   type Architecture_Interface is limited interface;
+
+   function Get_R
+     (Arch : in out Architecture_Interface;
+      Index : Register_Index)
+      return Word
+      is abstract;
+
+   procedure Set_R
+     (Arch : in out Architecture_Interface;
+      Index : Register_Index;
+      Value : Word)
+   is abstract;
+
+   function Next_Value
+     (Arch : in out Architecture_Interface;
+      Size : Data_Size)
+      return Word
+      is abstract;
+
+   procedure Set_R
+     (Arch : in out Architecture_Interface'Class;
+      R    : Register_Index;
+      Size : Data_Size;
+      From : Word);
+
    function Get_Address
-     (Operand : Operand_Type;
+     (Arch    : in out Architecture_Interface'Class;
+      Operand : Operand_Type;
       Size    : Data_Size;
       Trace   : Boolean;
-      R       : in out Registers;
       Memory  : in out Aqua.Memory.Memory_Type'Class)
       return Address;
 
    procedure Read
-     (Operand : Operand_Type;
+     (Arch    : in out Architecture_Interface'Class;
+      Operand : Operand_Type;
       Size    : Data_Size;
       Trace   : Boolean;
-      R       : in out Registers;
       Memory  : in out Aqua.Memory.Memory_Type'Class;
       Value   :    out Word);
 
    procedure Write
-     (Operand : Operand_Type;
+     (Arch    : in out Architecture_Interface'Class;
+      Operand : Operand_Type;
       Size    : Data_Size;
       Trace   : Boolean;
-      R       : in out Registers;
       Memory  : in out Aqua.Memory.Memory_Type'Class;
       Value   : Word);
 
