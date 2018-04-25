@@ -29,7 +29,7 @@ package Aqua.Architecture is
 
    type Aqua_Instruction is
      (A_Halt, A_Nop, A_Rts, A_Return,
-      A_Clr, A_Dec, A_Inc, A_Neg, A_Not, A_Tst,
+      A_Clr, A_Dec, A_Inc, A_Neg, A_Not, A_Tst, A_Ldj, A_Stj,
       A_Mov, A_Cmp, A_Add, A_And, A_Div, A_Mul, A_Or, A_Sub, A_Xor,
       A_Ash, A_Lsh,
       A_Add_3, A_And_3, A_Div_3, A_Mul_3, A_Or_3, A_Sub_3, A_Xor_3,
@@ -44,7 +44,7 @@ package Aqua.Architecture is
    subtype No_Operand_Instruction is
      Aqua_Instruction range A_Halt .. A_Return;
    subtype Single_Operand_Instruction is
-     Aqua_Instruction range A_Clr .. A_Tst;
+     Aqua_Instruction range A_Clr .. A_Stj;
    subtype Double_Operand_Instruction is
      Aqua_Instruction range A_Mov .. A_Lsh;
    subtype Triple_Operand_Instruction is

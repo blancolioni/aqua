@@ -174,7 +174,7 @@ package body Aqua.Architecture is
          when A_Goto =>
             return 2#00110110#;
          when A_Call =>
-            return 2#00111000# + Immediate mod 8;
+            return 2#00111000#;
          when A_Trap =>
             return 2#00010000# + Immediate mod 16;
       end case;
