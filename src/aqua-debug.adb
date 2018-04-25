@@ -82,7 +82,7 @@ package body Aqua.Debug is
             when A_Jmp | A_Jsr | A_Goto =>
                return Img & " destination";
             when A_Call =>
-               return Img & Octet'Image (Op mod 8) & ", destination";
+               return Img;
             when A_Trap =>
                return Img & Octet'Image (Op mod 16);
          end case;
