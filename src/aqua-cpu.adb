@@ -17,6 +17,7 @@ package body Aqua.CPU is
 
    Trace_Code       : Boolean := False;
    Trace_Window     : Boolean := False;
+   Trace_Calls      : constant Boolean := True;
    Trace_Executions : constant Boolean := False;
 
    type Branch_Info is
@@ -535,11 +536,16 @@ package body Aqua.CPU is
                   Ada.Text_IO.Put (N'Img);
                end if;
 
-               X := CPU.Get_Address
-                   (Operand => Dst,
-                    Size    => Word_32_Size,
-                    Trace   => Trace_Code,
-                    Memory  => CPU.Image.all);
+               if Dst.Mode = Register and then not Dst.Deferred then
+                  X := CPU.Get_R (Dst.Register);
+               else
+                  X :=
+                    CPU.Get_Address
+                      (Operand => Dst,
+                       Size    => Word_32_Size,
+                       Trace   => Trace_Code,
+                       Memory  => CPU.Image.all);
+               end if;
 
                CPU.R_Jump := CPU.Globals (R_PC);
                CPU.Globals (R_PC) := X;
@@ -555,7 +561,7 @@ package body Aqua.CPU is
 
                CPU.Set_R (Last, Word (Last));
                CPU.Zero := CPU.Zero + Register_Window_Index (Last) + 1;
-               CPU.R_Local := CPU.R_Local - Last;
+               CPU.R_Local := CPU.R_Local - Last - 1;
 
             end;
 
@@ -566,19 +572,40 @@ package body Aqua.CPU is
                         Register_Index (N mod Register_Count);
                P    : constant Register_Index :=
                         Register_Index
-                          (CPU.Window (CPU.Zero - 1));
+                          (CPU.Window (CPU.Zero - 1) mod Register_Count);
             begin
+
+               if Trace_Code then
+                  Ada.Text_IO.Put (Last'Img & P'Img);
+               end if;
 
                if Last > CPU.R_Local then
                   Last := CPU.R_Local + 1;
                end if;
 
-               if P + Last >= CPU.R_Global then
-                  Last := CPU.R_Global - P;
-               end if;
+               CPU.Window (CPU.Zero - 1) :=
+                 (if Last > 0 then CPU.Get_R (Last - 1) else 0);
 
-               CPU.Zero := CPU.Zero - Register_Window_Index (P);
-               CPU.R_Local := Last;
+               CPU.R_Local := Register_Index'Min (P + Last, CPU.R_Global);
+
+               declare
+                  Old_X : constant Register_Window_Index :=
+                            Register_Window_Index (P);
+                  New_L : constant Register_Window_Index :=
+                            Register_Window_Index (CPU.R_Local);
+                  Dst_Lo : constant Register_Window_Index :=
+                             CPU.Zero;
+                  Dst_Hi : constant Register_Window_Index :=
+                             Dst_Lo + Old_X + New_L - 1;
+                  Src_Lo : constant Register_Window_Index :=
+                             CPU.Zero - Old_X - 1;
+                  Src_Hi : constant Register_Window_Index :=
+                             CPU.Zero + New_L - Old_X - 2;
+               begin
+                  CPU.Window (Dst_Lo .. Dst_Hi) :=
+                    CPU.Window (Src_Lo .. Src_Hi);
+                  CPU.Zero := CPU.Zero - Old_X - 1;
+               end;
             end;
 
             CPU.Globals (R_PC) := CPU.R_Jump;
@@ -597,7 +624,7 @@ package body Aqua.CPU is
                     (Dst, Size, Trace_Code,
                      CPU.Image.all, X);
                else
-                  if Dst.Mode = Register and then not Dst.Deferred then
+                  if Dst.Mode = Register then
                      A := 0;
                      X := Aqua.Get (CPU.Get_R (Dst.Register), Size);
                   elsif Dst.Mode = Small_Immediate then
@@ -622,7 +649,7 @@ package body Aqua.CPU is
 
                if Instruction = A_Tst then
                   null;
-               elsif Dst.Mode = Register and then not Dst.Deferred then
+               elsif Dst.Mode = Register then
                   CPU.Set_R (Dst.Register, Size, X);
                elsif Dst.Mode = Small_Immediate then
                   raise Aqua.Architecture.Bad_Instruction;
@@ -658,7 +685,7 @@ package body Aqua.CPU is
                     (Dst, Size, Trace_Code,
                      CPU.Image.all, Y);
                else
-                  if Dst.Mode = Register and then not Dst.Deferred then
+                  if Dst.Mode = Register then
                      A := 0;
                      Y := Aqua.Get (CPU.Get_R (Dst.Register), Size);
                   elsif Dst.Mode = Small_Immediate then
@@ -683,7 +710,7 @@ package body Aqua.CPU is
 
                if Instruction = A_Cmp then
                   null;
-               elsif Dst.Mode = Register and then not Dst.Deferred then
+               elsif Dst.Mode = Register then
                   CPU.Set_R (Dst.Register, Size, Y);
                elsif Dst.Mode = Small_Immediate then
                   raise Aqua.Architecture.Bad_Instruction;
@@ -839,7 +866,7 @@ package body Aqua.CPU is
            "PC = " & Aqua.IO.Hex_Image (CPU.Globals (R_PC));
       end if;
 
-      if Trace_Window
+      if Trace_Calls
         and then (Instruction = A_Call or else Instruction = A_Return)
       then
          Ada.Text_IO.New_Line;
@@ -1409,12 +1436,12 @@ package body Aqua.CPU is
      (CPU : in out Aqua_CPU_Type)
    is
    begin
-      for I in 0 .. CPU.Window_Local loop
-         if I = CPU.Zero then
-            Ada.Text_IO.Put ("| ");
-         end if;
+      for I in 0 .. CPU.Window_Local - 1 loop
          Ada.Text_IO.Put (Aqua.IO.Hex_Image (CPU.Window (I)));
          Ada.Text_IO.Put (" ");
+         if I = CPU.Zero - 1 then
+            Ada.Text_IO.Put ("| ");
+         end if;
       end loop;
       Ada.Text_IO.New_Line;
    end Show_Stack;
