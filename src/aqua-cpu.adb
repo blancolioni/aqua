@@ -1105,9 +1105,24 @@ package body Aqua.CPU is
                Exit_Code : constant Word := CPU.Pop;
             begin
                if Exit_Code /= 0 then
-                  Ada.Text_IO.Put_Line
-                    (Ada.Text_IO.Standard_Error,
-                     "exited with code" & Exit_Code'Img);
+                  declare
+                     A : constant Address := Exit_Code;
+                     Length : constant Word := CPU.Image.Get_Word (A);
+                     Message : String (1 .. Natural (Length));
+                  begin
+                     for I in 1 .. Length loop
+                        declare
+                           Code : constant Word :=
+                                    CPU.Image.Get_Word (A + I * 4);
+                        begin
+                           Message (Positive (I)) :=
+                             Character'Val (Code);
+                        end;
+                     end loop;
+
+                     Ada.Text_IO.New_Line;
+                     Ada.Text_IO.Put_Line (Message);
+                  end;
                end if;
                CPU.B := True;
             end;
