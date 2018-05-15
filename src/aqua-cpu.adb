@@ -182,6 +182,18 @@ package body Aqua.CPU is
    procedure Dump_Core
      (CPU : in out Aqua_CPU_Type'Class);
 
+   ---------------
+   -- Add_Watch --
+   ---------------
+
+   procedure Add_Watch
+     (CPU             : in out Aqua_CPU_Type'Class;
+      Watched_Address : Address)
+   is
+   begin
+      CPU.Image.Add_Monitor (Watched_Address);
+   end Add_Watch;
+
    ------------------------------
    -- Convert_Triple_To_Double --
    ------------------------------
@@ -1241,6 +1253,18 @@ package body Aqua.CPU is
             & ")");
       end if;
    end Push;
+
+   ------------------
+   -- Remove_Watch --
+   ------------------
+
+   procedure Remove_Watch
+     (CPU             : in out Aqua_CPU_Type'Class;
+      Watched_Address : Address)
+   is
+   begin
+      CPU.Image.Remove_Monitor (Watched_Address);
+   end Remove_Watch;
 
    ------------
    -- Report --
