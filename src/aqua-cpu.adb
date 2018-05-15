@@ -12,11 +12,12 @@ package body Aqua.CPU is
 
    use Aqua.Architecture;
 
-   Trace_Code       : Boolean := False;
-   Trace_FP         : constant Boolean := True;
-   Trace_SP         : constant Boolean := True;
-   Trace_Stack      : constant Boolean := False;
-   Trace_Executions : constant Boolean := False;
+   Trace_Code        : Boolean := False;
+   Trace_FP          : constant Boolean := True;
+   Trace_SP          : constant Boolean := True;
+   Trace_Stack       : constant Boolean := False;
+   Trace_Executions  : constant Boolean := False;
+   Write_Frequencies : constant Boolean := False;
 
    Default_Stack_Top : constant := 16#8000_0000#;
 
@@ -187,6 +188,18 @@ package body Aqua.CPU is
 
    procedure Dump_Core
      (CPU : in out Aqua_CPU_Type'Class);
+
+   ---------------
+   -- Add_Watch --
+   ---------------
+
+   procedure Add_Watch
+     (CPU             : in out Aqua_CPU_Type'Class;
+      Watched_Address : Address)
+   is
+   begin
+      CPU.Image.Add_Monitor (Watched_Address);
+   end Add_Watch;
 
    ------------------------------
    -- Convert_Triple_To_Double --
@@ -385,93 +398,95 @@ package body Aqua.CPU is
 
       CPU.Exec_Time := CPU.Exec_Time + Ada.Calendar.Clock - CPU.Start;
 
-      declare
-         type Opcode_Entry is
-            record
-               Opcode    : Octet;
-               Frequency : Natural;
-            end record;
-
-         function "<" (Left, Right : Opcode_Entry) return Boolean
-         is (Left.Frequency < Right.Frequency);
-
-         package Opcode_Frequency_Tables is
-           new Ada.Containers.Doubly_Linked_Lists (Opcode_Entry);
-
-         package Sorted_Opcodes is
-           new Opcode_Frequency_Tables.Generic_Sorting ("<");
-
-         Freq : Opcode_Frequency_Tables.List;
-         Total : Natural := 0;
-      begin
-         for Opcode in CPU.Opcode_Acc'Range loop
-            if CPU.Opcode_Acc (Opcode) > 0 then
-               Freq.Append ((Opcode, CPU.Opcode_Acc (Opcode)));
-               Total := Total + CPU.Opcode_Acc (Opcode);
-            end if;
-         end loop;
-
-         Sorted_Opcodes.Sort (Freq);
-
-         for Item of Freq loop
-            Ada.Text_IO.Put
-              (Aqua.Debug.Opcode_Image (Item.Opcode));
-            Ada.Text_IO.Set_Col (20);
-            Ada.Text_IO.Put
-              (Natural'Image (Item.Frequency));
-            Ada.Text_IO.Set_Col (30);
-            Ada.Text_IO.Put
-              (Natural'Image (Item.Frequency * 100 / Total) & "%");
-            Ada.Text_IO.New_Line;
-         end loop;
-         Ada.Text_IO.Put ("TOTAL");
-         Ada.Text_IO.Set_Col (20);
-         Ada.Text_IO.Put (Natural'Image (Total));
-         Ada.Text_IO.New_Line;
-         Ada.Text_IO.New_Line;
-         Ada.Text_IO.Put_Line
-           ("OPERAND             Op        (Op)");
-
-         Ada.Text_IO.Put ("Small integers");
-         Ada.Text_IO.Set_Col (20);
-         Ada.Text_IO.Put_Line
-           (Natural'Image (CPU.Operand_Acc (0) + CPU.Opcode_Acc (1)));
-
+      if Write_Frequencies then
          declare
-            procedure Put (Op_Name  : String;
-                           Op_Index : Natural;
-                           Defer    : Boolean := False);
+            type Opcode_Entry is
+               record
+                  Opcode    : Octet;
+                  Frequency : Natural;
+               end record;
 
-            ---------
-            -- Put --
-            ---------
+            function "<" (Left, Right : Opcode_Entry) return Boolean
+            is (Left.Frequency < Right.Frequency);
 
-            procedure Put (Op_Name  : String;
-                           Op_Index : Natural;
-                           Defer    : Boolean := False)
-            is
-            begin
-               Ada.Text_IO.Put (Op_Name);
+            package Opcode_Frequency_Tables is
+              new Ada.Containers.Doubly_Linked_Lists (Opcode_Entry);
+
+            package Sorted_Opcodes is
+              new Opcode_Frequency_Tables.Generic_Sorting ("<");
+
+            Freq  : Opcode_Frequency_Tables.List;
+            Total : Natural := 0;
+         begin
+            for Opcode in CPU.Opcode_Acc'Range loop
+               if CPU.Opcode_Acc (Opcode) > 0 then
+                  Freq.Append ((Opcode, CPU.Opcode_Acc (Opcode)));
+                  Total := Total + CPU.Opcode_Acc (Opcode);
+               end if;
+            end loop;
+
+            Sorted_Opcodes.Sort (Freq);
+
+            for Item of Freq loop
+               Ada.Text_IO.Put
+                 (Aqua.Debug.Opcode_Image (Item.Opcode));
                Ada.Text_IO.Set_Col (20);
                Ada.Text_IO.Put
-                 (Natural'Image (CPU.Operand_Acc (Op_Index)));
-               if Defer then
-                  Ada.Text_IO.Set_Col (30);
-                  Ada.Text_IO.Put
-                    (Natural'Image (CPU.Operand_Acc (Op_Index + 5)));
-               end if;
+                 (Natural'Image (Item.Frequency));
+               Ada.Text_IO.Set_Col (30);
+               Ada.Text_IO.Put
+                 (Natural'Image (Item.Frequency * 100 / Total) & "%");
                Ada.Text_IO.New_Line;
-            end Put;
+            end loop;
+            Ada.Text_IO.Put ("TOTAL");
+            Ada.Text_IO.Set_Col (20);
+            Ada.Text_IO.Put (Natural'Image (Total));
+            Ada.Text_IO.New_Line;
+            Ada.Text_IO.New_Line;
+            Ada.Text_IO.Put_Line
+              ("OPERAND             Op        (Op)");
 
-         begin
-            Put ("register", 1, True);
-            Put ("X/8(R)", 2, True);
-            Put ("(R)+", 3);
-            Put ("-(R)", 4);
-            Put ("X/32(R)", 5);
+            Ada.Text_IO.Put ("Small integers");
+            Ada.Text_IO.Set_Col (20);
+            Ada.Text_IO.Put_Line
+              (Natural'Image (CPU.Operand_Acc (0) + CPU.Opcode_Acc (1)));
+
+            declare
+               procedure Put (Op_Name  : String;
+                              Op_Index : Natural;
+                              Defer    : Boolean := False);
+
+               ---------
+               -- Put --
+               ---------
+
+               procedure Put (Op_Name  : String;
+                              Op_Index : Natural;
+                              Defer    : Boolean := False)
+               is
+               begin
+                  Ada.Text_IO.Put (Op_Name);
+                  Ada.Text_IO.Set_Col (20);
+                  Ada.Text_IO.Put
+                    (Natural'Image (CPU.Operand_Acc (Op_Index)));
+                  if Defer then
+                     Ada.Text_IO.Set_Col (30);
+                     Ada.Text_IO.Put
+                       (Natural'Image (CPU.Operand_Acc (Op_Index + 5)));
+                  end if;
+                  Ada.Text_IO.New_Line;
+               end Put;
+
+            begin
+               Put ("register", 1, True);
+               Put ("X/8(R)", 2, True);
+               Put ("(R)+", 3);
+               Put ("-(R)", 4);
+               Put ("X/32(R)", 5);
+            end;
+
          end;
-
-      end;
+      end if;
    end Execute;
 
    --------------
@@ -1277,6 +1292,18 @@ package body Aqua.CPU is
             & ")");
       end if;
    end Push;
+
+   ------------------
+   -- Remove_Watch --
+   ------------------
+
+   procedure Remove_Watch
+     (CPU             : in out Aqua_CPU_Type'Class;
+      Watched_Address : Address)
+   is
+   begin
+      CPU.Image.Remove_Monitor (Watched_Address);
+   end Remove_Watch;
 
    ------------
    -- Report --

@@ -46,6 +46,14 @@ package Aqua.CPU is
      (CPU  : in out Aqua_CPU_Type'Class;
       Name : String);
 
+   procedure Add_Watch
+     (CPU             : in out Aqua_CPU_Type'Class;
+      Watched_Address : Address);
+
+   procedure Remove_Watch
+     (CPU             : in out Aqua_CPU_Type'Class;
+      Watched_Address : Address);
+
    procedure Run (CPU : in out Aqua_CPU_Type'Class);
 
 private
