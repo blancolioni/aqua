@@ -4,6 +4,22 @@ with Aqua.IO;
 
 package body Aqua.Memory is
 
+   -----------------
+   -- Add_Monitor --
+   -----------------
+
+   procedure Add_Monitor
+     (Memory  : in out Memory_Type'Class;
+      Addr    : Address)
+   is
+   begin
+      Memory.Set_Flag
+        (Addr  => Addr,
+         Flag  => Flag_Monitor,
+         Value => True);
+      Memory.Monitors.Append (Addr);
+   end Add_Monitor;
+
    -----------------------
    -- Begin_Transaction --
    -----------------------
@@ -190,13 +206,24 @@ package body Aqua.Memory is
          Memory.Table (Table_Address (Start))
            .Flags (Directory_Address (Start)) :=
              (Flag_R => True, Flag_W => True, Flag_X => False,
-              Flag_Driver => True);
+              Flag_Driver => True,
+              Flag_P => True, Flag_U1 => False, Flag_U2 => False,
+              Flag_Monitor => False);
 
          Page.Driver_Map.Insert (Start, Driver);
 
       end;
 
    end Install_Driver;
+
+   --------------------
+   -- Remove_Monitor --
+   --------------------
+
+   procedure Remove_Monitor
+     (Memory  : in out Memory_Type'Class;
+      Addr    : Address)
+   is null;
 
    ----------------------
    -- Set_Access_Flags --
@@ -326,6 +353,14 @@ package body Aqua.Memory is
    is
       It : Word := Value;
    begin
+      if Memory.Flag_Is_Set (Addr, Flag_Monitor) then
+         if Memory.Monitors.Contains (Addr) then
+            Ada.Text_IO.Put_Line
+              (Aqua.IO.Hex_Image (Addr)
+               & " <- " & Aqua.IO.Hex_Image (Value));
+         end if;
+      end if;
+
       for I in Address range 0 .. Address (Data_Octets (Size)) - 1 loop
          Memory.Set_Octet (Addr + I, Octet (It mod 256));
          It := It / 256;

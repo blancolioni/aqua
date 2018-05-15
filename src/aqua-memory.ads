@@ -81,6 +81,14 @@ package Aqua.Memory is
       Addr    : Address;
       R, W, X : Boolean := False);
 
+   procedure Add_Monitor
+     (Memory  : in out Memory_Type'Class;
+      Addr    : Address);
+
+   procedure Remove_Monitor
+     (Memory : in out Memory_Type'Class;
+      Addr   : Address);
+
    procedure Begin_Transaction (Memory : in out Memory_Type'Class);
    procedure End_Transaction (Memory : in out Memory_Type'Class);
 
@@ -106,12 +114,14 @@ private
 
    type Page_Data is array (Page_Address_Range) of Octet;
 
-   type Page_Flag is (Flag_R, Flag_W, Flag_X, Flag_Driver);
+   type Page_Flag is
+     (Flag_P, Flag_U1, Flag_U2, Flag_Monitor,
+      Flag_R, Flag_W, Flag_X, Flag_Driver);
 
    type Page_Flags is array (Page_Flag) of Boolean with Component_Size => 1;
 
    type Directory_Page_Flags is array (Directory_Address_Range) of Page_Flags
-     with Component_Size => 4;
+     with Component_Size => 8;
 
    package Driver_Maps is
      new Ada.Containers.Ordered_Maps (Address, Aqua.Drivers.Aqua_Driver,
@@ -142,11 +152,15 @@ private
      new Ada.Containers.Doubly_Linked_Lists
        (Aqua.Drivers.Aqua_Driver, Aqua.Drivers."=");
 
+   package Monitored_Addresses is
+     new Ada.Containers.Doubly_Linked_Lists (Address);
+
    type Memory_Type is tagged
       record
          Table      : Table_Type;
          Page_Count : Natural := 0;
          Changes    : Changed_Driver_Lists.List;
+         Monitors   : Monitored_Addresses.List;
       end record;
 
    function Flag_Is_Set
