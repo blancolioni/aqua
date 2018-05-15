@@ -29,9 +29,9 @@ package Aqua.Architecture is
    type Aqua_Instruction is
      (A_Halt, A_Nop, A_Rts, A_Return,
       A_Clr, A_Dec, A_Inc, A_Neg, A_Not, A_Tst,
-      A_Mov, A_Cmp, A_Add, A_And, A_Div, A_Mul, A_Or, A_Sub, A_Xor,
+      A_Mov, A_Cmp, A_Add, A_And, A_Div, A_Mul, A_Or, A_Sub, A_Xor, A_Mod,
       A_Ash, A_Lsh,
-      A_Add_3, A_And_3, A_Div_3, A_Mul_3, A_Or_3, A_Sub_3, A_Xor_3,
+      A_Add_3, A_And_3, A_Div_3, A_Mul_3, A_Or_3, A_Sub_3, A_Xor_3, A_Mod_3,
       A_Seq_3, A_Sne_3, A_Sgt_3, A_Slt_3, A_Sge_3, A_Sle_3,
       A_Fadd, A_Fsub, A_Fmul, A_Fdiv,
       A_Fsqrt, A_Fexp, A_Fln,
@@ -47,7 +47,7 @@ package Aqua.Architecture is
    subtype Double_Operand_Instruction is
      Aqua_Instruction range A_Mov .. A_Lsh;
    subtype Triple_Operand_Instruction is
-     Aqua_Instruction range A_Add_3 .. A_Xor_3;
+     Aqua_Instruction range A_Add_3 .. A_Mod_3;
    subtype Triple_Set_Instruction is
      Aqua_Instruction range A_Seq_3 .. A_Sle_3;
    subtype Single_Operand_Float_Instruction is

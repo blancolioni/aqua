@@ -81,6 +81,12 @@ package body Aqua.CPU is
       Src  : Aqua.Word;
       Dst  : in out Aqua.Word);
 
+   procedure Handle_Mod
+     (CPU  : in out Aqua_CPU_Type'Class;
+      Size : Aqua.Data_Size;
+      Src  : Aqua.Word;
+      Dst  : in out Aqua.Word);
+
    procedure Handle_Mul
      (CPU  : in out Aqua_CPU_Type'Class;
       Size : Aqua.Data_Size;
@@ -131,6 +137,7 @@ package body Aqua.CPU is
         A_Div  => Handle_Div'Access,
         A_Sub  => Handle_Sub'Access,
         A_Mul  => Handle_Mul'Access,
+        A_Mod  => Handle_Mod'Access,
         A_And  => Handle_And'Access,
         A_Or   => Handle_Or'Access,
         A_Xor  => Handle_Xor'Access,
@@ -205,6 +212,8 @@ package body Aqua.CPU is
             return A_Sub;
          when A_Xor_3 =>
             return A_Xor;
+         when A_Mod_3 =>
+            return A_Mod;
       end case;
    end Convert_Triple_To_Double;
 
@@ -994,6 +1003,21 @@ package body Aqua.CPU is
       X := X + 1;
       Set (Dst, Size, X);
    end Handle_Inc;
+
+   ----------------
+   -- Handle_Mod --
+   ----------------
+
+   procedure Handle_Mod
+     (CPU  : in out Aqua_CPU_Type'Class;
+      Size : Aqua.Data_Size;
+      Src  : Aqua.Word;
+      Dst  : in out Aqua.Word)
+   is
+      pragma Unreferenced (CPU);
+   begin
+      Aqua.Set (Dst, Size, Dst mod Src);
+   end Handle_Mod;
 
    ----------------
    -- Handle_Mov --
