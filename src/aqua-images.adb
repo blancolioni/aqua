@@ -337,7 +337,7 @@ package body Aqua.Images is
             end if;
 
             Read_Address (File, Start);
-            Binding.Start := Start;
+            Binding.Start := Convert_Address (Start);
 --              Binding.Start := Start + Image.High;
 
             Image.Bindings.Append (Binding);

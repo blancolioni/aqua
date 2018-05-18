@@ -63,11 +63,12 @@ package body Aqua.Assembler is
    -----------------
 
    procedure Bind_Action
-     (A      : in out Root_Assembly_Type'Class;
-      Group  : String;
-      Before : Boolean;
-      Parent : String;
-      Child  : String)
+     (A           : in out Root_Assembly_Type'Class;
+      Group       : String;
+      Before      : Boolean;
+      Parent      : String;
+      Child       : String;
+      Bound_Label : String)
    is
       use Ada.Strings.Unbounded;
       Info : Binding_Info;
@@ -84,7 +85,7 @@ package body Aqua.Assembler is
 --           Ensure_Label (A, Child_String, True);
 --        end if;
       Info := (To_Unbounded_String (Group),
-               A.Segment_List.First_Element.Bound,
+               To_Unbounded_String (Bound_Label),
                Before,
                To_Unbounded_String (Parent),
                To_Unbounded_String (Child));
@@ -795,7 +796,15 @@ package body Aqua.Assembler is
                Write_String_Literal (File, To_String (Binding.Child_Text));
             end if;
 
-            Write_Address (File, Binding.Start);
+            declare
+               Label : constant String := To_String (Binding.Start_Label);
+               Addr  : constant Address := A.Labels.Element (Label).Value;
+            begin
+               Write_Address (File, Addr);
+               Ada.Text_IO.Put_Line
+                 ("binding: " & Label & " at " & Aqua.IO.Hex_Image (Addr));
+            end;
+
          end;
       end loop;
 

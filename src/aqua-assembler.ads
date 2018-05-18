@@ -52,11 +52,12 @@ package Aqua.Assembler is
       Size : Aqua.Data_Size);
 
    procedure Bind_Action
-     (A      : in out Root_Assembly_Type'Class;
-      Group  : String;
-      Before : Boolean;
-      Parent : String;
-      Child  : String);
+     (A           : in out Root_Assembly_Type'Class;
+      Group       : String;
+      Before      : Boolean;
+      Parent      : String;
+      Child       : String;
+      Bound_Label : String);
 
    procedure Exception_Handler
      (A                       : in out Root_Assembly_Type'Class;
@@ -200,7 +201,7 @@ private
    type Binding_Info is
       record
          Group_Name  : Ada.Strings.Unbounded.Unbounded_String;
-         Start       : Address;
+         Start_Label : Ada.Strings.Unbounded.Unbounded_String;
          Before      : Boolean;
          Parent_Text : Ada.Strings.Unbounded.Unbounded_String;
          Child_Text  : Ada.Strings.Unbounded.Unbounded_String;
