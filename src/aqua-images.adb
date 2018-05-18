@@ -357,7 +357,7 @@ package body Aqua.Images is
             Read_Word (File, Column);
             Read_Address (File, Start);
             Image.Locations.Append
-              ((Source_File_Name, Start + Image.Code_Base,
+              ((Source_File_Name, Convert_Address (Start),
                Natural (Line), Natural (Column)));
          end loop;
       end;
