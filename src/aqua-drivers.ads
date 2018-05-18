@@ -13,6 +13,11 @@ package Aqua.Drivers is
      (Driver : in out Root_Aqua_Driver)
    is abstract;
 
+   function Monitored
+     (Driver   : Root_Aqua_Driver;
+      Register : Driver_Register_Range)
+      return Boolean;
+
    function Get_Octet
      (Driver : Root_Aqua_Driver'Class;
       Addr   : Driver_Register_Range)
@@ -69,6 +74,12 @@ private
          Rs      : Device_Registers (0 .. Last_Address) := (others => 0);
          Changed : Register_Flags (0 .. Last_Address)   := (others => False);
       end record;
+
+   function Monitored
+     (Driver   : Root_Aqua_Driver;
+      Register : Driver_Register_Range)
+      return Boolean
+   is (True);
 
    function Changed_Range
      (Driver : Root_Aqua_Driver'Class;

@@ -303,7 +303,10 @@ package body Aqua.Memory is
                      Driver.Set_Octet
                        (Aqua.Drivers.Driver_Register_Range (Addr - First),
                         Value);
-                     if not Memory.Changes.Contains (Driver) then
+                     if Driver.Monitored
+                       (Aqua.Drivers.Driver_Register_Range (Addr - First))
+                       and then not Memory.Changes.Contains (Driver)
+                     then
                         Memory.Changes.Append (Driver);
                      end if;
                   end if;
