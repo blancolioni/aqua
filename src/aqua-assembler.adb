@@ -801,8 +801,6 @@ package body Aqua.Assembler is
                Addr  : constant Address := A.Labels.Element (Label).Value;
             begin
                Write_Address (File, Addr);
-               Ada.Text_IO.Put_Line
-                 ("binding: " & Label & " at " & Aqua.IO.Hex_Image (Addr));
             end;
 
          end;
