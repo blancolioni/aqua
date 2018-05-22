@@ -1137,6 +1137,23 @@ package body Aqua.CPU is
 
                      Ada.Text_IO.New_Line;
                      Ada.Text_IO.Put_Line (Message);
+                     declare
+                        PC : Word renames CPU.R (Aqua.Architecture.R_PC);
+                        SP : Word renames CPU.R (Aqua.Architecture.R_SP);
+                        FP : Word renames CPU.R (Aqua.Architecture.R_FP);
+                     begin
+                        while PC /= 0 loop
+                           SP := FP;
+                           FP := CPU.Pop;
+                           PC := CPU.Pop;
+                           if PC /= 0 then
+                              Ada.Text_IO.Put_Line
+                                (Ada.Text_IO.Standard_Error,
+                                 "  at "
+                                 & CPU.Image.Show_Source_Position (PC));
+                           end if;
+                        end loop;
+                     end;
                   end;
                end if;
                CPU.B := True;
