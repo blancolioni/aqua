@@ -27,11 +27,14 @@ package body Aqua.Assembler is
       Size : Aqua.Data_Size)
    is
       Rec : Segment_Record renames A.Segment_List (A.Current_Segment);
+      Word_Size : constant Word := Data_Octets (Size);
    begin
       pragma Assert (Rec.Initialised);
-      A.Set_Flags (Rec.Bound, R => True, W => True);
+      A.Set_Access_Flags
+        (Rec.Bound, Rec.Bound + Word_Size,
+         R => True, W => True, X => False);
       A.Set_Value (Rec.Bound, Size, W);
-      Rec.Bound := Rec.Bound + Address (Data_Octets (Size));
+      Rec.Bound := Rec.Bound + Word_Size;
    end Append;
 
    ------------------
