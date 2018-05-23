@@ -19,6 +19,8 @@ package body Aqua.CPU is
    Trace_Executions  : constant Boolean := False;
    Write_Frequencies : constant Boolean := False;
 
+   Source_Location_Width : constant := 24;
+
    Default_Stack_Top : constant := 16#8000_0000#;
 
    type Branch_Info is
@@ -318,15 +320,22 @@ package body Aqua.CPU is
                begin
                   if Last_Source /= Loc then
                      Last_Source := To_Unbounded_String (Loc);
-                     if Loc'Length < 16 then
+                     if Loc'Length < Source_Location_Width then
                         Ada.Text_IO.Put (Loc);
                      else
-                        Ada.Text_IO.Put
-                          ("..." & Loc (Loc'Last - 12 .. Loc'Last));
+                        declare
+                           First_Index : constant Positive :=
+                                           Loc'Last + 5
+                                             - Source_Location_Width;
+                        begin
+                           Ada.Text_IO.Put
+                             ("..." & Loc (First_Index .. Loc'Last));
+                        end;
                      end if;
                   end if;
                end;
-               Ada.Text_IO.Set_Col (20);
+               Ada.Text_IO.Set_Col
+                 (Ada.Text_IO.Count (Source_Location_Width + 1));
                if Trace_FP then
                   Ada.Text_IO.Put
                     (Aqua.IO.Hex_Image (FP) & " ");
@@ -941,9 +950,7 @@ package body Aqua.CPU is
          end if;
 
          if Trace_Code then
-            Ada.Text_IO.Put_Line
-              ("branch: "
-               & Aqua.IO.Hex_Image (PC));
+            Ada.Text_IO.Put (" [taken]");
          end if;
 
       end if;
