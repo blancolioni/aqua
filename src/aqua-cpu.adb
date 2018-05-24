@@ -378,10 +378,11 @@ package body Aqua.CPU is
                      & Ada.Exceptions.Exception_Message (E));
 
                   CPU.Dump_Core;
-                  while PC /= 0 loop
+                  loop
                      SP := FP;
                      FP := CPU.Pop;
                      PC := CPU.Pop;
+                     exit when PC = 0;
                      if PC /= 0 then
                         Ada.Text_IO.Put_Line
                           (Ada.Text_IO.Standard_Error,
