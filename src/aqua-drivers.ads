@@ -58,6 +58,7 @@ package Aqua.Drivers is
      (Driver : in out Root_Aqua_Driver'Class);
 
    function Text_Writer return Aqua_Driver;
+   function Character_Handling return Aqua_Driver;
 
 private
 

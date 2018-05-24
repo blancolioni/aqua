@@ -1,3 +1,4 @@
+with Ada.Wide_Wide_Characters.Handling;
 with Ada.Wide_Wide_Text_IO;
 
 package body Aqua.Drivers is
@@ -12,6 +13,29 @@ package body Aqua.Drivers is
 
    overriding procedure Update
      (Driver : in out Text_Writer_Driver);
+
+   Character_Handling_Register_Count : constant Driver_Register_Count := 8;
+
+   R_Command        : constant Driver_Register_Range := 0;
+   R_Character_Code : constant Driver_Register_Range := 4;
+
+   type Character_Handling_Command is
+     (No_Command, To_Upper_Case, To_Lower_Case, Is_White_Space);
+
+   type Character_Handling_Driver is
+     new Root_Aqua_Driver with null record;
+
+   overriding procedure Update
+     (Driver : in out Character_Handling_Driver);
+
+   ------------------------
+   -- Character_Handling --
+   ------------------------
+
+   function Character_Handling return Aqua_Driver is
+   begin
+      return new Character_Handling_Driver (Character_Handling_Register_Count);
+   end Character_Handling;
 
    -------------------
    -- Clear_Changes --
@@ -80,6 +104,47 @@ package body Aqua.Drivers is
    begin
       return new Text_Writer_Driver (Text_Writer_Register_Count - 1);
    end Text_Writer;
+
+   ------------
+   -- Update --
+   ------------
+
+   overriding procedure Update
+     (Driver : in out Character_Handling_Driver)
+   is
+   begin
+      if Driver.Changed_Word (R_Command) then
+         declare
+            use Ada.Wide_Wide_Characters.Handling;
+            Last_Command  : constant Word :=
+                              Character_Handling_Command'Pos
+                                (Character_Handling_Command'Last);
+            Command_Value : constant Word := Driver.Get_Word (R_Command);
+            Ch            : Wide_Wide_Character :=
+                              Wide_Wide_Character'Val
+                                (Driver.Get_Word (R_Character_Code));
+         begin
+            if Command_Value in 1 .. Last_Command then
+               case Character_Handling_Command'Val (Command_Value) is
+                  when No_Command =>
+                     null;
+                  when To_Upper_Case =>
+                     Ch := To_Upper (Ch);
+                  when To_Lower_Case =>
+                     Ch := To_Lower (Ch);
+                  when Is_White_Space =>
+                     Ch := (if Is_Space (Ch) then ' ' else 'x');
+               end case;
+
+               Driver.Set_Word
+                 (R_Character_Code,
+                  Wide_Wide_Character'Pos (Ch));
+               Driver.Set_Word (R_Command, 0);
+            end if;
+            Driver.Clear_Changes;
+         end;
+      end if;
+   end Update;
 
    ------------
    -- Update --
