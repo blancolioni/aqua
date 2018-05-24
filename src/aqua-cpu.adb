@@ -1131,20 +1131,40 @@ package body Aqua.CPU is
                   declare
                      A : constant Address := Exit_Code;
                      Length : constant Word := CPU.Image.Get_Word (A);
-                     Message : String (1 .. Natural (Length));
+                     Got_Message : Boolean := Length < 200;
                   begin
-                     for I in 1 .. Length loop
+                     if Got_Message then
                         declare
-                           Code : constant Word :=
-                                    CPU.Image.Get_Word (A + I * 4);
+                           Message : String (1 .. Natural (Length));
                         begin
-                           Message (Positive (I)) :=
-                             Character'Val (Code);
-                        end;
-                     end loop;
+                           for I in 1 .. Length loop
+                              declare
+                                 Code : constant Word :=
+                                          CPU.Image.Get_Word (A + I * 4);
+                              begin
+                                 if Code not in 32 .. 127 then
+                                    Got_Message := False;
+                                    exit;
+                                 else
+                                    Message (Positive (I)) :=
+                                      Character'Val (Code);
+                                 end if;
+                              end;
+                           end loop;
 
-                     Ada.Text_IO.New_Line;
-                     Ada.Text_IO.Put_Line (Message);
+                           if Got_Message then
+                              Ada.Text_IO.New_Line;
+                              Ada.Text_IO.Put_Line (Message);
+                           end if;
+                        end;
+                     end if;
+
+                     if not Got_Message then
+                        Ada.Text_IO.New_Line;
+                        Ada.Text_IO.Put_Line
+                          ("exit code " & Aqua.IO.Hex_Image (Length));
+                     end if;
+
                      declare
                         PC : Word renames CPU.R (Aqua.Architecture.R_PC);
                         SP : Word renames CPU.R (Aqua.Architecture.R_SP);
