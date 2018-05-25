@@ -9,9 +9,28 @@ package Aqua.Drivers is
 
    type Aqua_Driver is access all Root_Aqua_Driver'Class;
 
+   function Identity
+     (Driver : Root_Aqua_Driver)
+      return String
+      is abstract;
+
    procedure Update
      (Driver : in out Root_Aqua_Driver)
    is abstract;
+
+   procedure Log
+     (Driver  : Root_Aqua_Driver'Class;
+      Message : String);
+
+   type Driver_Creator is access function return Aqua_Driver;
+
+   procedure Register
+     (Identifier : String;
+      Creator    : Driver_Creator);
+
+   function Create
+     (Identifier : String)
+      return Aqua_Driver;
 
    function Monitored
      (Driver   : Root_Aqua_Driver;

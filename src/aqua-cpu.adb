@@ -8,6 +8,8 @@ with Aqua.Traps;
 
 with Aqua.Options;
 
+with Aqua.Drivers.Meta_Driver;
+
 package body Aqua.CPU is
 
    use Aqua.Architecture;
@@ -1243,7 +1245,15 @@ package body Aqua.CPU is
 
    overriding procedure Initialize
      (CPU : in out Aqua_CPU_Type)
-   is null;
+   is
+   begin
+      Aqua.Drivers.Meta_Driver.Create_Meta_Driver (CPU.Image);
+      Aqua.Drivers.Register
+        ("aqua-text-writer", Aqua.Drivers.Text_Writer'Access);
+      Aqua.Drivers.Register
+        ("aqua-character-handler",
+         Aqua.Drivers.Character_Handling'Access);
+   end Initialize;
 
    ------------------
    -- Next_Operand --
