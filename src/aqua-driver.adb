@@ -109,7 +109,6 @@ begin
       Image  : constant Aqua.Images.Image_Type := Aqua.Images.New_Image;
       CPU    : Aqua.CPU.Aqua_CPU_Type (Image);
    begin
-      Image.Install_Driver (16#1FFF_0000#, Aqua.Drivers.Text_Writer);
       Image.Load ("test.o32");
       Image.Link;
       CPU.Execute ("self-test", 16#1000#, (1 => 0));

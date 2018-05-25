@@ -1,7 +1,15 @@
 with Ada.Wide_Wide_Characters.Handling;
 with Ada.Wide_Wide_Text_IO;
+with Ada.Text_IO;
+
+with WL.String_Maps;
 
 package body Aqua.Drivers is
+
+   package Driver_Registry_Maps is
+     new WL.String_Maps (Driver_Creator);
+
+   Driver_Registry : Driver_Registry_Maps.Map;
 
    Text_Writer_Register_Count : constant Driver_Register_Count := 8;
 
@@ -10,6 +18,11 @@ package body Aqua.Drivers is
 
    type Text_Writer_Driver is
      new Root_Aqua_Driver with null record;
+
+   overriding function Identity
+     (Driver : Text_Writer_Driver)
+      return String
+   is ("aqua-text-writer");
 
    overriding procedure Update
      (Driver : in out Text_Writer_Driver);
@@ -24,6 +37,11 @@ package body Aqua.Drivers is
 
    type Character_Handling_Driver is
      new Root_Aqua_Driver with null record;
+
+   overriding function Identity
+     (Driver : Character_Handling_Driver)
+      return String
+   is ("aqua-character-handler");
 
    overriding procedure Update
      (Driver : in out Character_Handling_Driver);
@@ -48,6 +66,22 @@ package body Aqua.Drivers is
       Driver.Changed := (others => False);
    end Clear_Changes;
 
+   ------------
+   -- Create --
+   ------------
+
+   function Create
+     (Identifier : String)
+      return Aqua_Driver
+   is
+   begin
+      if Driver_Registry.Contains (Identifier) then
+         return Driver_Registry.Element (Identifier).all;
+      else
+         return null;
+      end if;
+   end Create;
+
    --------------
    -- Get_Word --
    --------------
@@ -64,6 +98,31 @@ package body Aqua.Drivers is
          end loop;
       end return;
    end Get_Word;
+
+   ---------
+   -- Log --
+   ---------
+
+   procedure Log
+     (Driver  : Root_Aqua_Driver'Class;
+      Message : String)
+   is
+   begin
+      Ada.Text_IO.Put_Line
+        (Driver.Identity & ": " & Message);
+   end Log;
+
+   --------------
+   -- Register --
+   --------------
+
+   procedure Register
+     (Identifier : String;
+      Creator    : Driver_Creator)
+   is
+   begin
+      Driver_Registry.Insert (Identifier, Creator);
+   end Register;
 
    ---------------
    -- Set_Octet --
