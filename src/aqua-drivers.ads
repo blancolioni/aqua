@@ -95,6 +95,11 @@ private
          Changed : Register_Flags (0 .. Last_Address)   := (others => False);
       end record;
 
+   function Read_String
+     (Driver : Root_Aqua_Driver'Class;
+      Start  : Driver_Register_Range)
+      return String;
+
    function Monitored
      (Driver   : Root_Aqua_Driver;
       Register : Driver_Register_Range)

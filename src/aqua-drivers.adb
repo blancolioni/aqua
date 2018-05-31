@@ -11,13 +11,21 @@ package body Aqua.Drivers is
 
    Driver_Registry : Driver_Registry_Maps.Map;
 
-   Text_Writer_Register_Count : constant Driver_Register_Count := 8;
+   Text_Writer_Register_Count : constant Driver_Register_Count := 255;
 
    R_Character : constant Driver_Register_Range := 0;
    R_Col       : constant Driver_Register_Range := 4;
+   R_Output    : constant Driver_Register_Range := 8;
+   R_Name      : constant Driver_Register_Range := 12;
+
+   type File_Access is access Ada.Text_IO.File_Type;
 
    type Text_Writer_Driver is
-     new Root_Aqua_Driver with null record;
+     new Root_Aqua_Driver with
+      record
+         Output     : File_Access;
+         Redirected : Boolean := False;
+      end record;
 
    overriding function Identity
      (Driver : Text_Writer_Driver)
@@ -111,6 +119,27 @@ package body Aqua.Drivers is
       Ada.Text_IO.Put_Line
         (Driver.Identity & ": " & Message);
    end Log;
+
+   -----------------
+   -- Read_String --
+   -----------------
+
+   function Read_String
+     (Driver : Root_Aqua_Driver'Class;
+      Start  : Driver_Register_Range)
+      return String
+   is
+      use Aqua.Drivers;
+      A : Driver_Register_Range := Start;
+      L : constant Natural := Natural (Driver.Get_Word (A)) mod 256;
+      S : String (1 .. L);
+   begin
+      for Ch of S loop
+         A := A + 4;
+         Ch := Character'Val (Driver.Get_Word (A));
+      end loop;
+      return S;
+   end Read_String;
 
    --------------
    -- Register --
@@ -228,13 +257,44 @@ package body Aqua.Drivers is
          declare
             W : constant Word := Driver.Get_Word (R_Character);
          begin
-            if W = 10 then
-               Ada.Wide_Wide_Text_IO.New_Line;
+            if Driver.Redirected then
+               if W = 10 then
+                  Ada.Text_IO.New_Line (Driver.Output.all);
+               else
+                  Ada.Text_IO.Put
+                    (Driver.Output.all,
+                     Character'Val (Driver.Get_Word (R_Character) mod 256));
+               end if;
             else
-               Ada.Wide_Wide_Text_IO.Put
-                 (Wide_Wide_Character'Val (Driver.Get_Word (R_Character)));
+               if W = 10 then
+                  Ada.Wide_Wide_Text_IO.New_Line;
+               else
+                  Ada.Wide_Wide_Text_IO.Put
+                    (Wide_Wide_Character'Val (Driver.Get_Word (R_Character)));
+               end if;
             end if;
          end;
+      end if;
+
+      if Driver.Changed_Word (R_Output) then
+         if Driver.Redirected then
+            Ada.Text_IO.Close (Driver.Output.all);
+            Driver.Redirected := False;
+         end if;
+
+         if Driver.Get_Word (R_Name) /= 0 then
+            declare
+               Name : constant String := Driver.Read_String (R_Name);
+            begin
+               if Driver.Output = null then
+                  Driver.Output := new Ada.Text_IO.File_Type;
+               end if;
+
+               Ada.Text_IO.Create
+                 (Driver.Output.all, Ada.Text_IO.Out_File, Name);
+               Driver.Redirected := True;
+            end;
+         end if;
       end if;
 
       Driver.Set_Word
