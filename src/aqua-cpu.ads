@@ -1,10 +1,7 @@
 private with Ada.Calendar;
-private with Ada.Containers.Doubly_Linked_Lists;
 private with Ada.Strings.Unbounded;
 
 with Ada.Finalization;
-
-private with Aqua.Architecture;
 
 with Aqua.Execution;
 with Aqua.Images;
@@ -13,6 +10,7 @@ package Aqua.CPU is
 
    Halt_Instruction : exception;
    Runtime_Error    : exception;
+   Page_Fault       : exception;
 
    type Aqua_CPU_Type (Image : access Aqua.Images.Root_Image_Type'Class) is
    limited new Ada.Finalization.Limited_Controlled
@@ -58,41 +56,44 @@ package Aqua.CPU is
 
 private
 
-   type Saved_Register_Count is mod 8;
+   Register_Stack_Length : constant := 4096;
 
-   type Saved_Register_Array is array (Saved_Register_Count) of Word;
+   type Register_Stack_Range is range 0 .. Register_Stack_Length - 1;
 
-   type Saved_Registers is
-      record
-         Count : Saved_Register_Count;
-         Rs    : Saved_Register_Array;
-      end record;
+   type Register_Stack_Array is array (Register_Stack_Range) of Word;
 
-   package List_Of_Saved_Registers is
-     new Ada.Containers.Doubly_Linked_Lists (Saved_Registers);
+   type Global_Register_Array is array (Octet) of Word;
 
    type Opcode_Acc_Array is array (Octet) of Natural;
-   type Operand_Acc_Array is array (0 .. 15) of Natural;
 
    type Aqua_CPU_Type (Image : access Aqua.Images.Root_Image_Type'Class) is
    limited new Ada.Finalization.Limited_Controlled
      and Aqua.Execution.Execution_Interface with
       record
-         R           : Aqua.Architecture.Registers :=
-                         (Architecture.R_PC => 16#FFFF_FFFC#,
-                          Architecture.R_SP => 16#8000_0000#,
-                          others            => 16#BAAD_F00D#);
-         R_Stack     : List_Of_Saved_Registers.List;
-         R_Local     : Aqua.Architecture.Register_Index := 0;
-         R_Global    : Aqua.Architecture.Register_Index := 29;
+         Stack       : Register_Stack_Array := (others => 0);
+         Gs          : Global_Register_Array := (others => 0);
+         SP          : Register_Stack_Range := 0;
+         Local       : Octet := 0;
+         Global      : Octet := 255;
+         Jump        : Address := 0;
+         PC          : Address := 0;
          N, Z, C, V  : Boolean := False;
          B           : Boolean := False;
          Start       : Ada.Calendar.Time;
          Exec_Time   : Duration := 0.0;
          Current_Env : Ada.Strings.Unbounded.Unbounded_String;
          Opcode_Acc  : Opcode_Acc_Array;
-         Operand_Acc : Operand_Acc_Array;
       end record;
+
+   procedure Set_R
+     (CPU : in out Aqua_CPU_Type'Class;
+      R   : Octet;
+      X   : Word);
+
+   function Get_R
+     (CPU : in out Aqua_CPU_Type'Class;
+      R   : Octet)
+      return Word;
 
    overriding function Pop
      (CPU : in out Aqua_CPU_Type)
@@ -112,5 +113,13 @@ private
      (CPU   : Aqua_CPU_Type)
       return String
    is (Ada.Strings.Unbounded.To_String (CPU.Current_Env));
+
+   function Get_R
+     (CPU : in out Aqua_CPU_Type'Class;
+      R   : Octet)
+      return Word
+   is (if R >= CPU.Global then CPU.Gs (R)
+       elsif R >= CPU.Local then 0
+       else CPU.Stack (CPU.SP + Register_Stack_Range (R)));
 
 end Aqua.CPU;

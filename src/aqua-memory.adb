@@ -90,13 +90,32 @@ package body Aqua.Memory is
    end Flag_Is_Set;
 
    --------------
-   -- Get_Octet --
+   -- Get_Page --
    --------------
 
-   function Get_Octet
+   function Get_Page
+     (Mem  : Memory_Type;
+      Addr : Address)
+      return Page_Access
+   is
+      T : constant Table_Address_Range := Table_Address (Addr);
+      D : constant Directory_Address_Range := Directory_Address (Addr);
+   begin
+      if Mem.Table (T) = null then
+         return null;
+      else
+         return Mem.Table (T).Pages (D);
+      end if;
+   end Get_Page;
+
+   --------------
+   -- Get_Word --
+   --------------
+
+   function Get_Word
      (Memory : Memory_Type'Class;
       Addr   : Address)
-      return Octet
+      return Word
    is
       Page      : constant Page_Access := Get_Page (Memory, Addr);
    begin
@@ -116,62 +135,15 @@ package body Aqua.Memory is
                               First + Address (Driver.Last_Address);
                begin
                   if Addr in First .. Last then
-                     return Driver.Get_Octet
+                     return Driver.Get_Word
                        (Aqua.Drivers.Driver_Register_Range (Addr - First));
                   end if;
                end;
             end loop;
          end if;
-         return Page.Data (Addr mod Page_Size);
+         return Page.Data (To_Offset (Addr mod Page_Size));
       end if;
-   end Get_Octet;
-
-   --------------
-   -- Get_Page --
-   --------------
-
-   function Get_Page
-     (Mem  : Memory_Type;
-      Addr : Address)
-      return Page_Access
-   is
-      T : constant Table_Address_Range := Table_Address (Addr);
-      D : constant Directory_Address_Range := Directory_Address (Addr);
-   begin
-      if Mem.Table (T) = null then
-         return null;
-      else
-         return Mem.Table (T).Pages (D);
-      end if;
-   end Get_Page;
-
-   ---------------
-   -- Get_Value --
-   ---------------
-
-   function Get_Value
-     (Memory : Memory_Type'Class;
-      Addr   : Address;
-      Size   : Data_Size)
-      return Word
-   is
-      It : Word := 0;
-   begin
-      case Size is
-         when Word_8_Size =>
-            It := Word (Memory.Get_Octet (Addr));
-         when Word_16_Size =>
-            It := Word (Memory.Get_Octet (Addr))
-              + 256 * Word (Memory.Get_Octet (Addr + 1));
-         when Word_32_Size =>
-            It := Word (Memory.Get_Octet (Addr))
-              + 256 * Word (Memory.Get_Octet (Addr + 1))
-              + 65536 * Word (Memory.Get_Octet (Addr + 2))
-              + 256 * 65536 * Word (Memory.Get_Octet (Addr + 3));
-      end case;
-
-      return It;
-   end Get_Value;
+   end Get_Word;
 
    --------------------
    -- Install_Driver --
@@ -293,10 +265,10 @@ package body Aqua.Memory is
    -- Set_Octet --
    ---------------
 
-   procedure Set_Octet
+   procedure Set_Word
      (Memory : in out Memory_Type'Class;
       Addr   : Address;
-      Value  : Octet)
+      Value  : Word)
    is
    begin
       Ensure_Page (Memory, Addr);
@@ -312,11 +284,10 @@ package body Aqua.Memory is
          if False then
             Ada.Text_IO.Put_Line ("[" & Aqua.IO.Hex_Image (Addr)
                                   & "]<-"
-                                  & Aqua.IO.Hex_Image
-                                    (Word (Value), Word_8_Size));
+                                  & Aqua.IO.Hex_Image (Value));
          end if;
 
-         Page.Data (Addr mod Page_Size) := Value;
+         Page.Data (To_Offset (Addr mod Page_Size)) := Value;
          if Memory.Flag_Is_Set (Addr, Flag_Driver) then
             for Position in Page.Driver_Map.Iterate loop
                declare
@@ -327,60 +298,24 @@ package body Aqua.Memory is
                               First + Address (Driver.Last_Address);
                begin
                   if Addr in First .. Last then
-                     Driver.Set_Octet
-                       (Aqua.Drivers.Driver_Register_Range (Addr - First),
-                        Value);
-                     if Driver.Monitored
-                       (Aqua.Drivers.Driver_Register_Range (Addr - First))
-                       and then not Memory.Changes.Contains (Driver)
-                     then
-                        Memory.Changes.Append (Driver);
-                     end if;
+                     declare
+                        R : constant Aqua.Drivers.Driver_Register_Range :=
+                              Aqua.Drivers.Driver_Register_Range
+                                (Addr - First);
+                     begin
+                        Driver.Set_Word (R, Value);
+                        if Driver.Monitored (R)
+                          and then not Memory.Changes.Contains (Driver)
+                        then
+                           Memory.Changes.Append (Driver);
+                        end if;
+                     end;
                   end if;
                end;
             end loop;
          end if;
       end;
 
-   end Set_Octet;
-
-   ---------------
-   -- Set_Value --
-   ---------------
-
-   procedure Set_Value
-     (Memory : in out Memory_Type'Class;
-      Addr   : Address;
-      Size   : Data_Size;
-      Value  : Word)
-   is
-      It : Word := Value;
-   begin
-      if Memory.Flag_Is_Set (Addr, Flag_Monitor) then
-         if Memory.Monitors.Contains (Addr) then
-            Ada.Text_IO.Put_Line
-              (Aqua.IO.Hex_Image (Addr)
-               & " <- " & Aqua.IO.Hex_Image (Value));
-         end if;
-      end if;
-
-      for I in Address range 0 .. Address (Data_Octets (Size)) - 1 loop
-         Memory.Set_Octet (Addr + I, Octet (It mod 256));
-         It := It / 256;
-      end loop;
-   end Set_Value;
-
-   --------------
-   -- Set_Word --
-   --------------
-
-   procedure Set_Word
-     (Memory : in out Memory_Type'Class;
-      Addr   : Address;
-      Value  : Word)
-   is
-   begin
-      Set_Value (Memory, Addr, Word_32_Size, Value);
    end Set_Word;
 
 end Aqua.Memory;

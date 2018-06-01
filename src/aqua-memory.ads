@@ -7,44 +7,15 @@ package Aqua.Memory is
 
    type Memory_Type is tagged private;
 
-   function Get_Octet
-     (Memory : Memory_Type'Class;
-      Addr   : Address)
-      return Octet
-     with Inline_Always;
-
-   procedure Set_Octet
-     (Memory : in out Memory_Type'Class;
-      Addr   : Address;
-      Value  : Octet)
-     with Inline_Always;
-
-   function Get_Value
-     (Memory : Memory_Type'Class;
-      Addr   : Address;
-      Size   : Data_Size)
-      return Word
-     with Inline_Always;
-
-   procedure Set_Value
-     (Memory : in out Memory_Type'Class;
-      Addr   : Address;
-      Size   : Data_Size;
-      Value  : Word)
-     with Inline_Always;
-
    function Get_Word
      (Memory : Memory_Type'Class;
       Addr   : Address)
-      return Word
-   is (Get_Value (Memory, Addr, Word_32_Size))
-   with Inline_Always;
+      return Word;
 
    procedure Set_Word
      (Memory : in out Memory_Type'Class;
       Addr   : Address;
-      Value  : Word)
-     with Inline_Always;
+      Value  : Word);
 
    function Can_Read
      (Memory : Memory_Type'Class;
@@ -112,7 +83,12 @@ private
    function Table_Address (Addr : Address) return Table_Address_Range
    is (Addr / Directory_Size / Page_Size);
 
-   type Page_Data is array (Page_Address_Range) of Octet;
+   type Page_Offset_Range is range 0 .. Page_Size / 4 - 1;
+
+   function To_Offset (Addr : Page_Address_Range) return Page_Offset_Range
+   is (Page_Offset_Range (Addr / 4));
+
+   type Page_Data is array (Page_Offset_Range) of Word;
 
    type Page_Flag is
      (Flag_P, Flag_U1, Flag_U2, Flag_Monitor,
