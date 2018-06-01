@@ -82,30 +82,27 @@ package body Aqua.Images is
                if Trace_Link then
                   Ada.Text_IO.Put (" " & Aqua.IO.Hex_Image (Ref.Addr));
                end if;
+
                if Ref.Branch then
                   declare
-                     Target : constant Address :=
-                                Ref.Addr - Info.Value;
+                     W : Word :=
+                           Image.Get_Word (Ref.Addr)
+                             and 16#FEFF_0000#;
                   begin
-                     if Ref.Addr > Info.Value then
-                        Ada.Text_IO.Put_Line
-                          ("branch backward: "
-                           & IO.Hex_Image (Ref.Addr)
-                           & " "
-                           & IO.Hex_Image (Info.Value)
-                           & " "
-                           & IO.Hex_Image (Target));
+                     if Info.Value >= Ref.Addr then
+                        W := W or ((Info.Value - Ref.Addr) / 4);
+                     else
+                        W := W or 16#0100_0000#
+                          or ((Info.Value + 16#0004_0000# - Ref.Addr) / 4);
                      end if;
-                     Image.Set_Value
-                             (Ref.Addr, Word_16_Size, Word (Target));
+                     Image.Set_Word (Ref.Addr, W);
                   end;
-               elsif Ref.Relative then
-                  declare
-                     W : constant Word := Info.Value - Ref.Addr;
-                  begin
-                     Image.Set_Word
-                       (Ref.Addr, W);
-                  end;
+--                 elsif Ref.Relative then
+--                    if Info.Value >= Ref.Addr then
+--                       Image.Set_Word
+--                         (Ref.Addr,
+--                    Image.Set_Word
+--                      (Ref.Addr,
                else
                   Image.Set_Word
                     (Ref.Addr, Info.Value);
@@ -388,30 +385,33 @@ package body Aqua.Images is
                   W     => True,
                   X     => False);
 
-               for Addr in Segment.Base .. Segment.Bound - 1 loop
-
+               for Addr in Segment.Base / 4 .. Segment.Bound / 4 - 1 loop
                   declare
                      Target : constant Address :=
-                                Addr - Segment.Base + Rec.Bound;
+                                Addr * 4 - Segment.Base + Rec.Bound;
+                     Value  : Word := 0;
                      X      : Octet;
                   begin
+                     for I in 1 .. 4 loop
+                        Read_Octet (File, X);
+                        Value := Value * 256 + Word (X);
+                     end loop;
+
                      if Trace_Code then
-                        if Target mod 16 = 0 then
-                           if Addr > Segment.Base then
+                        if Target mod 32 = 0 then
+                           if Addr > Segment.Base / 4 then
                               Ada.Text_IO.New_Line;
                            end if;
                            Ada.Text_IO.Put
                              (Aqua.IO.Hex_Image (Target));
                         end if;
+
+                        Ada.Text_IO.Put (" " & Aqua.IO.Hex_Image (Value));
+
                      end if;
 
-                     Read_Octet (File, X);
+                     Image.Set_Word (Target, Value);
 
-                     if Trace_Code then
-                        Ada.Text_IO.Put (" " & Aqua.IO.Hex_Image (X));
-                     end if;
-
-                     Image.Set_Octet (Target, X);
                   end;
                end loop;
 
