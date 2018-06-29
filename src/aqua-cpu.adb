@@ -1,6 +1,9 @@
+with Ada.Containers.Indefinite_Doubly_Linked_Lists;
 with Ada.Exceptions;
 
 with Ada.Text_IO;
+
+with WL.String_Maps;
 
 with Aqua.Debug;
 with Aqua.IO;
@@ -20,6 +23,23 @@ package body Aqua.CPU is
    Trace_Stack       : constant Boolean := False;
    Trace_Executions  : constant Boolean := False;
    Write_Frequencies : constant Boolean := False;
+
+   package Profile_Maps is
+     new WL.String_Maps (Natural);
+
+   type Profile_Entry (Length : Positive) is
+      record
+         Location : String (1 .. Length);
+         Hit_Count : Natural;
+      end record;
+
+   function ">" (Left, Right : Profile_Entry) return Boolean
+   is (Left.Hit_Count > Right.Hit_Count);
+
+   Profile_Map : Profile_Maps.Map;
+
+   package Profile_Hit_Lists is
+     new Ada.Containers.Indefinite_Doubly_Linked_Lists (Profile_Entry);
 
    Source_Location_Width : constant := 24;
 
@@ -260,6 +280,15 @@ package body Aqua.CPU is
             "unabled to create core file");
    end Dump_Core;
 
+   ----------------------
+   -- Enable_Profiling --
+   ----------------------
+
+   procedure Enable_Profiling (Enabled : Boolean) is
+   begin
+      Aqua.Options.Set_Option ("profile", Enabled'Image);
+   end Enable_Profiling;
+
    -------------
    -- Execute --
    -------------
@@ -276,6 +305,9 @@ package body Aqua.CPU is
       SP : Word renames CPU.R (Aqua.Architecture.R_SP);
       FP : Word renames CPU.R (Aqua.Architecture.R_FP);
       Last_Source : Ada.Strings.Unbounded.Unbounded_String;
+
+      Profile : constant Boolean := Aqua.Options.Profile;
+
    begin
 
       Trace_Code := Aqua.Options.Trace_Code;
@@ -314,6 +346,25 @@ package body Aqua.CPU is
             Original_PC : constant Word := PC;
          begin
             CPU.Opcode_Acc (Op) := CPU.Opcode_Acc (Op) + 1;
+
+            if Profile then
+               declare
+                  Loc : constant String :=
+                          CPU.Image.Show_Source_Position
+                            (Original_PC);
+               begin
+                  if not Profile_Map.Contains (Loc) then
+                     Profile_Map.Insert (Loc, 0);
+                  end if;
+
+                  declare
+                     N : Natural renames Profile_Map (Loc);
+                  begin
+                     N := N + 1;
+                  end;
+               end;
+            end if;
+
             if Trace_Code then
                declare
                   Loc : constant String :=
@@ -1367,7 +1418,6 @@ package body Aqua.CPU is
    overriding procedure Report
      (CPU : Aqua_CPU_Type)
    is
-      use Ada.Calendar;
       use Ada.Text_IO;
    begin
       Put_Line
@@ -1505,5 +1555,69 @@ package body Aqua.CPU is
       end loop;
       Ada.Text_IO.Put_Line ("---------------");
    end Show_Stack;
+
+   -------------------
+   -- Write_Profile --
+   -------------------
+
+   procedure Write_Profile (Path : String) is
+      use Ada.Text_IO;
+      File : File_Type;
+      Total : Natural := 0;
+      Hit_List : Profile_Hit_Lists.List;
+
+      package Hit_Count_Sorting is
+        new Profile_Hit_Lists.Generic_Sorting (">");
+
+   begin
+
+      Put ("writing profile"
+           & (if Path = "" then "" else " to " & Path)
+           & "..");
+      Flush;
+
+      if Path /= "" then
+         Create (File, Out_File, Path);
+         Set_Output (File);
+      end if;
+
+      for Position in Profile_Map.Iterate loop
+         declare
+            Location  : constant String := Profile_Maps.Key (Position);
+            Hit_Count : constant Natural :=
+                          Profile_Maps.Element (Position);
+         begin
+            Hit_List.Append
+              ((Location'Length, Location, Hit_Count));
+            Total := Total + Hit_Count;
+         end;
+      end loop;
+
+      Hit_Count_Sorting.Sort (Hit_List);
+
+      for Hit of Hit_List loop
+         Put (Hit.Location);
+         Set_Col (60);
+         Put (Hit.Hit_Count'Image);
+         Set_Col (70);
+         Put (Natural'Image
+              (Natural (Float (Hit.Hit_Count) / Float (Total) * 100.0))
+              & "%");
+         New_Line;
+      end loop;
+
+      if Path /= "" then
+         Set_Output (Standard_Output);
+         Close (File);
+      end if;
+
+      Put_Line (". done");
+
+   exception
+      when Name_Error =>
+         Put_Line (Standard_Error,
+                   Path & ": cannot open for writing");
+
+   end Write_Profile;
 
 end Aqua.CPU;

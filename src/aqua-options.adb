@@ -4,6 +4,16 @@ package body Aqua.Options is
 
    Local_Trace_Code : Boolean := False;
    Local_Trace_Link : Boolean := False;
+   Local_Profile    : Boolean := False;
+
+   -------------
+   -- Profile --
+   -------------
+
+   function Profile return Boolean is
+   begin
+      return Local_Profile;
+   end Profile;
 
    ----------------
    -- Set_Option --
@@ -18,6 +28,8 @@ package body Aqua.Options is
          Local_Trace_Code := Boolean'Value (Value);
       elsif Name = "trace-link" then
          Local_Trace_Link := Boolean'Value (Value);
+      elsif Name = "profile" then
+         Local_Profile := Boolean'Value (Value);
       else
          Ada.Text_IO.Put_Line
            (Ada.Text_IO.Standard_Error,
