@@ -56,6 +56,9 @@ package Aqua.CPU is
 
    procedure Run (CPU : in out Aqua_CPU_Type'Class);
 
+   procedure Enable_Profiling (Enabled : Boolean);
+   procedure Write_Profile (Path : String);
+
 private
 
    type Saved_Register_Count is mod 8;
