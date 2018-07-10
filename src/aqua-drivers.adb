@@ -129,7 +129,6 @@ package body Aqua.Drivers is
       Start  : Driver_Register_Range)
       return String
    is
-      use Aqua.Drivers;
       A : Driver_Register_Range := Start;
       L : constant Natural := Natural (Driver.Get_Word (A)) mod 256;
       S : String (1 .. L);
