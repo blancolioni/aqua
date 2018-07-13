@@ -6,6 +6,7 @@ private with Ada.Strings.Fixed.Less_Case_Insensitive;
 private with Ada.Strings.Unbounded;
 
 private with WL.String_Maps;
+private with WL.String_Sets;
 
 with Aqua.Memory;
 
@@ -172,14 +173,15 @@ private
 
    type Root_Image_Type is new Aqua.Memory.Memory_Type with
       record
-         Locations     : List_Of_Source_Locations.List;
-         Bindings      : Binding_Info_Vectors.Vector;
-         Handlers      : Exception_Info_Vectors.Vector;
-         String_Vector : Link_Vectors.Vector;
-         Label_Vector  : Link_Vectors.Vector;
-         Link_Map      : Link_Maps.Map;
-         Segment_Map   : Segment_Maps.Map;
-         Start         : Address := 16#1000#;
+         Locations      : List_Of_Source_Locations.List;
+         Bindings       : Binding_Info_Vectors.Vector;
+         Handlers       : Exception_Info_Vectors.Vector;
+         String_Vector  : Link_Vectors.Vector;
+         Label_Vector   : Link_Vectors.Vector;
+         Link_Map       : Link_Maps.Map;
+         Segment_Map    : Segment_Maps.Map;
+         Start          : Address := 16#1000#;
+         Loaded_Objects : WL.String_Sets.Set;
       end record;
 
    function Start_Address

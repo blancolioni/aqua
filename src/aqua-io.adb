@@ -154,7 +154,7 @@ package body Aqua.IO is
             Read_Octet (File, X);
             if X /= Character'Pos (Ch) then
                Octet_IO.Close (File.F);
-               raise Invalid_Header;
+               raise Invalid_Header with Name;
             end if;
          end;
       end loop;
