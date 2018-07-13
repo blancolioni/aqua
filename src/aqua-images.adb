@@ -246,6 +246,15 @@ package body Aqua.Images is
 
    begin
 
+      if Image.Loaded_Objects.Contains (Name) then
+         if Trace_Load then
+            Ada.Text_IO.Put_Line ("image: skipping " & Name);
+         end if;
+         return;
+      end if;
+
+      Image.Loaded_Objects.Insert (Name);
+
       if Trace_Load then
          Ada.Text_IO.Put_Line ("image: loading " & Name);
       end if;
