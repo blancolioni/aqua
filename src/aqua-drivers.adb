@@ -246,8 +246,14 @@ package body Aqua.Drivers is
             New_Col : constant Word := Driver.Get_Word (R_Col);
          begin
             if New_Col > 0 then
-               Ada.Wide_Wide_Text_IO.Set_Col
-                 (Ada.Wide_Wide_Text_IO.Count (New_Col));
+               if Driver.Redirected then
+                  Ada.Text_IO.Set_Col
+                    (Driver.Output.all,
+                     Ada.Text_IO.Count (New_Col));
+               else
+                  Ada.Wide_Wide_Text_IO.Set_Col
+                    (Ada.Wide_Wide_Text_IO.Count (New_Col));
+               end if;
             end if;
          end;
       end if;
@@ -296,8 +302,14 @@ package body Aqua.Drivers is
          end if;
       end if;
 
-      Driver.Set_Word
-        (R_Col, Word (Ada.Wide_Wide_Text_IO.Col));
+      if Driver.Redirected then
+         Driver.Set_Word
+           (R_Col, Word (Ada.Text_IO.Col (Driver.Output.all)));
+      else
+         Driver.Set_Word
+           (R_Col, Word (Ada.Wide_Wide_Text_IO.Col));
+      end if;
+
       Driver.Clear_Changes;
    end Update;
 
