@@ -313,4 +313,11 @@ package body Aqua.Drivers is
       Driver.Clear_Changes;
    end Update;
 
+begin
+   Register
+     ("aqua-text-writer", Text_Writer'Access);
+   Register
+     ("aqua-character-handler",
+      Character_Handling'Access);
+
 end Aqua.Drivers;

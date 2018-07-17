@@ -254,6 +254,18 @@ package body Aqua.CPU is
       end case;
    end Convert_Triple_To_Double;
 
+   ----------------
+   -- Create_CPU --
+   ----------------
+
+   function Create_CPU (Image : Aqua.Images.Image_Type) return Aqua_CPU is
+   begin
+      return CPU : constant Aqua_CPU := new Aqua_CPU_Type do
+         CPU.Image := Image;
+         Aqua.Drivers.Meta_Driver.Create_Meta_Driver (CPU.Image);
+      end return;
+   end Create_CPU;
+
    ---------------
    -- Dump_Core --
    ---------------
@@ -1298,12 +1310,7 @@ package body Aqua.CPU is
      (CPU : in out Aqua_CPU_Type)
    is
    begin
-      Aqua.Drivers.Meta_Driver.Create_Meta_Driver (CPU.Image);
-      Aqua.Drivers.Register
-        ("aqua-text-writer", Aqua.Drivers.Text_Writer'Access);
-      Aqua.Drivers.Register
-        ("aqua-character-handler",
-         Aqua.Drivers.Character_Handling'Access);
+      null;
    end Initialize;
 
    ------------------
