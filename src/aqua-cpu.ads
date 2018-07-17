@@ -14,9 +14,13 @@ package Aqua.CPU is
    Halt_Instruction : exception;
    Runtime_Error    : exception;
 
-   type Aqua_CPU_Type (Image : access Aqua.Images.Root_Image_Type'Class) is
+   type Aqua_CPU_Type is
    limited new Ada.Finalization.Limited_Controlled
      and Aqua.Execution.Execution_Interface with private;
+
+   type Aqua_CPU is access all Aqua_CPU_Type'Class;
+
+   function Create_CPU (Image : Aqua.Images.Image_Type) return Aqua_CPU;
 
    overriding procedure Initialize
      (CPU : in out Aqua_CPU_Type);
@@ -77,10 +81,11 @@ private
    type Opcode_Acc_Array is array (Octet) of Natural;
    type Operand_Acc_Array is array (0 .. 15) of Natural;
 
-   type Aqua_CPU_Type (Image : access Aqua.Images.Root_Image_Type'Class) is
+   type Aqua_CPU_Type is
    limited new Ada.Finalization.Limited_Controlled
      and Aqua.Execution.Execution_Interface with
       record
+         Image       : Aqua.Images.Image_Type;
          R           : Aqua.Architecture.Registers :=
                          (Architecture.R_PC => 16#FFFF_FFFC#,
                           Architecture.R_SP => 16#8000_0000#,
