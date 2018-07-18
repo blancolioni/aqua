@@ -90,23 +90,6 @@ package body Aqua.Drivers is
       end if;
    end Create;
 
-   --------------
-   -- Get_Word --
-   --------------
-
-   function Get_Word
-     (Driver : Root_Aqua_Driver'Class;
-      Addr   : Driver_Register_Range)
-      return Word
-   is
-   begin
-      return X : Word := 0 do
-         for I in reverse Driver_Register_Range range 0 .. 3 loop
-            X := X * 256 + Word (Driver.Get_Octet (Addr + I));
-         end loop;
-      end return;
-   end Get_Word;
-
    ---------
    -- Log --
    ---------
@@ -152,20 +135,6 @@ package body Aqua.Drivers is
       Driver_Registry.Insert (Identifier, Creator);
    end Register;
 
-   ---------------
-   -- Set_Octet --
-   ---------------
-
-   procedure Set_Octet
-     (Driver : in out Root_Aqua_Driver'Class;
-      Addr   : Driver_Register_Range;
-      Value  : Octet)
-   is
-   begin
-      Driver.Rs (Addr) := Value;
-      Driver.Changed (Addr) := True;
-   end Set_Octet;
-
    --------------
    -- Set_Word --
    --------------
@@ -175,12 +144,9 @@ package body Aqua.Drivers is
       Addr   : Driver_Register_Range;
       Value  : Word)
    is
-      It : Word := Value;
    begin
-      for I in Driver_Register_Range range 0 .. 3 loop
-         Driver.Set_Octet (Addr + I, Octet (It mod 256));
-         It := It / 256;
-      end loop;
+      Driver.Rs (Addr) := Value;
+      Driver.Changed (Addr) := True;
    end Set_Word;
 
    -----------------
