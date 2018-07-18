@@ -37,16 +37,6 @@ package Aqua.Drivers is
       Register : Driver_Register_Range)
       return Boolean;
 
-   function Get_Octet
-     (Driver : Root_Aqua_Driver'Class;
-      Addr   : Driver_Register_Range)
-      return Octet;
-
-   procedure Set_Octet
-     (Driver : in out Root_Aqua_Driver'Class;
-      Addr   : Driver_Register_Range;
-      Value  : Octet);
-
    function Get_Word
      (Driver : Root_Aqua_Driver'Class;
       Addr   : Driver_Register_Range)
@@ -82,7 +72,7 @@ package Aqua.Drivers is
 private
 
    type Device_Registers is
-     array (Driver_Register_Range range <>) of Octet;
+     array (Driver_Register_Range range <>) of Word;
 
    type Register_Flags is
      array (Driver_Register_Range range <>) of Boolean;
@@ -118,18 +108,18 @@ private
      (Driver : Root_Aqua_Driver'Class;
       Addr   : Driver_Register_Range)
       return Boolean
-   is (Driver.Changed_Range (Addr, Addr + 1));
+   is (Driver.Changed_Range (Addr / 4, Addr / 4 + 1));
 
    function Changed_Word
      (Driver : Root_Aqua_Driver'Class;
       Addr   : Driver_Register_Range)
       return Boolean
-   is (Driver.Changed_Range ((Addr / 4) * 4, (Addr / 4) * 4 + 4));
+   is (Driver.Changed_Range (Addr, Addr + 1));
 
-   function Get_Octet
+   function Get_Word
      (Driver : Root_Aqua_Driver'Class;
       Addr   : Driver_Register_Range)
-      return Octet
+      return Word
    is (Driver.Rs (Addr));
 
 end Aqua.Drivers;
