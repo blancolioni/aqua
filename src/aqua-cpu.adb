@@ -29,7 +29,6 @@ package body Aqua.CPU is
    package Profile_Hit_Lists is
      new Ada.Containers.Indefinite_Doubly_Linked_Lists (Profile_Entry);
 
-
    ---------------
    -- Add_Watch --
    ---------------
@@ -50,7 +49,6 @@ package body Aqua.CPU is
       end return;
    end Create_CPU;
 
-
    ----------------------
    -- Enable_Profiling --
    ----------------------
@@ -70,11 +68,7 @@ package body Aqua.CPU is
       Start            : Address;
       Arguments        : Array_Of_Words)
    is
-      use type Ada.Calendar.Time;
-      use Ada.Strings.Unbounded;
-
       Profile : constant Boolean := Aqua.Options.Profile;
-
    begin
 
       Trace_Code := Aqua.Options.Trace_Code;
@@ -94,25 +88,6 @@ package body Aqua.CPU is
 
       CPU.Start := Ada.Calendar.Clock;
 
-
-            if Profile then
-               declare
-                  Loc : constant String :=
-                          CPU.Image.Show_Source_Position
-                            (Original_PC);
-               begin
-                  if not Profile_Map.Contains (Loc) then
-                     Profile_Map.Insert (Loc, 0);
-                  end if;
-
-                  declare
-                     N : Natural renames Profile_Map (Loc);
-                  begin
-                     N := N + 1;
-                  end;
-               end;
-            end if;
-
       declare
          R : Register_Stack_Range := 0;
       begin
@@ -129,6 +104,24 @@ package body Aqua.CPU is
       loop
          if not CPU.Image.Can_Execute (CPU.PC) then
             raise Page_Fault with "pc not executable";
+         end if;
+
+         if Profile then
+            declare
+               Loc : constant String :=
+                       CPU.Image.Show_Source_Position
+                         (CPU.PC);
+            begin
+               if not Profile_Map.Contains (Loc) then
+                  Profile_Map.Insert (Loc, 0);
+               end if;
+
+               declare
+                  N : Natural renames Profile_Map (Loc);
+               begin
+                  N := N + 1;
+               end;
+            end;
          end if;
 
          declare
