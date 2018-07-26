@@ -1282,7 +1282,7 @@ package body Aqua.CPU is
 --              end loop;
 
          when others =>
-            raise Constraint_Error
+            raise Runtime_Error
               with "unimplemented trap:" & Natural'Image (Index);
       end case;
    end Handle_Trap;
