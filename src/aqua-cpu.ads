@@ -12,7 +12,9 @@ with Aqua.Images;
 package Aqua.CPU is
 
    Halt_Instruction : exception;
-   Runtime_Error    : exception;
+
+   procedure Enable_Trace
+     (Enabled : Boolean);
 
    type Aqua_CPU_Type is
    limited new Ada.Finalization.Limited_Controlled

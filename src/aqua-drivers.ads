@@ -76,9 +76,6 @@ package Aqua.Drivers is
    procedure Clear_Changes
      (Driver : in out Root_Aqua_Driver'Class);
 
-   function Text_Writer return Aqua_Driver;
-   function Character_Handling return Aqua_Driver;
-
 private
 
    type Device_Registers is
@@ -131,5 +128,9 @@ private
       Addr   : Driver_Register_Range)
       return Octet
    is (Driver.Rs (Addr));
+
+   function Text_Writer return Aqua_Driver;
+   function Character_Handling return Aqua_Driver;
+   function CPU_Handling return Aqua_Driver;
 
 end Aqua.Drivers;
