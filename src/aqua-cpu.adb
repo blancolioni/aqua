@@ -6,6 +6,7 @@ with Ada.Text_IO;
 with WL.String_Maps;
 
 with Aqua.Debug;
+with Aqua.Exceptions;
 with Aqua.IO;
 with Aqua.Traps;
 
@@ -41,7 +42,7 @@ package body Aqua.CPU is
    package Profile_Hit_Lists is
      new Ada.Containers.Indefinite_Doubly_Linked_Lists (Profile_Entry);
 
-   Source_Location_Width : constant := 24;
+   Source_Location_Width : constant := 40;
 
    Default_Stack_Top : constant := 16#8000_0000#;
 
@@ -301,6 +302,17 @@ package body Aqua.CPU is
       Aqua.Options.Set_Option ("profile", Enabled'Image);
    end Enable_Profiling;
 
+   ------------------
+   -- Enable_Trace --
+   ------------------
+
+   procedure Enable_Trace
+     (Enabled : Boolean)
+   is
+   begin
+      Trace_Code := Enabled;
+   end Enable_Trace;
+
    -------------
    -- Execute --
    -------------
@@ -434,7 +446,7 @@ package body Aqua.CPU is
                end if;
 
             exception
-               when E : Runtime_Error =>
+               when E : Aqua.Exceptions.Runtime_Error =>
                   Ada.Text_IO.Put_Line
                     (Ada.Text_IO.Standard_Error,
                      CPU.Image.Show_Source_Position
@@ -935,7 +947,7 @@ package body Aqua.CPU is
       end case;
 
       if PC < 16#1000# then
-         raise Runtime_Error with
+         raise Aqua.Exceptions.Runtime_Error with
            "PC = " & Aqua.IO.Hex_Image (PC);
       end if;
 
@@ -1282,7 +1294,7 @@ package body Aqua.CPU is
 --              end loop;
 
          when others =>
-            raise Runtime_Error
+            raise Aqua.Exceptions.Runtime_Error
               with "unimplemented trap:" & Natural'Image (Index);
       end case;
    end Handle_Trap;

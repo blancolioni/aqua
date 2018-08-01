@@ -1,5 +1,6 @@
 with Ada.Text_IO;
 
+with Aqua.Exceptions;
 with Aqua.IO;
 
 package body Aqua.Memory is
@@ -103,7 +104,7 @@ package body Aqua.Memory is
       if Page = null then
          return 0;
       elsif not Memory.Flag_Is_Set (Addr, Flag_R) then
-         raise Constraint_Error with
+         raise Aqua.Exceptions.Runtime_Error with
            "page not readable: address: " & Aqua.IO.Hex_Image (Addr);
       else
          if Memory.Flag_Is_Set (Addr, Flag_Driver) then
@@ -189,7 +190,7 @@ package body Aqua.Memory is
                         Start mod Page_Size;
    begin
       if Start_Page /= End_Page then
-         raise Constraint_Error with
+         raise Aqua.Exceptions.Runtime_Error with
            "driver crosses page boundary";
       end if;
 
@@ -199,7 +200,7 @@ package body Aqua.Memory is
          Page : constant Page_Access := Memory.Get_Page (Start);
       begin
          if Page.Driver_Map.Contains (Start_Address) then
-            raise Constraint_Error with
+            raise Aqua.Exceptions.Runtime_Error with
               "driver conflict at " & Aqua.IO.Hex_Image (Start);
          end if;
 
@@ -301,7 +302,7 @@ package body Aqua.Memory is
    begin
       Ensure_Page (Memory, Addr);
       if not Memory.Flag_Is_Set (Addr, Flag_W) then
-         raise Constraint_Error with
+         raise Aqua.Exceptions.Runtime_Error with
            "page not writable: address: " & Aqua.IO.Hex_Image (Addr);
       end if;
 
@@ -362,6 +363,12 @@ package body Aqua.Memory is
               (Aqua.IO.Hex_Image (Addr)
                & " <- " & Aqua.IO.Hex_Image (Value));
          end if;
+      end if;
+
+      if Addr = 16#4000013C# then
+         Ada.Text_IO.Put_Line
+           (Aqua.IO.Hex_Image (Addr)
+            & " <- " & Aqua.IO.Hex_Image (Value));
       end if;
 
       for I in Address range 0 .. Address (Data_Octets (Size)) - 1 loop

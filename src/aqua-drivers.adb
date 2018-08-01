@@ -4,6 +4,8 @@ with Ada.Text_IO;
 
 with WL.String_Maps;
 
+with Aqua.CPU;
+
 package body Aqua.Drivers is
 
    package Driver_Registry_Maps is
@@ -54,6 +56,25 @@ package body Aqua.Drivers is
    overriding procedure Update
      (Driver : in out Character_Handling_Driver);
 
+   CPU_Handling_Register_Count : constant Driver_Register_Count := 8;
+
+   R_CPU_Command  : constant Driver_Register_Range := 0;
+   R_CPU_Argument : constant Driver_Register_Range := 4;
+
+   type CPU_Handling_Command is
+     (No_Command, Enable_Trace);
+
+   type CPU_Handling_Driver is
+     new Root_Aqua_Driver with null record;
+
+   overriding function Identity
+     (Driver : CPU_Handling_Driver)
+      return String
+   is ("aqua-cpu-handler");
+
+   overriding procedure Update
+     (Driver : in out CPU_Handling_Driver);
+
    ------------------------
    -- Character_Handling --
    ------------------------
@@ -73,6 +94,15 @@ package body Aqua.Drivers is
    begin
       Driver.Changed := (others => False);
    end Clear_Changes;
+
+   ------------------
+   -- CPU_Handling --
+   ------------------
+
+   function CPU_Handling return Aqua_Driver is
+   begin
+      return new CPU_Handling_Driver (CPU_Handling_Register_Count);
+   end CPU_Handling;
 
    ------------
    -- Create --
@@ -191,6 +221,39 @@ package body Aqua.Drivers is
    begin
       return new Text_Writer_Driver (Text_Writer_Register_Count - 1);
    end Text_Writer;
+
+   ------------
+   -- Update --
+   ------------
+
+   overriding procedure Update
+     (Driver : in out CPU_Handling_Driver)
+   is
+   begin
+      if Driver.Changed_Word (R_CPU_Command) then
+         declare
+            Last_Command  : constant Word :=
+                              CPU_Handling_Command'Pos
+                                (CPU_Handling_Command'Last);
+            Command_Value : constant Word := Driver.Get_Word (R_CPU_Command);
+         begin
+            if Command_Value <= Last_Command then
+               case CPU_Handling_Command'Val (Command_Value) is
+                  when No_Command =>
+                     null;
+                  when Enable_Trace =>
+                     declare
+                        Enabled : constant Boolean :=
+                                    Driver.Get_Word (R_CPU_Argument) /= 0;
+                     begin
+                        Aqua.CPU.Enable_Trace (Enabled);
+                     end;
+               end case;
+            end if;
+         end;
+         Driver.Clear_Changes;
+      end if;
+   end Update;
 
    ------------
    -- Update --
@@ -319,5 +382,7 @@ begin
    Register
      ("aqua-character-handler",
       Character_Handling'Access);
-
+   Register
+     ("aqua-cpu-handler",
+      CPU_Handling'Access);
 end Aqua.Drivers;
