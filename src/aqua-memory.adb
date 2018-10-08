@@ -365,12 +365,6 @@ package body Aqua.Memory is
          end if;
       end if;
 
-      if Addr = 16#4000013C# then
-         Ada.Text_IO.Put_Line
-           (Aqua.IO.Hex_Image (Addr)
-            & " <- " & Aqua.IO.Hex_Image (Value));
-      end if;
-
       for I in Address range 0 .. Address (Data_Octets (Size)) - 1 loop
          Memory.Set_Octet (Addr + I, Octet (It mod 256));
          It := It / 256;
