@@ -310,13 +310,6 @@ package body Aqua.Memory is
          Page : constant Page_Access := Memory.Get_Page (Addr);
       begin
 
-         if False then
-            Ada.Text_IO.Put_Line ("[" & Aqua.IO.Hex_Image (Addr)
-                                  & "]<-"
-                                  & Aqua.IO.Hex_Image
-                                    (Word (Value), Word_8_Size));
-         end if;
-
          Page.Data (Addr mod Page_Size) := Value;
          if Memory.Flag_Is_Set (Addr, Flag_Driver) then
             for Position in Page.Driver_Map.Iterate loop
