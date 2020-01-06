@@ -253,7 +253,7 @@ package body Aqua.Images is
          return;
       end if;
 
-      Image.Loaded_Objects.Insert (Name);
+      Image.Loaded_Objects.Include (Name);
 
       if Trace_Load then
          Ada.Text_IO.Put_Line ("image: loading " & Name);
