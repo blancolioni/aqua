@@ -753,7 +753,19 @@ package body Aqua.CPU is
                   end if;
                end if;
 
-               Double_Operand (Instruction) (CPU, Size, X, Y);
+               declare
+                  Handler : constant Double_Operand_Handler :=
+                    Double_Operand (Instruction);
+               begin
+                  if Handler = null then
+                     CPU.Dump_Core;
+                     CPU.Report;
+                     raise Constraint_Error with
+                       "not implemented: " & Instruction'Image;
+                  end if;
+
+                  Double_Operand (Instruction) (CPU, Size, X, Y);
+               end;
 
                if Trace_Code then
                   Ada.Text_IO.Put (" " & Aqua.IO.Hex_Image (Y));
