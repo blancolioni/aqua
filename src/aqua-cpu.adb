@@ -125,6 +125,12 @@ package body Aqua.CPU is
       Src  : Aqua.Word;
       Dst  : in out Aqua.Word);
 
+   procedure Handle_Lsh
+     (CPU  : in out Aqua_CPU_Type'Class;
+      Size : Aqua.Data_Size;
+      Src  : Aqua.Word;
+      Dst  : in out Aqua.Word);
+
    procedure Handle_And
      (CPU  : in out Aqua_CPU_Type'Class;
       Size : Aqua.Data_Size;
@@ -167,6 +173,7 @@ package body Aqua.CPU is
         A_And  => Handle_And'Access,
         A_Or   => Handle_Or'Access,
         A_Xor  => Handle_Xor'Access,
+        A_Lsh  => Handle_Lsh'Access,
         others => null);
 
    Single_Operand : constant array (Single_Operand_Instruction)
@@ -1103,6 +1110,30 @@ package body Aqua.CPU is
       X := X + 1;
       Set (Dst, Size, X);
    end Handle_Inc;
+
+   ----------------
+   -- Handle_Lsh --
+   ----------------
+
+   procedure Handle_Lsh
+     (CPU  : in out Aqua_CPU_Type'Class;
+      Size : Aqua.Data_Size;
+      Src  : Aqua.Word;
+      Dst  : in out Aqua.Word)
+   is
+      pragma Unreferenced (CPU);
+      Result : Aqua.Word;
+      Shift  : Natural;
+   begin
+      if Src < 2 ** 31 then
+         Shift := Natural (Src mod 32);
+         Result := Dst / 2 ** Shift;
+      else
+         Shift := Natural (Aqua.Word'Last - Src + 1) mod 32;
+         Result := Dst * 2 ** Shift;
+      end if;
+      Aqua.Set (Dst, Size, Result);
+   end Handle_Lsh;
 
    ----------------
    -- Handle_Mod --
